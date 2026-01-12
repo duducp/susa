@@ -35,8 +35,19 @@ clean: ## Remove arquivos gerados
 
 # CLI Installation
 cli-install: ## Instala o CLI no sistema
-	@echo "$(GREEN)🚀 Instalando CLI...$(NC)"
-	@./install.sh
+	@if command -v susa &> /dev/null; then \
+		echo "$(YELLOW)⚠️  SUSA já está instalado$(NC)"; \
+		read -p "Deseja reinstalar? (s/N): " response; \
+		if [ "$$response" = "s" ] || [ "$$response" = "S" ]; then \
+			echo "$(GREEN)🚀 Reinstalando CLI...$(NC)"; \
+			./install.sh; \
+		else \
+			echo "$(BLUE)ℹ️  Instalação cancelada$(NC)"; \
+		fi \
+	else \
+		echo "$(GREEN)🚀 Instalando CLI...$(NC)"; \
+		./install.sh; \
+	fi
 
 cli-uninstall: ## Remove o CLI do sistema
 	@echo "$(YELLOW)🗑️  Desinstalando CLI...$(NC)"

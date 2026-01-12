@@ -1,9 +1,11 @@
 #!/bin/bash
-set -euo pipefail
 
 # =========================
 # Remote Installer for CLI
 # =========================
+
+# Exit on error
+set -e
 
 # Settings
 REPO_URL="${CLI_REPO_URL:-https://github.com/carlosdorneles-mb/susa.git}"
@@ -158,7 +160,7 @@ main() {
         exit 1
     fi
     
-    cd cli/cli  # Navigate to the Susa CLI directory within the repo
+    cd cli
     
     # Check if install.sh exists
     if [ ! -f "install.sh" ]; then
@@ -166,23 +168,32 @@ main() {
         exit 1
     fi
     
-    # Make install.sh executable
+    # Check for existing installation
+    if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/susa" ]; then
+        log_warning "Susa CLI já está instalado em: $INSTALL_DIR"
+        log_info "A instalação atual será substituída."
+        echo ""
+        # Remove old installation to avoid permission conflicts
+        rm -rf "$INSTALL_DIR"
+    fi
+    
+    # Copy to permanent location (excluding .git)
+    log_info "Instalando em $INSTALL_DIR..."
+    mkdir -p "$INSTALL_DIR"
+    
+    # Copy all files except .git directory
+    find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec cp -r {} "$INSTALL_DIR/" \;
+    
+    # Run installation from permanent location
+    cd "$INSTALL_DIR"
     chmod +x install.sh
     
-    # Run installation
     log_info "Executando instalação..."
-    echo ""
     
     if bash install.sh; then
-        echo ""
         log_success "Susa CLI instalado com sucesso! 🎉"
         echo ""
-        log_info "Para começar a usar, execute:"
-        echo -e "  ${GREEN}susa --version${NC}"
-        echo -e "  ${GREEN}susa --help${NC}"
-        echo ""
-        log_info "Documentação: https://github.com/carlosdorneles-mb/susa"
-        echo ""
+        log_info "Documentação: https://carlosdorneles-mb.github.io/susa"
     else
         log_error "Falha durante a instalação"
         exit 1

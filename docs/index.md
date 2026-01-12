@@ -2,7 +2,7 @@
 
 Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamento de software.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Shell](https://img.shields.io/badge/shell-bash-orange)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey)
@@ -24,8 +24,7 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 ### Instalação com um comando (Recomendado)
 
 ```bash
-# macOS e Linux
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/cli/install-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/install-remote.sh | bash
 ```
 
 Este comando irá:
@@ -40,7 +39,7 @@ Este comando irá:
 
 ```bash
 # Desinstalar remotamente
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/cli/uninstall-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/uninstall-remote.sh | bash
 ```
 
 ### Verificar Instalação

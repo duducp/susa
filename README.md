@@ -15,15 +15,24 @@ Framework modular em Shell Script para criar CLIs extensíveis com descoberta au
 
 ## 🚀 Instalação
 
+### Instalação Rápida (Recomendado)
+
 ```bash
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/install-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/install-remote.sh | bash
+```
+
+### Instalação Manual
+
+```bash
+git clone https://github.com/carlosdorneles-mb/susa.git
+cd susa
+./install.sh
 ```
 
 ### Desinstalação
 
 ```bash
-# Desinstalar remotamente
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/uninstall-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/uninstall-remote.sh | bash
 ```
 
 ## 📖 Uso Básico

@@ -1,9 +1,11 @@
 #!/bin/bash
-set -euo pipefail
 
 # ============================================================
 # Remote Uninstaller for Susa CLI
 # ============================================================
+
+# Exit on error
+set -e
 
 # Settings
 CLI_NAME="${CLI_NAME:-susa}"
@@ -37,10 +39,20 @@ log_error() {
 # Detect operating system
 detect_os() {
     if [[ "$(uname)" == "Darwin" ]]; then
-        echo "macOS"
+        echo "macos"
     elif [[ -f /etc/os-release ]]; then
         . /etc/os-release
-        echo "$ID"
+        case "$ID" in
+            ubuntu|debian)
+                echo "debian"
+                ;;
+            fedora|rhel|centos|rocky|almalinux)
+                echo "fedora"
+                ;;
+            *)
+                echo "linux"
+                ;;
+        esac
     else
         echo "unknown"
     fi
@@ -49,38 +61,67 @@ detect_os() {
 # Banner
 show_banner() {
     echo ""
-    echo "╔════════════════════════════════════════════════════════╗"
-    echo "║         Desinstalador Remoto do Susa CLI              ║"
-    echo "╚════════════════════════════════════════════════════════╝"
+    echo -e "${CYAN}╔════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                                        ║${NC}"
+    echo -e "${CYAN}║      Susa CLI Remote Uninstaller       ║${NC}"
+    echo -e "${CYAN}║                                        ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
     echo ""
 }
 
 # Main uninstall function
 uninstall_susa() {
+    local uninstalled=false
     local os_type=$(detect_os)
-    log_info "Sistema detectado: $os_type"
-    echo ""
 
-    # Run the local uninstall script
-    if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/uninstall.sh" ]; then
-        log_info "Executando script de desinstalação local..."
-        bash "$INSTALL_DIR/uninstall.sh"
-        echo ""
+    log_info "Sistema detectado: $os_type"
+
+    # Remove completion files first
+    log_info "Removendo autocompletar..."
+    local completion_removed=false
+    if [ -f "$HOME/.local/share/bash-completion/completions/$CLI_NAME" ]; then
+        rm -f "$HOME/.local/share/bash-completion/completions/$CLI_NAME"
+        completion_removed=true
+    fi
+    if [ -f "$HOME/.local/share/zsh/site-functions/_$CLI_NAME" ]; then
+        rm -f "$HOME/.local/share/zsh/site-functions/_$CLI_NAME"
+        completion_removed=true
+    fi
+    if [ "$completion_removed" = true ]; then
+        log_success "Autocompletar removido"
     else
-        log_error "Susa CLI não está instalado ou diretório não encontrado: $INSTALL_DIR"
+        echo "  Autocompletar não encontrado"
+    fi
+
+    # Remove binary symlink
+    log_info "Removendo executável..."
+    if [ -L "$BIN_DIR/$CLI_NAME" ] || [ -f "$BIN_DIR/$CLI_NAME" ]; then
+        rm -f "$BIN_DIR/$CLI_NAME"
+        log_success "Executável removido"
+        uninstalled=true
+    else
+        echo "  Executável não encontrado em $BIN_DIR"
+    fi
+
+    # Remove installation directory
+    log_info "Removendo diretório de instalação..."
+    if [ -d "$INSTALL_DIR" ]; then
+        rm -rf "$INSTALL_DIR"
+        log_success "Diretório removido: $INSTALL_DIR"
+        uninstalled=true
+    else
+        echo "  Diretório não encontrado: $INSTALL_DIR"
+    fi
+
+    echo ""
+    if [ "$uninstalled" = false ]; then
+        log_warning "Susa CLI não foi encontrado"
+        log_info "Verifique manualmente em: $INSTALL_DIR e $BIN_DIR/$CLI_NAME"
         exit 1
     fi
 
-    # Remove o diretório de instalação
-    if [ -d "$INSTALL_DIR" ]; then
-        log_info "Removendo diretório de instalação: $INSTALL_DIR..."
-        rm -rf "$INSTALL_DIR"
-        log_success "Diretório removido"
-    fi
-
-    echo ""
-    log_success "Desinstalação completa!"
-    echo ""
+    log_success "Susa CLI desinstalado com sucesso! ✓"
+    log_info "Nota: Reinicie o terminal para aplicar todas as mudanças"
 }
 
 # Main execution
@@ -92,12 +133,15 @@ main() {
     read -r confirm
     echo ""
 
-    if [[ "$confirm" =~ ^[sS]$ ]]; then
-        uninstall_susa
-    else
-        log_info "Desinstalação cancelada."
-        exit 0
-    fi
+    case "$confirm" in
+        [sS])
+            uninstall_susa
+            ;;
+        *)
+            log_info "Desinstalação cancelada."
+            exit 0
+            ;;
+    esac
 }
 
 # Checks if it is being executed via pipe
@@ -108,6 +152,5 @@ else
     # Via pipe (curl | sh), uninstalls directly
     show_banner
     log_warning "Executando desinstalação automática (não interativa)..."
-    echo ""
     uninstall_susa
 fi

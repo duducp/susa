@@ -23,11 +23,34 @@ else
     SHELL_CONFIG="~/.bashrc ou ~/.zshrc"
 fi
 
+# Check if CLI is already installed
+if [ -L "$INSTALL_DIR/$CLI_NAME" ] || [ -f "$INSTALL_DIR/$CLI_NAME" ]; then
+    INSTALLED_PATH=$(readlink -f "$INSTALL_DIR/$CLI_NAME" 2>/dev/null || echo "$INSTALL_DIR/$CLI_NAME")
+    
+    # Check if it's pointing to a different directory (not this installation)
+    if [[ "$INSTALLED_PATH" != "$CLI_SOURCE_DIR/$CLI_NAME" ]]; then
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "  ⚠  Susa CLI já está instalado"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "Instalação detectada em: $INSTALLED_PATH"
+        echo ""
+        echo "Para atualizar para a versão mais recente, use:"
+        echo ""
+        echo "  $CLI_NAME self update"
+        echo ""
+        echo "Para reinstalar de qualquer forma, primeiro remova a instalação atual."
+        echo ""
+        exit 0
+    fi
+fi
+
 # Create installation directory if it doesn't exist
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Instalando Susa CLI"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 if [ ! -d "$INSTALL_DIR" ]; then
@@ -45,8 +68,8 @@ ln -sf "$CLI_SOURCE_DIR/susa" "$INSTALL_DIR/$CLI_NAME"
 echo "  ✓ Executável instalado"
 
 # Checks if the directory is in the PATH
-echo ""
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  ⚠  Configuração do PATH necessária"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -66,34 +89,48 @@ else
     echo "→ Verificando PATH..."
     echo "  ✓ Diretório já está no PATH"
 fi
+
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Shell Completion (Autocompletar)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Instalar autocompletar (tab completion)?"
-echo "Permite usar TAB para completar comandos."
-echo ""
-read -p "Instalar agora? (s/N): " -n 1 -r
-echo ""
 
-if [[ $REPLY =~ ^[SsYy]$ ]]; then
+# Check if running in interactive mode
+if [ -t 0 ]; then
+    # Interactive mode - ask user
+    echo "Instalar autocompletar (tab completion)?"
+    echo "Permite usar TAB para completar comandos."
     echo ""
-    echo "→ Instalando autocompletar..."
-    if "$CLI_SOURCE_DIR/susa" self completion --install 2>&1 | grep -q "instalado em:"; then
-        echo "  ✓ Autocompletar instalado"
+    read -p "Instalar agora? (s/N): " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[SsYy]$ ]]; then
         echo ""
-        echo "  Nota: Reinicie o terminal ou execute 'source' no seu shell config"
+        echo "→ Instalando autocompletar..."
+        if "$CLI_SOURCE_DIR/susa" self completion --install 2>&1 | grep -q "instalado em:"; then
+            echo "  ✓ Autocompletar instalado"
+            echo ""
+            echo "  Nota: Reinicie o terminal ou execute 'source' no seu shell config"
+        fi
+    else
+        echo ""
+        echo "  Você pode instalar depois com:"
+        echo "  $CLI_NAME self completion --install"
     fi
 else
+    # Non-interactive mode (piped from curl, etc.) - skip completion
+    echo "Modo não-interativo detectado."
+    echo "Instalação do autocompletar será pulada."
     echo ""
     echo "  Você pode instalar depois com:"
     echo "  $CLI_NAME self completion --install"
 fi
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━"
 echo "  Comandos Úteis"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  Uso básico:"
 echo "    $CLI_NAME <categoria> <comando> [opções]"

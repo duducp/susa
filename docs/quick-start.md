@@ -8,7 +8,7 @@ A forma mais rápida de instalar o Susa CLI é usando o instalador remoto:
 
 ```bash
 # macOS e Linux
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/cli/install-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/install-remote.sh | bash
 ```
 
 Este comando irá:
@@ -38,7 +38,7 @@ Para remover o Susa CLI:
 
 ```bash
 # Desinstalar remotamente (recomendado)
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/cli/uninstall-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/uninstall-remote.sh | bash
 ```
 
 O script de desinstalação irá:
