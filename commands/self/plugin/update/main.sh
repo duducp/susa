@@ -29,6 +29,7 @@ show_help() {
 # Main function
 main() {
     local PLUGIN_NAME="$1"
+    local REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
     
     # Check if the plugin exists
     if [ ! -d "$PLUGINS_DIR/$PLUGIN_NAME" ]; then

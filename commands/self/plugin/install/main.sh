@@ -25,62 +25,134 @@ show_help() {
     echo -e "  -h, --help    Mostra esta mensagem de ajuda"
 }
 
-# Main function
-main() {
-    local PLUGIN_URL="$1"
+# Check if plugin is already installed and show information
+check_plugin_already_installed() {
+    local plugin_name="$1"
     
-    # Normaliza URL (converte user/repo para URL completa)
-    PLUGIN_URL=$(normalize_git_url "$PLUGIN_URL")
+    if [ ! -d "$PLUGINS_DIR/$plugin_name" ]; then
+        return 1
+    fi
     
-    # Extrai nome do plugin da URL
-    PLUGIN_NAME=$(extract_plugin_name "$PLUGIN_URL")
-    
-    log_info "Instalando plugin: $PLUGIN_NAME"
+    log_warning "Plugin '$plugin_name' já está instalado"
     echo ""
     
-    # Verifica se git está instalado
+    # Show plugin information
+    local registry_file="$PLUGINS_DIR/registry.yaml"
+    if [ -f "$registry_file" ]; then
+        local current_version=$(registry_get_plugin_info "$registry_file" "$plugin_name" "version")
+        local install_date=$(registry_get_plugin_info "$registry_file" "$plugin_name" "installed_at")
+        
+        if [ -n "$current_version" ]; then
+            echo -e "  ${GRAY}Versão atual: $current_version${NC}"
+        fi
+        if [ -n "$install_date" ]; then
+            echo -e "  ${GRAY}Instalado em: $install_date${NC}"
+        fi
+    fi
+    
+    echo ""
+    echo -e "${LIGHT_YELLOW}Opções disponíveis:${NC}"
+    echo -e "  • Atualizar plugin:  ${LIGHT_CYAN}susa self plugin update $plugin_name${NC}"
+    echo -e "  • Remover plugin:  ${LIGHT_CYAN}susa self plugin remove $plugin_name${NC}"
+    echo -e "  • Listar plugins:   ${LIGHT_CYAN}susa self plugin list${NC}"
+    
+    return 0
+}
+
+# Ensure registry.yaml file exists
+ensure_registry_exists() {
+    local registry_file="$1"
+    
+    if [ -f "$registry_file" ]; then
+        return 0
+    fi
+    
+    log_debug "Creating registry.yaml file"
+    cat > "$registry_file" << 'EOF'
+# Plugin Registry
+# This file keeps track of all installed plugins
+
+plugins:
+EOF
+}
+
+# Register plugin in registry.yaml
+register_plugin() {
+    local registry_file="$1"
+    local plugin_name="$2"
+    local plugin_url="$3"
+    local plugin_version="$4"
+    
+    if registry_add_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version"; then
+        log_debug "Plugin registrado no registry.yaml"
+        return 0
+    else
+        log_warning "Não foi possível registrar no registry (plugin pode já existir)"
+        return 1
+    fi
+}
+
+# Show installation success message
+show_installation_success() {
+    local plugin_name="$1"
+    local plugin_url="$2"
+    local plugin_version="$3"
+    local cmd_count="$4"
+    
+    echo ""
+    log_success "Plugin '$plugin_name' instalado com sucesso!"
+    echo -e "  ${GRAY}Origem: $plugin_url${NC}"
+    echo -e "  ${GRAY}Versão: $plugin_version${NC}"
+    echo -e "  ${GRAY}Comandos: $cmd_count${NC}"
+    echo ""
+    echo -e "Use ${LIGHT_CYAN}susa self plugin list${NC} para ver todos os plugins"
+}
+
+# Main function
+main() {
+    local plugin_url="$1"
+    
+    # Normalize URL (convert user/repo to full URL)
+    plugin_url=$(normalize_git_url "$plugin_url")
+    
+    # Extract plugin name from URL
+    local plugin_name=$(extract_plugin_name "$plugin_url")
+    
+    log_info "Instalando plugin: $plugin_name"
+    echo ""
+    
+    # Check if plugin is already installed
+    if check_plugin_already_installed "$plugin_name"; then
+        exit 0
+    fi
+    
+    # Check if git is installed
     ensure_git_installed || exit 1
     
-    # Verifica se plugin já existe
-    if [ -d "$PLUGINS_DIR/$PLUGIN_NAME" ]; then
-        log_error "Plugin '$PLUGIN_NAME' já está instalado"
-        echo ""
-        echo -e "Para atualizar, use: ${LIGHT_CYAN}susa self plugin update $PLUGIN_NAME${NC}"
-        exit 1
-    fi
-    
-    # Cria diretório de plugins se não existir
+    # Create plugins directory if it doesn't exist
     mkdir -p "$PLUGINS_DIR"
     
-    # Clona o repositório
-    log_info "Clonando de $PLUGIN_URL..."
-    if clone_plugin "$PLUGIN_URL" "$PLUGINS_DIR/$PLUGIN_NAME"; then
-        # Detecta versão do plugin
-        PLUGIN_VERSION=$(detect_plugin_version "$PLUGINS_DIR/$PLUGIN_NAME")
-        
-        # Registra no registry.yaml
-        REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
-        if registry_add_plugin "$REGISTRY_FILE" "$PLUGIN_NAME" "$PLUGIN_URL" "$PLUGIN_VERSION"; then
-            log_debug "Plugin registrado no registry.yaml"
-        else
-            log_warning "Não foi possível registrar no registry (plugin pode já existir)"
-        fi
-        
-        # Conta comandos instalados
-        cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$PLUGIN_NAME")
-        
-        echo ""
-        log_success "Plugin '$PLUGIN_NAME' instalado com sucesso!"
-        echo -e "  ${GRAY}Origem: $PLUGIN_URL${NC}"
-        echo -e "  ${GRAY}Versão: $PLUGIN_VERSION${NC}"
-        echo -e "  ${GRAY}Comandos: $cmd_count${NC}"
-        echo ""
-        echo -e "Use ${LIGHT_CYAN}susa self plugin list${NC} para ver todos os plugins"
-    else
+    # Clone the repository
+    log_info "Clonando de $plugin_url..."
+    if ! clone_plugin "$plugin_url" "$PLUGINS_DIR/$plugin_name"; then
         log_error "Falha ao clonar o repositório"
-        rm -rf "$PLUGINS_DIR/$PLUGIN_NAME"
+        rm -rf "$PLUGINS_DIR/$plugin_name"
         exit 1
     fi
+    
+    # Detect plugin version
+    local plugin_version=$(detect_plugin_version "$PLUGINS_DIR/$plugin_name")
+    
+    # Register in registry.yaml
+    local registry_file="$PLUGINS_DIR/registry.yaml"
+    ensure_registry_exists "$registry_file"
+    register_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version"
+    
+    # Count installed commands
+    local cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$plugin_name")
+    
+    # Show success message
+    show_installation_success "$plugin_name" "$plugin_url" "$plugin_version" "$cmd_count"
 }
 
 # Parse arguments first, before running main

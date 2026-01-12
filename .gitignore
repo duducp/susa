@@ -6,6 +6,10 @@
 config/.env
 .env
 
+# Plugins
+plugins/*
+!plugins/.gitkeep
+
 # Logs
 *.log
 logs/
