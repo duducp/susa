@@ -72,6 +72,9 @@ susa setup docker --help
 # Versão do CLI
 susa --version
 susa self version
+
+# Atualizar CLI
+susa self update
 ```
 
 ### Gerenciar Plugins

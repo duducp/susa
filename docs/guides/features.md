@@ -1059,6 +1059,7 @@ cli                           # Lista categorias
 susa --help, -h               # Ajuda principal
 susa --version, -V            # Versão do Susa CLI
 susa self version             # Versão do Susa CLI (alternativo)
+susa self update              # Atualiza o CLI para versão mais recente
 susa <categoria>              # Lista comandos e subcategorias
 susa <categoria> <comando>    # Executa comando
 susa <cat> <subcat> <cmd>     # Executa comando em subcategoria

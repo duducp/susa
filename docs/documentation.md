@@ -17,6 +17,7 @@ make install
 ```
 
 Este comando irá:
+
 - ✅ Criar ambiente virtual Python
 - ✅ Instalar MkDocs e tema Material
 - ✅ Instalar todas as extensões necessárias
@@ -139,6 +140,7 @@ def hello():
 |---------|-----------|-------------|
 | `setup docker` | Instala Docker | ✅ |
 | `self version` | Mostra versão | ❌ |
+| `self update` | Atualiza o CLI | ❌ |
 ```
 
 #### Listas de Tarefas
