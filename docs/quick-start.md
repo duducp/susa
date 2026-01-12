@@ -113,7 +113,7 @@ EOF
 chmod +x commands/install/meu-comando/main.sh
 
 # 5. Usar
-./susa install meu-comando
+./susa setup meu-comando
 ```
 
 ### 4. Criar Subcategoria com Comandos

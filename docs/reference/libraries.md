@@ -1351,7 +1351,7 @@ show_usage
 # Output: Usage: cli <command> [options]
 
 show_usage install docker
-# Output: Usage: susa install docker <command> [options]
+# Output: Usage: susa setup docker <command> [options]
 ```
 
 ### Exemplo Completo

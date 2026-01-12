@@ -77,7 +77,7 @@ Antes de submeter PR:
 ./susa self plugin list
 
 # Teste em subcategorias
-./susa install
+./susa setup
 ```
 
 ## 📚 Documentação

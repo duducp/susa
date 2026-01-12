@@ -78,19 +78,19 @@ commands/
 ./cli
 
 # Listar subcategorias e comandos de uma categoria
-./susa install
+./susa setup
 
 # Navegar para uma subcategoria
-./susa install python
+./susa setup python
 
 # Navegar para sub-subcategoria (nível 3)
-./susa install python tools
+./susa setup python tools
 
 # Executar comando direto
-./susa install asdf
+./susa setup asdf
 
 # Executar comando em subcategoria
-./susa install python pip
+./susa setup python pip
 
 # Executar comando em sub-subcategoria
 ./susa install python tools venv

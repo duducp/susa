@@ -77,12 +77,12 @@ description: "Ferramentas Python"
 
 ## ✅ Testes Realizados
 
-- [x] Lista categoria principal: `./susa install`
-- [x] Lista subcategoria: `./susa install python`
-- [x] Lista sub-subcategoria: `./susa install python tools`
-- [x] Executa comando direto: `./susa install asdf`
-- [x] Executa comando em subcategoria: `./susa install python pip`
-- [x] Executa comando nível 3: `./susa install python tools venv`
+- [x] Lista categoria principal: `./susa setup`
+- [x] Lista subcategoria: `./susa setup python`
+- [x] Lista sub-subcategoria: `./susa setup python tools`
+- [x] Executa comando direto: `./susa setup asdf`
+- [x] Executa comando em subcategoria: `./susa setup python pip`
+- [x] Executa comando nível 3: `./susa setup python tools venv`
 
 ## 🎁 Benefícios
 

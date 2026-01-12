@@ -195,7 +195,7 @@ Diretório raiz do CLI (normalmente detectado automaticamente).
 **Exemplo:**
 
 ```bash
-CLI_DIR=/opt/mycli ./susa install docker
+CLI_DIR=/opt/mycli ./susa setup docker
 ```
 
 ---
@@ -291,7 +291,7 @@ Adicione aliases ao shell para comandos frequentes:
 # ~/.zshrc ou ~/.bashrc
 
 # Aliases do CLI
-alias clic='susa install'
+alias clic='susa setup'
 alias cliu='cli update'
 alias clid='susa deploy'
 alias clip='susa self plugin'
@@ -300,7 +300,7 @@ alias clip='susa self plugin'
 Uso:
 
 ```bash
-clic docker       # Equivale a: susa install docker
+clic docker       # Equivale a: susa setup docker
 cliu system       # Equivale a: cli update system
 clip list         # Equivale a: susa self plugin list
 ```
@@ -558,10 +558,10 @@ echo $CLI_DIR
 
 # Exportar variável
 export DEBUG=true
-susa install docker
+susa setup docker
 
 # Ou inline
-DEBUG=true susa install docker
+DEBUG=true susa setup docker
 ```
 
 ---

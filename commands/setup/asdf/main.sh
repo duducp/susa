@@ -7,7 +7,7 @@
 show_help() {
     echo "Instalação do ASDF Version Manager"
     echo ""
-    echo -e "${LIGHT_GREEN}Usage:${NC} susa install asdf [options]"
+    echo -e "${LIGHT_GREEN}Usage:${NC} susa setup asdf [options]"
     echo ""
     echo -e "${LIGHT_GREEN}Description:${NC}"
     echo "  ASDF é um gerenciador de versões universal que suporta múltiplas"
@@ -19,8 +19,8 @@ show_help() {
     echo "  -u, --uninstall   Desinstala o ASDF do sistema"
     echo ""
     echo -e "${LIGHT_GREEN}Examples:${NC}"
-    echo "  susa install asdf              # Instala o ASDF"
-    echo "  susa install asdf --uninstall  # Desinstala o ASDF"
+    echo "  susa setup asdf              # Instala o ASDF"
+    echo "  susa setup asdf --uninstall  # Desinstala o ASDF"
     echo ""
     echo -e "${LIGHT_GREEN}Post-installation:${NC}"
     echo "  Após a instalação, reinicie o terminal ou execute:"
@@ -293,7 +293,7 @@ install_asdf() {
         echo "Próximos passos:"
         echo -e "  1. Reinicie o terminal ou execute: ${LIGHT_CYAN}source $shell_config${NC}"
         echo -e "  2. Liste plugins disponíveis: ${LIGHT_CYAN}asdf plugin list all${NC}"
-        echo -e "  3. Use ${LIGHT_CYAN}susa install asdf --help${NC} para mais informações"
+        echo -e "  3. Use ${LIGHT_CYAN}susa setup asdf --help${NC} para mais informações"
     else
         log_error "ASDF foi instalado mas não está disponível no PATH"
         log_info "Tente reiniciar o terminal ou executar: source $shell_config"

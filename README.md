@@ -20,7 +20,7 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 
 ```bash
 # macOS e Linux
-curl -LsSf https://raw.githubusercontent.com/cdorneles/scripts/main/cli/install-remote.sh | sh
+curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/install-remote.sh | sh
 ```
 
 ## 📖 Uso Básico
@@ -30,16 +30,16 @@ curl -LsSf https://raw.githubusercontent.com/cdorneles/scripts/main/cli/install-
 susa
 
 # Listar comandos de uma categoria
-susa install
+susa setup
 
 # Executar comando
-susa install docker
+susa setup docker
 
 # Navegar subcategorias
-susa install python tools pip
+susa setup python tools pip
 
 # Help de comando
-susa install docker --help
+susa setup docker --help
 
 # Versão do Susa CLI
 susa --version
@@ -57,7 +57,7 @@ susa/
 ├── Makefile                 # Automação
 │
 ├── commands/                # Comandos nativos
-│   ├── install/
+│   ├── setup/
 │   │   ├── config.yaml     # Config da categoria
 │   │   ├── docker/
 │   │   │   ├── config.yaml # Config do comando
@@ -118,7 +118,7 @@ susa self plugin list
 Organize comandos em hierarquias:
 
 ```bash
-susa install python tools pip
+susa setup python tools pip
 #   └─┬─┘ └──┬──┘ └─┬─┘ └┬┘
 #  cat  subcat1  subcat2 cmd
 ```
@@ -139,10 +139,10 @@ susa install python tools pip
 
 ```bash
 # 1. Criar estrutura
-mkdir -p commands/install/meuapp
+mkdir -p commands/setup/meuapp
 
 # 2. Criar config.yaml
-cat > commands/install/meuapp/config.yaml << EOF
+cat > commands/setup/meuapp/config.yaml << EOF
 name: "Meu App"
 description: "Instala Meu App"
 script: "main.sh"
@@ -151,7 +151,7 @@ os: ["linux", "mac"]
 EOF
 
 # 3. Criar script
-cat > commands/install/meuapp/main.sh << 'EOF'
+cat > commands/setup/meuapp/main.sh << 'EOF'
 #!/bin/bash
 set -euo pipefail
 
@@ -166,10 +166,10 @@ log_success "Instalado com sucesso!"
 EOF
 
 # 4. Dar permissão
-chmod +x commands/install/meuapp/main.sh
+chmod +x commands/setup/meuapp/main.sh
 
 # 5. Testar
-susa install meuapp
+susa setup meuapp
 ```
 
 Pronto! O comando aparece automaticamente.
@@ -215,9 +215,9 @@ susa self plugin remove devops-tools
 
 ```bash
 # Instalar ferramentas
-susa install docker
-susa install nodejs
-susa install python
+susa setup docker
+susa setup nodejs
+susa setup python
 
 # Atualizar sistema
 susa update system

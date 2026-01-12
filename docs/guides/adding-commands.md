@@ -95,10 +95,10 @@ categories:
 
 ```bash
 # Listar comandos da categoria
-./susa install
+./susa setup
 
 # Executar o comando
-./susa install vscode
+./susa setup vscode
 ```
 
 ## 📚 Funções Disponíveis
