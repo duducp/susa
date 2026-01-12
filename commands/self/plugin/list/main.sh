@@ -80,7 +80,7 @@ main() {
     if [ $plugin_count -eq 0 ]; then
         log_info "Nenhum plugin instalado"
         echo ""
-        echo -e "Para instalar plugins, use: ${LIGHT_CYAN}susa self plugin install <url>${NC}"
+        echo -e "Para instalar plugins, use: ${LIGHT_CYAN}susa self plugin add <url>${NC}"
     else
         echo -e "${GREEN}Total: $plugin_count plugin(s)${NC}"
     fi

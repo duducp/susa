@@ -43,7 +43,7 @@ main() {
     if [ ! -f "$REGISTRY_FILE" ]; then
         log_error "Registry não encontrado. Não é possível determinar a origem do plugin."
         echo ""
-        echo -e "O plugin não foi instalado via ${LIGHT_CYAN}susa self plugin install${NC}"
+        echo -e "O plugin não foi instalado via ${LIGHT_CYAN}susa self plugin add${NC}"
         exit 1
     fi
     

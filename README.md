@@ -101,7 +101,7 @@ susa setup meuapp
 ### Instalar Plugins
 
 ```bash
-susa self plugin install user/repo
+susa self plugin add user/repo
 susa self plugin list
 ```
 

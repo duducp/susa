@@ -18,7 +18,7 @@ setup_command_env() {
 }
 
 # Builds the command path based on SCRIPT_DIR
-# Example: commands/self/plugin/install -> self plugin install
+# Example: commands/self/plugin/add -> self plugin add
 build_command_path() {
     local script_dir="${SCRIPT_DIR:-${1:-}}"
     

@@ -81,8 +81,8 @@ susa self update
 
 ```bash
 # Instalar plugin do GitHub
-susa self plugin install user/repo
-susa self plugin install https://github.com/user/repo.git
+susa self plugin add user/repo
+susa self plugin add https://github.com/user/repo.git
 
 # Listar plugins instalados
 susa self plugin list
@@ -165,7 +165,7 @@ Instale plugins externos para adicionar funcionalidades:
 
 ```bash
 # Instalar plugin
-susa self plugin install https://github.com/user/susa-plugin-name
+susa self plugin add https://github.com/user/susa-plugin-name
 
 # Listar plugins
 susa self plugin list

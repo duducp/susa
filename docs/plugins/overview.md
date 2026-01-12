@@ -49,10 +49,10 @@ Mostra todos os plugins instalados com:
 
 ```bash
 # De URL completa
-susa self plugin install https://github.com/user/cli-plugin-name
+susa self plugin add https://github.com/user/cli-plugin-name
 
 # Atalho GitHub
-susa self plugin install user/cli-plugin-name
+susa self plugin add user/cli-plugin-name
 ```
 
 ### Atualizar Plugin

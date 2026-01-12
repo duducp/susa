@@ -1419,9 +1419,9 @@ Constrói o caminho do comando baseado no SCRIPT_DIR.
 
 **Exemplo:**
 ```bash
-# Se SCRIPT_DIR = /opt/cli/commands/self/plugin/install
+# Se SCRIPT_DIR = /opt/cli/commands/self/plugin/add
 path=$(build_command_path)
-echo "$path"  # self plugin install
+echo "$path"  # self plugin add
 ```
 
 ---

@@ -291,7 +291,7 @@ susa self co<TAB>    → susa self completion
 
 ```bash
 # Após instalar um plugin, ele aparece automaticamente
-susa self plugin install user/plugin-repo
+susa self plugin add user/plugin-repo
 
 # O completion detecta novos comandos
 susa <TAB>  # Mostra categorias do plugin também

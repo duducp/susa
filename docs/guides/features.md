@@ -98,7 +98,7 @@ setup/                 # Categoria
 Plugins são repositórios Git que adicionam comandos sem modificar o código principal:
 
 ```bash
-susa self plugin install user/myplugin
+susa self plugin add user/myplugin
 # Comandos do plugin ficam disponíveis imediatamente!
 ```
 
@@ -684,7 +684,7 @@ myplugin/                    # Repositório Git
 O CLI fornece comandos para gerenciar plugins:
 
 ```bash
-susa self plugin install <url>      # Instala plugin de repositório Git
+susa self plugin add <url>           # Instala plugin de repositório Git
 susa self plugin list                # Lista plugins instalados
 susa self plugin update <nome>       # Atualiza plugin específico
 susa self plugin remove <nome>       # Remove plugin
@@ -715,10 +715,10 @@ plugins:
 
 ```bash
 # Instalar plugin do GitHub
-susa self plugin install https://github.com/user/devops-tools.git
+susa self plugin add https://github.com/user/devops-tools.git
 
 # Ou formato curto
-susa self plugin install user/devops-tools
+susa self plugin add user/devops-tools
 
 # Comandos do plugin ficam disponíveis imediatamente
 susa deploy dev
@@ -1069,7 +1069,7 @@ susa <cat> <cmd> --help       # Help do comando (se disponível)
 ### Comandos de Plugin
 
 ```bash
-susa self plugin install <url>      # Instala plugin do Git
+susa self plugin add <url>          # Instala plugin do Git
 susa self plugin list                # Lista plugins instalados
 susa self plugin update <nome>       # Atualiza plugin específico
 susa self plugin remove <nome>       # Remove plugin

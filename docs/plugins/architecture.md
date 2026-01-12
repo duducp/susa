@@ -109,10 +109,10 @@ Mostra todos os plugins instalados com:
 
 ```bash
 # De URL completa
-susa self plugin install https://github.com/user/cli-plugin-name
+susa self plugin add https://github.com/user/cli-plugin-name
 
 # Atalho GitHub
-susa self plugin install user/cli-plugin-name
+susa self plugin add user/cli-plugin-name
 ```
 
 Durante a instalação:
@@ -148,7 +148,7 @@ Atualiza o plugin para a versão mais recente:
 
 **Requisitos:**
 
-- Plugin deve ter sido instalado via `susa self plugin install`
+- Plugin deve ter sido instalado via `susa self plugin add`
 - Origem deve ser um repositório Git válido
 - Plugins locais não podem ser atualizados
 
