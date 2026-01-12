@@ -8,6 +8,9 @@ set -euo pipefail
 
 setup_command_env
 
+# Source completion library
+source "$CLI_DIR/lib/completion.sh"
+
 show_help() {
     show_description
     echo ""
@@ -292,12 +295,20 @@ _susa "$@"
 ZSH_COMPLETION_EOF
 }
 
-# Instala completion para Bash
+# Install autocomplete for Bash
 install_bash_completion() {
-    log_info "Instalando completion para Bash..."
+    log_info "Instalando o autocompletar para Bash..."
     
-    local completion_dir="$HOME/.local/share/bash-completion/completions"
-    local completion_file="$completion_dir/susa"
+    # Check if already installed
+    if is_completion_installed "bash"; then
+        log_warning "Autocompletar para Bash já está instalado"
+        local completion_file=$(get_completion_file_path "bash")
+        echo -e "${LIGHT_YELLOW}Para reinstalar, primeiro desinstale: ${LIGHT_CYAN}susa self completion --uninstall${NC}"
+        return 1
+    fi
+    
+    local completion_dir=$(get_completion_dir_path "bash")
+    local completion_file=$(get_completion_file_path "bash")
     local shell_config=$(detect_shell_config)
     
     # Cria diretório se não existir
@@ -307,7 +318,7 @@ install_bash_completion() {
     generate_bash_completion > "$completion_file"
     chmod +x "$completion_file"
     
-    log_success "Completion instalado em: $completion_file"
+    log_success "Autocompletar instalado em: $completion_file"
     echo ""
     echo -e "${LIGHT_YELLOW}Próximos passos:${NC}"
     echo -e "  1. Reinicie o terminal ou execute: ${LIGHT_CYAN}source $shell_config${NC}"
@@ -316,10 +327,18 @@ install_bash_completion() {
 
 # Instala completion para Zsh
 install_zsh_completion() {
-    log_info "Instalando completion para Zsh..."
+    log_info "Instalando autocompletar para Zsh..."
     
-    local completion_dir="$HOME/.local/share/zsh/site-functions"
-    local completion_file="$completion_dir/_susa"
+    # Check if already installed
+    if is_completion_installed "zsh"; then
+        log_warning "Autocompletar para Zsh já está instalado"
+        local completion_file=$(get_completion_file_path "zsh")
+        echo -e "${LIGHT_YELLOW}Para reinstalar, primeiro desinstale: ${LIGHT_CYAN}susa self completion --uninstall${NC}"
+        return 1
+    fi
+    
+    local completion_dir=$(get_completion_dir_path "zsh")
+    local completion_file=$(get_completion_file_path "zsh")
     local shell_config=$(detect_shell_config)
     
     # Cria diretório se não existir
@@ -339,7 +358,7 @@ install_zsh_completion() {
         fi
     fi
     
-    log_success "Completion instalado em: $completion_file"
+    log_success "Autocompletar instalado em: $completion_file"
     echo ""
     echo -e "${LIGHT_YELLOW}Próximos passos:${NC}"
     echo -e "  1. Reinicie o terminal ou execute: ${LIGHT_CYAN}source $shell_config${NC}"
@@ -348,32 +367,32 @@ install_zsh_completion() {
 
 # Remove completion
 uninstall_completion() {
-    log_info "Removendo completion..."
+    log_info "Removendo o autocompletar..."
     
     local removed=false
     
     # Remove bash completion
-    local bash_completion="$HOME/.local/share/bash-completion/completions/susa"
-    if [ -f "$bash_completion" ]; then
+    if is_completion_installed "bash"; then
+        local bash_completion=$(get_completion_file_path "bash")
         rm "$bash_completion"
         log_debug "Removido: $bash_completion"
         removed=true
     fi
     
     # Remove zsh completion
-    local zsh_completion="$HOME/.local/share/zsh/site-functions/_susa"
-    if [ -f "$zsh_completion" ]; then
+    if is_completion_installed "zsh"; then
+        local zsh_completion=$(get_completion_file_path "zsh")
         rm "$zsh_completion"
         log_debug "Removido: $zsh_completion"
         removed=true
     fi
     
     if [ "$removed" = true ]; then
-        log_success "Completion removido com sucesso!"
+        log_success "Autocompletar removido com sucesso!"
         echo ""
         echo -e "${LIGHT_YELLOW}Nota:${NC} Reinicie o terminal para aplicar as mudanças"
     else
-        log_warning "Nenhum completion encontrado para remover"
+        log_warning "Nenhum autocompletar encontrado para remover"
     fi
 }
 

@@ -41,22 +41,51 @@ build_command_path() {
 # Usage:
 #   show_usage
 #   show_usage "<file> <destination>"
+#   show_usage --no-options
 show_usage() {
     local cli_name=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "command")
     local command_path=$(build_command_path)
-    local custom_args="$*"
+    local show_options=true
+    local custom_args=""
     
-    # If no custom arguments provided, use [opções]
-    if [ -z "$custom_args" ]; then
+    # Parse arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --no-options)
+                show_options=false
+                shift
+                ;;
+            *)
+                custom_args="$custom_args $1"
+                shift
+                ;;
+        esac
+    done
+    
+    # Trim leading space from custom_args
+    custom_args="${custom_args# }"
+    
+    # If no custom arguments and show_options is true, use [opções]
+    if [ -z "$custom_args" ] && [ "$show_options" = true ]; then
         custom_args="[opções]"
     fi
     
-    # If command_path is empty, show usage without it
-    if [ -z "$command_path" ]; then
-        echo -e "${LIGHT_GREEN}Uso:${NC} ${LIGHT_CYAN}${cli_name}${NC} ${CYAN}<comando>${NC} ${GRAY}${custom_args}${NC}"
+    # Build usage string
+    local usage_string="${LIGHT_GREEN}Uso:${NC} ${LIGHT_CYAN}${cli_name}${NC}"
+    
+    # Add command path if available
+    if [ -n "$command_path" ]; then
+        usage_string="$usage_string ${CYAN}${command_path}${NC}"
     else
-        echo -e "${LIGHT_GREEN}Uso:${NC} ${LIGHT_CYAN}${cli_name}${NC} ${CYAN}${command_path}${NC} ${GRAY}${custom_args}${NC}"
+        usage_string="$usage_string ${CYAN}<comando>${NC}"
     fi
+    
+    # Add custom args if available
+    if [ -n "$custom_args" ]; then
+        usage_string="$usage_string ${GRAY}${custom_args}${NC}"
+    fi
+    
+    echo -e "$usage_string"
 }
 
 # Get and display the command description from config.yaml
