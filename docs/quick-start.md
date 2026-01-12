@@ -47,6 +47,28 @@ susa --help
 
 ---
 
+### Desinstalação
+
+Para remover o Susa CLI:
+
+```bash
+# Desinstalar remotamente (recomendado)
+curl -LsSf https://raw.githubusercontent.com/cdorneles/scripts/main/cli/uninstall-remote.sh | sh
+
+# Ou localmente (se você clonou o repositório)
+cd scripts/cli
+./uninstall.sh
+```
+
+O script de desinstalação irá:
+
+- ✅ Remover o executável do sistema
+- ✅ Remover o diretório de instalação
+- ✅ Remover scripts de completion (bash/zsh)
+- ✅ Limpar configurações dos arquivos .bashrc/.zshrc
+
+---
+
 ## 📖 Uso Básico
 
 ### 1. Estrutura Básica

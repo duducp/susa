@@ -44,6 +44,16 @@ cd scripts/cli
 ./install.sh
 ```
 
+### Desinstalação
+
+```bash
+# Desinstalar remotamente
+curl -LsSf https://raw.githubusercontent.com/cdorneles/scripts/main/cli/uninstall-remote.sh | sh
+
+# Ou localmente (se você clonou o repositório)
+cd scripts/cli && ./uninstall.sh
+```
+
 ### Verificar Instalação
 
 ```bash

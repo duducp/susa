@@ -25,18 +25,21 @@ fi
 
 INSTALL_DIR="$HOME/.local/bin"
 
-echo ""
-echo "Desinstalador do Susa CLI"
-echo "Sistema: $OS_TYPE"
-echo ""
+# Remove completion usando o comando existente
+if [ -x "$CLI_SOURCE_DIR/susa" ]; then
+    echo "→ Removendo completion..."
+    "$CLI_SOURCE_DIR/susa" self completion --uninstall 2>/dev/null || true
+fi
 
 # Remove o symlink
 if [ -L "$INSTALL_DIR/$CLI_NAME" ]; then
     echo "→ Removendo link simbólico..."
     rm "$INSTALL_DIR/$CLI_NAME"
-    echo "✓ Susa CLI desinstalado com sucesso!"
+    echo "✓ Executável removido"
 else
     echo "⚠  Susa CLI não está instalado em $INSTALL_DIR"
 fi
 
+echo ""
+echo "✓ Susa CLI desinstalado com sucesso!"
 echo ""

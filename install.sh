@@ -31,11 +31,6 @@ else
     SHELL_CONFIG="~/.bashrc ou ~/.zshrc"
 fi
 
-echo ""
-echo "Instalador do CLI"
-echo "Sistema: $OS_TYPE"
-echo ""
-
 # Cria diretório de instalação se não existir
 if [ ! -d "$INSTALL_DIR" ]; then
     echo "→ Criando diretório $INSTALL_DIR..."

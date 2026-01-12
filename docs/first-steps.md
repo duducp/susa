@@ -124,6 +124,10 @@ BACKUP_DIR="$HOME/backups"
 ## Desinstalação
 
 ```bash
+# Desinstalar remotamente (recomendado)
+curl -LsSf https://raw.githubusercontent.com/cdorneles/scripts/main/cli/uninstall-remote.sh | sh
+
+# Ou localmente (se você clonou o repositório)
 cd cli
 ./uninstall.sh
 ```
