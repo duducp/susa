@@ -1,0 +1,7 @@
+category: plugin
+id: update
+name: "Update"
+description: "Atualiza um plugin para a versão mais recente"
+script: "main.sh"
+sudo: false
+os: ["linux", "mac"]

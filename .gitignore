@@ -1,0 +1,53 @@
+# ============================================================
+# .gitignore - CLI Project
+# ============================================================
+
+# Configurações locais
+config/.env
+.env
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Backups
+backups/
+*.tar.gz
+*.zip
+
+# Temporários
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Node modules (caso use em algum script)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+*.egg
+
+# MkDocs
+site/
+
+# Outros
+.cache/

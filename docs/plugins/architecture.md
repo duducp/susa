@@ -1,0 +1,209 @@
+# Arquitetura de Plugins
+
+## 📋 Visão Geral
+
+O CLI agora suporta uma arquitetura descentralizada com suporte a plugins externos. Cada comando tem sua própria configuração local, facilitando a modularidade e extensibilidade.
+
+## 🏗️ Estrutura
+
+```text
+cli/
+├── cli.yaml                 # Config global (nome, versão, categorias)
+├── commands/                # Comandos built-in
+│   ├── install/
+│   │   ├── asdf/
+│   │   │   ├── config.yaml  # Config do comando
+│   │   │   └── main.sh      # Script
+│   │   └── docker/
+│   │       ├── config.yaml
+│   │       └── main.sh
+│   └── daily/
+│       └── backup/
+│           ├── config.yaml
+│           └── main.sh
+└── plugins/                 # Plugins externos
+    ├── registry.yaml        # Registro de plugins
+    └── backup-tools/        # Exemplo de plugin
+        └── daily/
+            └── backup-s3/
+                ├── config.yaml
+                └── main.sh
+```
+
+## 📝 Formato do config.yaml
+
+Cada comando deve ter um arquivo `config.yaml` no seu diretório:
+
+```yaml
+category: daily              # Categoria do comando
+id: backup-s3               # ID único do comando
+name: "Backup S3"           # Nome para exibição
+description: "Descrição"    # Descrição curta
+script: "main.sh"           # Script principal
+sudo: false                 # Requer sudo?
+os: ["linux", "mac"]        # Sistemas compatíveis
+group: "Backups"            # (Opcional) Grupo para organização
+```
+
+## 🔌 Como Criar um Plugin
+
+### 1. Estrutura Básica
+
+Crie um diretório dentro de `plugins/`:
+
+```bash
+mkdir -p plugins/meu-plugin/categoria/comando
+```
+
+### 2. Crie o config.yaml
+
+```yaml
+category: daily
+id: meu-comando
+name: "Meu Comando"
+description: "Descrição do comando"
+script: "main.sh"
+sudo: false
+os: ["linux"]
+```
+
+### 3. Crie o Script
+
+```bash
+#!/bin/bash
+
+echo "Meu comando funcionando!"
+```
+
+### 4. Torne Executável
+
+```bash
+chmod +x plugins/meu-plugin/categoria/comando/main.sh
+```
+
+## ✅ Vantagens
+
+1. **Modularidade**: Cada comando é auto-contido
+2. **Plugins Externos**: Fácil adicionar comandos sem modificar o core
+3. **Isolamento**: Plugins não quebram outros comandos
+4. **Distribuição**: Comandos podem ser compartilhados como repositórios Git
+5. **Versionamento**: Cada plugin pode ter sua versão
+
+## 🚀 Comandos de Gerenciamento
+
+### Listar Plugins
+
+```bash
+susa self plugin list
+```
+
+Mostra todos os plugins instalados com:
+
+- Origem (URL Git)
+- Versão
+- Número de comandos
+- Categorias
+- Data de instalação
+
+### Instalar Plugin
+
+```bash
+# De URL completa
+susa self plugin install https://github.com/user/cli-plugin-name
+
+# Atalho GitHub
+susa self plugin install user/cli-plugin-name
+```
+
+Durante a instalação:
+
+- Clona o repositório
+- Detecta versão (de version.txt ou VERSION)
+- Registra no registry.yaml
+
+### Remover Plugin
+
+```bash
+susa self plugin remove plugin-name
+```
+
+Remove completamente:
+
+- Diretório do plugin
+- Entrada no registry.yaml
+
+### Atualizar Plugin
+
+```bash
+susa self plugin update plugin-name
+```
+
+Atualiza o plugin para a versão mais recente:
+
+- Obtém URL de origem do registry
+- Faz backup temporário do plugin atual
+- Clona versão mais recente do repositório
+- Atualiza informações no registry (versão, data)
+- Remove backup se sucesso, restaura se falha
+
+**Requisitos:**
+
+- Plugin deve ter sido instalado via `susa self plugin install`
+- Origem deve ser um repositório Git válido
+- Plugins locais não podem ser atualizados
+
+## 📦 Distribuindo Plugins
+
+Plugins podem ser distribuídos como repositórios Git:
+
+```bash
+# Estrutura do repositório
+my-cli-plugin/
+├── README.md
+└── daily/
+    └── meu-comando/
+        ├── config.yaml
+        └── main.sh
+```
+
+Usuários podem clonar e copiar para `plugins/`:
+
+```bash
+git clone https://github.com/user/my-cli-plugin
+cp -r my-cli-plugin plugins/
+```
+
+## 🔍 Discovery de Comandos
+
+O sistema descobre comandos automaticamente:
+
+1. Busca em `commands/categoria/` (built-in)
+2. Busca em `plugins/*/categoria/` (externos)
+3. Filtra por compatibilidade de SO
+4. Aplica permissões (sudo)
+
+## 📋 Registry (plugins/registry.yaml)
+
+O registry mantém controle de todos os plugins:
+
+```yaml
+version: "1.0.0"
+
+plugins:
+  - name: "backup-tools"
+    source: "https://github.com/user/backup-tools.git"
+    version: "1.2.0"
+    installed_at: "2026-01-11T22:30:00Z"
+```
+
+**Funcionalidades:**
+
+- **Tracking**: Origem, versão, data de instalação
+- **Histórico**: Mantém registro de todos os plugins
+- **Metadados**: Informações úteis para atualização futura
+
+## ⚡ Performance
+
+- **Lazy Loading**: Configs são lidas apenas quando necessário
+- **Filesystem-based**: Não precisa parsear YAML central
+- **Cache**: Possível implementar cache em `/tmp` futuramente

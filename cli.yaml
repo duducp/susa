@@ -1,0 +1,10 @@
+# CLI Global Configuration
+
+command: "susa"
+name: "Susa CLI"
+description: "CLI para gerenciar instalações e atualizações de software."
+version: "1.0.0"
+
+# Diretórios de comandos
+commands_dir: "commands"
+plugins_dir: "plugins"

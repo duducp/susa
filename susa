@@ -1,0 +1,305 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# ============================================================
+# CLI - Command Line Interface for Daily Scripts
+# ============================================================
+
+# Resolve o link simbólico para encontrar o diretório real
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+while [ -L "$SCRIPT_PATH" ]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+CLI_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+YAML_CONFIG="$CLI_DIR/cli.yaml"
+
+# ============================================================
+# Carrega Bibliotecas
+# ============================================================
+
+source "$CLI_DIR/lib/logger.sh"
+source "$CLI_DIR/lib/color.sh"
+source "$CLI_DIR/lib/os.sh"
+source "$CLI_DIR/lib/string.sh"
+source "$CLI_DIR/lib/sudo.sh"
+source "$CLI_DIR/lib/yaml.sh"
+source "$LIB_DIR/cli.sh"
+source "$LIB_DIR/shell.sh"
+source "$LIB_DIR/dependencies.sh"
+source "$LIB_DIR/kubernetes.sh"
+
+[ -f "$CLI_DIR/config/settings.conf" ] && source "$CLI_DIR/config/settings.conf"
+
+# Valida se o arquivo de configuração existe
+if [ ! -f "$YAML_CONFIG" ]; then
+    echo "Erro: Arquivo de configuração '$YAML_CONFIG' não encontrado" >&2
+    exit 1
+fi
+
+# ============================================================
+# Funções
+# ============================================================
+
+show_help() {
+    local description=$(get_yaml_global_field "$YAML_CONFIG" "description")
+    local categories=$(get_all_categories "$YAML_CONFIG")
+
+    echo "$description"
+    echo ""
+    show_usage
+    echo ""
+    echo -e "${LIGHT_GREEN}Commands:${NC}"
+    
+    for cat in $categories; do
+        local cat_desc=$(get_category_info "$YAML_CONFIG" "$cat" "description")
+        printf "  ${LIGHT_CYAN}%-12s${NC} %s\n" "$cat" "$cat_desc"
+    done
+    
+    echo ""
+    echo -e "${LIGHT_GREEN}Global options:${NC}"
+    printf "  ${LIGHT_CYAN}%-14s${NC} %s\n" "-h, --help" "Mostra esta mensagem de ajuda"
+    printf "  ${LIGHT_CYAN}%-14s${NC} %s\n" "-V, --version" "Mostra a versão do CLI"
+}
+
+list_commands() {
+    local category="$1"
+    local categories=$(get_all_categories "$YAML_CONFIG")
+    
+    # Verifica se é uma categoria de primeiro nível
+    local is_top_level=false
+    if echo "$categories" | grep -q "^${category}$"; then
+        is_top_level=true
+    fi
+    
+    # Se não é de primeiro nível, valida se o diretório existe
+    if [ "$is_top_level" = false ]; then
+        local cli_dir="${CLI_DIR}"
+        if [ ! -d "$cli_dir/commands/$category" ] && [ ! -d "$cli_dir/plugins"/*/"$category" 2>/dev/null ]; then
+            log_error "Categoria '$category' não encontrada"
+            return 1
+        fi
+    fi
+    
+    local category_desc=$(get_category_info "$YAML_CONFIG" "$category" "description")
+    local commands=$(get_category_commands "$category")
+    local subcategories=$(get_category_subcategories "$category")
+    local current_os=$(get_simple_os)
+    
+    echo "$category_desc"
+    echo ""
+    show_usage "$category"
+    echo ""
+    
+    # Lista subcategorias primeiro
+    if [ -n "$subcategories" ]; then
+        echo -e "${LIGHT_GREEN}Subcategories:${NC}"
+        for subcat in $subcategories; do
+            local subcat_desc=$(get_category_info "$YAML_CONFIG" "$category/$subcat" "description")
+            printf "  ${LIGHT_MAGENTA}%-15s${NC} %s\n" "$subcat" "$subcat_desc"
+        done
+        
+        # Só adiciona linha extra se houver comandos também
+        if [ -n "$commands" ]; then
+            echo ""
+        fi
+    fi
+    
+    # Lista comandos
+    if [ -n "$commands" ]; then
+        echo -e "${LIGHT_GREEN}Commands:${NC}"
+        
+        local has_compatible_commands=false
+        
+        # Primeiro, lista comandos sem grupo
+        for cmd in $commands; do
+            # Verifica compatibilidade com o SO
+            if ! is_command_compatible "$YAML_CONFIG" "$category" "$cmd" "$current_os"; then
+                continue
+            fi
+            
+            # Pula comandos que pertencem a um grupo
+            local cmd_group=$(get_command_group "$YAML_CONFIG" "$category" "$cmd")
+            if [ -n "$cmd_group" ]; then
+                continue
+            fi
+            
+            has_compatible_commands=true
+            local cmd_desc=$(get_command_info "$YAML_CONFIG" "$category" "$cmd" "description")
+            
+            # Adiciona indicador de sudo se necessário
+            local sudo_indicator=""
+            if requires_sudo "$YAML_CONFIG" "$category" "$cmd"; then
+                sudo_indicator=" ${YELLOW}[sudo]${NC}"
+            fi
+            
+            printf "  ${LIGHT_CYAN}%-15s${NC} %s%b\n" "$cmd" "$cmd_desc" "$sudo_indicator"
+        done
+        
+        # Depois, lista comandos agrupados
+        local groups=$(get_category_groups "$YAML_CONFIG" "$category" "$current_os")
+        
+        if [ -n "$groups" ]; then
+            while IFS= read -r group; do
+                [ -z "$group" ] && continue
+                
+                echo ""
+                echo -e " ${LIGHT_GRAY}$group${NC}"
+                
+                for cmd in $commands; do
+                    # Verifica compatibilidade com o SO
+                    if ! is_command_compatible "$YAML_CONFIG" "$category" "$cmd" "$current_os"; then
+                        continue
+                    fi
+                    
+                    local cmd_group=$(get_command_group "$YAML_CONFIG" "$category" "$cmd")
+                    
+                    # Lista apenas comandos deste grupo
+                    if [ "$cmd_group" = "$group" ]; then
+                        has_compatible_commands=true
+                        local cmd_desc=$(get_command_info "$YAML_CONFIG" "$category" "$cmd" "description")
+                        
+                        # Adiciona indicador de sudo se necessário
+                        local sudo_indicator=""
+                        if requires_sudo "$YAML_CONFIG" "$category" "$cmd"; then
+                            sudo_indicator=" ${YELLOW}[sudo]${NC}"
+                        fi
+                        
+                        printf "  ${LIGHT_CYAN}%-15s${NC} %s%b\n" "$cmd" "$cmd_desc" "$sudo_indicator"
+                    fi
+                done
+            done <<< "$groups"
+        fi
+        
+        if [ "$has_compatible_commands" = false ] && [ -z "$subcategories" ]; then
+            echo -e "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+        fi
+    fi
+}
+
+execute_command() {
+    local category="$1"
+    local command="$2"
+    shift 2
+    
+    local current_os=$(get_simple_os)
+    
+    # Encontra o config do comando
+    local config_file=$(find_command_config "$category" "$command")
+    
+    if [ -z "$config_file" ]; then
+        log_error "Comando '$command' não encontrado na categoria '$category'"
+        echo ""
+        list_commands "$category"
+        exit 1
+    fi
+    
+    # Verifica compatibilidade com o SO
+    if ! is_command_compatible "$YAML_CONFIG" "$category" "$command" "$current_os"; then
+        log_error "Comando '$command' não é compatível com o sistema operacional atual ($current_os)"
+        exit 1
+    fi
+    
+    # Obtém o script name e monta o path
+    local script_name=$(get_command_info "$YAML_CONFIG" "$category" "$command" "script")
+    local command_dir=$(dirname "$config_file")
+    local script_path="$command_dir/$script_name"
+    
+    if [ ! -f "$script_path" ]; then
+        log_error "Script '$script_name' não encontrado em $command_dir/"
+        exit 1
+    fi
+    
+    # Verifica se foi solicitado help para o comando
+    local show_command_help=false
+    for arg in "$@"; do
+        if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            show_command_help=true
+            break
+        fi
+    done
+    
+    # Se foi solicitado help, verifica se o script tem função show_help
+    if [ "$show_command_help" = true ]; then
+        # Verifica se existe a função show_help sem executar o script
+        if grep -q "^show_help()" "$script_path" 2>/dev/null; then
+            source "$script_path"
+            show_help
+        fi
+        exit 0
+    fi
+    
+    # Verifica se requer sudo e avisa o usuário
+    if requires_sudo "$YAML_CONFIG" "$category" "$command"; then
+        check_sudo
+    fi
+    
+    source "$script_path" "$@"
+}
+
+# ============================================================
+# Main
+# ============================================================
+
+main() {
+    # Sem argumentos - mostra ajuda
+    if [ $# -eq 0 ]; then
+        show_help
+        exit 0
+    fi
+
+    # Opções globais
+    case "$1" in
+        -h|--help|help)
+            show_help
+            exit 0
+            ;;
+        -V|--version|version)
+            show_version
+            exit 0
+            ;;
+    esac
+    
+    # Constrói o caminho da categoria/subcategoria
+    local category="$1"
+    local remaining_args=("${@:2}")
+    
+    # Verifica se há mais argumentos que podem ser subcategorias
+    while [ ${#remaining_args[@]} -gt 0 ]; do
+        local next_arg="${remaining_args[0]}"
+        
+        # Se é help, mostra ajuda da categoria atual
+        if [ "$next_arg" = "help" ]; then
+            list_commands "$category"
+            exit 0
+        fi
+        
+        # Tenta ver se é uma subcategoria
+        local subcategories=$(get_category_subcategories "$category")
+        if echo "$subcategories" | grep -q "^${next_arg}$"; then
+            # É uma subcategoria, adiciona ao caminho
+            category="$category/$next_arg"
+            remaining_args=("${remaining_args[@]:1}")
+        else
+            # Não é subcategoria, deve ser um comando
+            break
+        fi
+    done
+    
+    # Se não sobrou nenhum argumento, lista comandos/subcategorias da categoria
+    if [ ${#remaining_args[@]} -eq 0 ]; then
+        list_commands "$category"
+        exit 1
+    fi
+    
+    # O próximo argumento é o comando
+    local command="${remaining_args[0]}"
+    local command_args=("${remaining_args[@]:1}")
+    
+    # Executa o comando
+    execute_command "$category" "$command" "${command_args[@]}"
+}
+
+main "$@"

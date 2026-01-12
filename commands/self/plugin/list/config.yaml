@@ -1,0 +1,7 @@
+category: plugin
+id: list
+name: "List"
+description: "Lista todos os plugins instalados"
+script: "main.sh"
+sudo: false
+os: ["linux", "mac"]

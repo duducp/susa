@@ -1,0 +1,7 @@
+category: plugin
+id: install
+name: "Install"
+description: "Instala um plugin a partir de um repositório Git"
+script: "main.sh"
+sudo: false
+os: ["linux", "mac"]
