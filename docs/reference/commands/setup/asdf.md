@@ -46,6 +46,7 @@ susa setup asdf --uninstall
 | `--update` | Atualiza para a versão mais recente |
 | `-u, --uninstall` | Remove o ASDF || `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
+
 ## Guia Rápido de Uso
 
 Depois de instalar o ASDF, você pode instalar linguagens de programação. Veja como:
