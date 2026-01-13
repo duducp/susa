@@ -49,15 +49,21 @@ fi
 # Check if susa.lock exists, if not, generate it
 LOCK_FILE="$CLI_DIR/susa.lock"
 if [ ! -f "$LOCK_FILE" ] && [ "${SUSA_SKIP_LOCK_CHECK:-}" != "1" ]; then
+    log_debug "Lock file não encontrado: $LOCK_FILE"
+    log_debug "SUSA_SKIP_LOCK_CHECK=${SUSA_SKIP_LOCK_CHECK:-não definido}"
     log_info "Primeira execução detectada. Configurando o Susa CLI..."
     log_info "Gerando arquivo de cache para otimizar o desempenho..."
 
+    log_debug "Chamando comando: SUSA_SKIP_LOCK_CHECK=1 $CLI_DIR/susa self lock"
     # Call the lock command bypassing the check to prevent infinite loop
     SUSA_SKIP_LOCK_CHECK=1 "$CLI_DIR/susa" self lock > /dev/null 2>&1 || {
+        local exit_code=$?
+        log_debug "Comando falhou com código de saída: $exit_code"
         log_error "Erro ao gerar arquivo de cache"
         exit 1
     }
 
+    log_debug "Lock file gerado com sucesso"
     log_success "Configuração concluída! O CLI está pronto para uso."
     echo ""
 fi

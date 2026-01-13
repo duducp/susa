@@ -31,6 +31,56 @@ Este comando irá:
 - ✅ Clonar o repositório
 - ✅ Executar a instalação
 - ✅ Configurar o PATH automaticamente
+- ✅ Detectar e configurar todos os shells disponíveis (Bash e Zsh)
+
+### ⚠️ Importante: Shells Suportados
+
+O Susa CLI suporta **Bash** e **Zsh**. Durante a instalação, o script detectará e configurará automaticamente todos os shells disponíveis no seu sistema.
+
+#### Se você usa apenas Bash
+
+Nenhuma ação adicional necessária! ✅
+
+#### Se você planeja usar Zsh no futuro
+
+Se você instalar o Zsh após a instalação do Susa CLI, será necessário configurá-lo manualmente:
+
+```bash
+# 1. Instalar Zsh primeiro
+# Ubuntu/Debian:
+sudo apt install zsh
+
+# Fedora/RHEL:
+sudo dnf install zsh
+
+# Arch Linux:
+sudo pacman -S zsh
+
+# macOS (já vem instalado por padrão)
+
+# 2. Adicionar o Susa CLI ao PATH no ~/.zshrc
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+
+# 3. Configurar o autocompletar do Susa CLI para Zsh
+susa self completion zsh --install
+
+# 4. Recarregar o shell
+source ~/.zshrc
+```
+
+#### Mudar o shell padrão para Zsh
+
+Se quiser usar Zsh como shell padrão:
+
+```bash
+# Verificar se Zsh está instalado
+which zsh
+
+# Mudar para Zsh como shell padrão
+chsh -s $(which zsh)
+
+# Fazer logout e login novamente para aplicar
+```
 
 ### Verificar Instalação
 
