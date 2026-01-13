@@ -17,9 +17,11 @@ show_help() {
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo "  -u, --uninstall   Desinstala o Podman do sistema"
+    echo "  --update          Atualiza o Podman para a versão mais recente"
     echo ""
     echo -e "${LIGHT_GREEN}Exemplos:${NC}"
     echo "  susa setup podman              # Instala o Podman"
+    echo "  susa setup podman --update     # Atualiza o Podman"
     echo "  susa setup podman --uninstall  # Desinstala o Podman"
     echo ""
     echo -e "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -265,46 +267,28 @@ install_podman_linux() {
 
 # Main installation function
 install_podman() {
+    # Check if Podman is already installed
+    if command -v podman &>/dev/null; then
+        local current_version=$(podman --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
+        log_info "Podman $current_version já está instalado."
+
+        log_debug "Obtendo última versão..."
+        local podman_version=$(get_latest_podman_version)
+        local target_version_clean="${podman_version#v}"
+
+        if [ "$current_version" != "$target_version_clean" ]; then
+            echo ""
+            echo -e "${YELLOW}Uma versão mais recente está disponível ($target_version_clean).${NC}"
+            echo -e "Para atualizar, execute: ${LIGHT_CYAN}susa setup podman --update${NC}"
+        fi
+
+        return 0
+    fi
+
     log_info "Iniciando instalação do Podman..."
 
     # Detect OS
     local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
-
-    # Only check version for macOS (which uses Homebrew)
-    if [ "$os_name" = "darwin" ]; then
-        log_debug "Obtendo última versão..."
-        local podman_version=$(get_latest_podman_version)
-
-        # Check existing installation
-        check_existing_installation "$podman_version"
-        local check_result=$?
-
-        if [ $check_result -eq 2 ]; then
-            return 0  # Já está atualizado
-        elif [ $check_result -eq 1 ]; then
-            return 0  # Cancelado pelo usuário
-        fi
-    else
-        # For Linux, just check if it's already installed
-        if command -v podman &>/dev/null; then
-            local current_version=$(podman --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
-
-            echo ""
-            echo -e "${YELLOW}Podman $current_version já está instalado. Reinstalar? (s/N)${NC}"
-            read -r response
-
-            if [[ ! "$response" =~ ^[sS]$ ]]; then
-                log_info "Instalação cancelada"
-                return 0
-            fi
-
-            # Remove old installation
-            if [ -f "$HOME/.local/bin/podman" ]; then
-                log_info "Removendo instalação anterior..."
-                rm -f "$HOME/.local/bin/podman"
-            fi
-        fi
-    fi
 
     case "$os_name" in
         darwin)
@@ -344,6 +328,80 @@ install_podman() {
         fi
     else
         return $install_result
+    fi
+}
+
+# Update Podman
+update_podman() {
+    log_info "Atualizando Podman..."
+
+    # Check if Podman is installed
+    if ! command -v podman &>/dev/null; then
+        log_error "Podman não está instalado. Use 'susa setup podman' para instalar."
+        return 1
+    fi
+
+    local current_version=$(podman --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
+    log_info "Versão atual: $current_version"
+
+    # Get latest version
+    log_debug "Obtendo última versão..."
+    local podman_version=$(get_latest_podman_version)
+    local target_version_clean="${podman_version#v}"
+
+    if [ "$current_version" = "$target_version_clean" ]; then
+        log_info "Você já possui a versão mais recente instalada ($current_version)"
+        return 0
+    fi
+
+    log_info "Atualizando de $current_version para $target_version_clean..."
+
+    # Detect OS and update
+    local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+    case "$os_name" in
+        darwin)
+            if ! command -v brew &>/dev/null; then
+                log_error "Homebrew não está instalado"
+                return 1
+            fi
+
+            log_info "Atualizando Podman via Homebrew..."
+            brew upgrade podman || {
+                log_error "Falha ao atualizar Podman"
+                return 1
+            }
+
+            # Update podman-compose if installed
+            if brew list podman-compose &>/dev/null 2>&1; then
+                log_info "Atualizando podman-compose..."
+                brew upgrade podman-compose || log_debug "podman-compose já está atualizado"
+            fi
+            ;;
+        linux)
+            # Remove old binary
+            if [ -f "$HOME/.local/bin/podman" ]; then
+                log_info "Removendo versão anterior..."
+                rm -f "$HOME/.local/bin/podman"
+            fi
+
+            # Install new version
+            install_podman_linux
+            return $?
+            ;;
+        *)
+            log_error "Sistema operacional não suportado: $os_name"
+            return 1
+            ;;
+    esac
+
+    # Verify update
+    if command -v podman &>/dev/null; then
+        local new_version=$(podman --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        log_success "Podman atualizado com sucesso para versão $new_version!"
+    else
+        log_error "Falha na atualização do Podman"
+        return 1
     fi
 }
 
@@ -408,6 +466,9 @@ main() {
         install)
             install_podman
             ;;
+        update)
+            update_podman
+            ;;
         uninstall)
             uninstall_podman
             ;;
@@ -429,6 +490,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         -u|--uninstall)
             ACTION="uninstall"
+            ;;
+        --update)
+            ACTION="update"
             ;;
         *)
             log_error "Opção desconhecida: $1"
