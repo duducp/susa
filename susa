@@ -123,9 +123,9 @@ list_commands() {
     fi
 
     local category_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$category" "description")
-    local commands=$(get_category_commands "$category")
-    local subcategories=$(get_category_subcategories "$category")
     local current_os=$(get_simple_os)
+    local commands=$(get_category_commands "$category" "$current_os")
+    local subcategories=$(get_category_subcategories "$category")
 
     echo "$category_desc"
     echo ""

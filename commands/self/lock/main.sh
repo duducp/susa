@@ -65,11 +65,13 @@ scan_category_dir() {
 
                 # Read additional metadata
                 local description=$(yq eval '.description' "$item_dir/config.yaml" 2>/dev/null)
+                local script=$(yq eval '.script' "$item_dir/config.yaml" 2>/dev/null)
                 local os=$(yq eval '.os' "$item_dir/config.yaml" 2>/dev/null)
                 local sudo=$(yq eval '.sudo' "$item_dir/config.yaml" 2>/dev/null)
                 local group=$(yq eval '.group' "$item_dir/config.yaml" 2>/dev/null)
 
                 [ "$description" != "null" ] && echo "META|description|${description}"
+                [ "$script" != "null" ] && echo "META|script|${script}"
                 [ "$os" != "null" ] && echo "META|os|${os}"
                 [ "$sudo" != "null" ] && echo "META|sudo|${sudo}"
                 [ "$group" != "null" ] && echo "META|group|${group}"

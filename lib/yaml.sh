@@ -104,6 +104,34 @@ get_command_info_from_lock() {
     yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .$field" "$lock_file" 2>/dev/null
 }
 
+# Check if command is compatible with current OS from lock file
+is_command_compatible_from_lock() {
+    local category="$1"
+    local command="$2"
+    local current_os="$3"  # linux or mac
+    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
+    local lock_file="$cli_dir/susa.lock"
+
+    if [ ! -f "$lock_file" ]; then
+        return 1
+    fi
+
+    # Get the OS array for this command
+    local supported_os=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .os[]" "$lock_file" 2>/dev/null)
+
+    # If there's no OS restriction, it's compatible
+    if [ -z "$supported_os" ]; then
+        return 0
+    fi
+
+    # Check if current OS is in the list
+    if echo "$supported_os" | grep -qw "$current_os"; then
+        return 0
+    fi
+
+    return 1
+}
+
 # --- Functions for Global Config (cli.yaml) ---
 
 # Function to get global YAML fields (name, description, version)
@@ -118,91 +146,27 @@ get_yaml_field() {
     yq eval ".$field" "$yaml_file" 2>/dev/null
 }
 
-# Function to read YAML categories
-parse_yaml_categories() {
-    local yaml_file="$1"
-
-    if [ ! -f "$yaml_file" ]; then
-        return 1
-    fi
-
-    # Extract category names using yq
-    yq eval '.categories | keys | .[]' "$yaml_file" 2>/dev/null
-}
-
-# Discover categories/subcategories automatically from directory structure
-# Returns only level 1 categories (directories in commands/ and plugins/)
-discover_categories() {
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local commands_dir="${cli_dir}/commands"
-    local plugins_dir="${cli_dir}/plugins"
-
-    local categories=""
-
-    # Search in commands/(first level only)
-    if [ -d "$commands_dir" ]; then
-        for cat_dir in "$commands_dir"/*; do
-            [ ! -d "$cat_dir" ] && continue
-            local cat_name=$(basename "$cat_dir")
-            categories="${categories}${cat_name}"$'\n'
-        done
-    fi
-
-    # Search in plugins/ (first level only for each plugin)
-    if [ -d "$plugins_dir" ]; then
-        for plugin_dir in "$plugins_dir"/*; do
-            [ ! -d "$plugin_dir" ] && continue
-            local plugin_name=$(basename "$plugin_dir")
-
-            # Ignore special files
-            [ "$plugin_name" = "registry.yaml" ] && continue
-            [ "$plugin_name" = "README.md" ] && continue
-
-            # Add first-level categories of this plugin
-            for cat_dir in "$plugin_dir"/*; do
-                [ ! -d "$cat_dir" ] && continue
-                local cat_name=$(basename "$cat_dir")
-                categories="${categories}${cat_name}"$'\n'
-            done
-        done
-    fi
-
-    # Remove duplicates and empty lines
-    echo "$categories" | grep -v '^$' | sort -u
-}
-
-# Get all categories (YAML + discovered)
+# Get all categories from lock file only
 get_all_categories() {
     local yaml_file="$1"
 
-    # If lock file exists, use it for faster loading
+    # Only read from lock file - no fallback
     if has_valid_lock_file; then
         get_categories_from_lock
         return 0
     fi
 
-    # Fallback to dynamic discovery
-    local categories=""
-
-    # First, try from YAML (optional)
-    if [ -f "$yaml_file" ]; then
-        categories=$(parse_yaml_categories "$yaml_file" 2>/dev/null || true)
-    fi
-
-    # Then, discover from filesystem
-    local discovered=$(discover_categories)
-
-    # Combine and remove duplicates
-    echo -e "${categories}\n${discovered}" | grep -v '^$' | sort -u
+    # If lock file doesn't exist, return empty
+    return 1
 }
 
-# Function to get information about a category or subcategory
+# Function to get information about a category or subcategory from lock file only
 get_category_info() {
     local yaml_file="$1"
     local category="$2"
     local field="$3"  # name or description
 
-    # If lock file exists, use it first
+    # Only read from lock file - no fallback
     if has_valid_lock_file; then
         local value=$(get_category_info_from_lock "$category" "$field")
         if [ -n "$value" ] && [ "$value" != "null" ]; then
@@ -211,190 +175,63 @@ get_category_info() {
         fi
     fi
 
-    # Fallback to dynamic discovery
-    local cli_dir="${CLI_DIR:-$(dirname "$yaml_file")}"
-
-    # Try reading from the category/subcategory config.yaml in commands/
-    local category_config="$cli_dir/commands/$category/config.yaml"
-    if [ -f "$category_config" ]; then
-        local value=$(yq eval ".$field" "$category_config" 2>/dev/null)
-        if [ -n "$value" ] && [ "$value" != "null" ]; then
-            echo "$value"
-            return 0
-        fi
-    fi
-
-    # Search in plugins/ if not found in commands/
-    if [ -d "$cli_dir/plugins" ]; then
-        for plugin_dir in "$cli_dir/plugins"/*; do
-            [ ! -d "$plugin_dir" ] && continue
-            local plugin_name=$(basename "$plugin_dir")
-
-            # Ignore special files
-            [ "$plugin_name" = "registry.yaml" ] && continue
-            [ "$plugin_name" = "README.md" ] && continue
-
-            category_config="$plugin_dir/$category/config.yaml"
-            if [ -f "$category_config" ]; then
-                local value=$(yq eval ".$field" "$category_config" 2>/dev/null)
-                if [ -n "$value" ] && [ "$value" != "null" ]; then
-                    echo "$value"
-                    return 0
-                fi
-            fi
-        done
-    fi
-}
-
-# --- Functions for Discovery of Commands and Subcategories (based on executable script)) ---
-
-# Checks if a directory is a command (has executable script)
-is_command_dir() {
-    local item_dir="$1"
-
-    # Checks if config.yaml exists
-    [ ! -f "$item_dir/config.yaml" ] && return 1
-
-    # Reads the script field from config.yaml using yq
-    local script_name=$(yq eval '.script' "$item_dir/config.yaml" 2>/dev/null)
-
-    # If script field exists and the file exists, it's a command
-    if [ -n "$script_name" ] && [ "$script_name" != "null" ] && [ -f "$item_dir/$script_name" ]; then
-        return 0
-    fi
-
+    # If lock file doesn't exist or value not found, return empty
     return 1
 }
 
-# Discover commands and subcategories in a path (category can be nested)
-# Returns: commands (directories with script) and subcategories (directories without script)
-discover_items_in_category() {
-    local base_dir="$1"
-    local category_path="$2"  # Can be "install", "install/python", etc.
-    local type="${3:-all}"     # "commands", "subcategories", or "all"
-
-    local full_path="$base_dir/$category_path"
-
-    if [ ! -d "$full_path" ]; then
-        return 0
-    fi
-
-    # Lists directories at the current level
-    for item_dir in "$full_path"/*; do
-        [ ! -d "$item_dir" ] && continue
-
-        local item_name=$(basename "$item_dir")
-
-        # Checks if it is a command (has executable script)
-        if is_command_dir "$item_dir"; then
-            if [ "$type" = "commands" ] || [ "$type" = "all" ]; then
-                echo "command:$item_name"
-            fi
-        else
-            # If it's not a command, it's a subcategory
-            if [ "$type" = "subcategories" ] || [ "$type" = "all" ]; then
-                echo "subcategory:$item_name"
-            fi
-        fi
-    done
-}
-
-# Gets commands from a category (can be nested like "install/python")
+# Gets commands from a category from lock file only
 get_category_commands() {
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local category="$1"
+    local current_os="${2:-}"  # Optional OS filter
 
-    # If lock file exists, use it for faster loading
+    # Only read from lock file - no fallback
     if has_valid_lock_file; then
-        get_category_commands_from_lock "$category"
+        local commands=$(get_category_commands_from_lock "$category")
+        
+        # If OS filter is provided, filter commands by compatibility
+        if [ -n "$current_os" ]; then
+            local filtered_commands=""
+            for cmd in $commands; do
+                if is_command_compatible_from_lock "$category" "$cmd" "$current_os"; then
+                    filtered_commands="${filtered_commands}${cmd}"$'\n'
+                fi
+            done
+            echo "$filtered_commands" | grep -v '^$'
+        else
+            echo "$commands"
+        fi
         return 0
     fi
 
-    # Fallback to dynamic discovery
-    local commands_dir="${cli_dir}/commands"
-    local plugins_dir="${cli_dir}/plugins"
-
-    # Search in commands/
-    if [ -d "$commands_dir" ]; then
-        discover_items_in_category "$commands_dir" "$category" "commands" | sed 's/^command://'
-    fi
-
-    # Search in plugins/
-    if [ -d "$plugins_dir" ]; then
-        for plugin_dir in "$plugins_dir"/*; do
-            [ ! -d "$plugin_dir" ] && continue
-            local plugin_name=$(basename "$plugin_dir")
-
-            # Ignore special files
-            [ "$plugin_name" = "registry.yaml" ] && continue
-            [ "$plugin_name" = "README.md" ] && continue
-
-            discover_items_in_category "$plugin_dir" "$category" "commands" | sed 's/^command://'
-        done
-    fi
+    # If lock file doesn't exist, return empty
+    return 1
 }
 
-# Gets subcategories from a category
+# Gets subcategories from a category from lock file only
 get_category_subcategories() {
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local category="$1"
 
-    # If lock file exists, use it for faster loading
+    # Only read from lock file - no fallback
     if has_valid_lock_file; then
         get_category_subcategories_from_lock "$category"
         return 0
     fi
 
-    # Fallback to dynamic discovery
-    local commands_dir="${cli_dir}/commands"
-    local plugins_dir="${cli_dir}/plugins"
-
-    local subcategories=""
-
-    # Search in commands/
-    if [ -d "$commands_dir" ]; then
-        subcategories=$(discover_items_in_category "$commands_dir" "$category" "subcategories" | sed 's/^subcategory://')
-    fi
-
-    # Search in plugins/
-    if [ -d "$plugins_dir" ]; then
-        for plugin_dir in "$plugins_dir"/*; do
-            [ ! -d "$plugin_dir" ] && continue
-            local plugin_name=$(basename "$plugin_dir")
-
-            # Ignore special files
-            [ "$plugin_name" = "registry.yaml" ] && continue
-            [ "$plugin_name" = "README.md" ] && continue
-
-            local plugin_subcats=$(discover_items_in_category "$plugin_dir" "$category" "subcategories" | sed 's/^subcategory://')
-            [ -n "$plugin_subcats" ] && subcategories="${subcategories}"$'\n'"${plugin_subcats}"
-        done
-    fi
-
-    # Remove duplicates and empty lines
-    echo "$subcategories" | grep -v '^$' | sort -u
-}
-
-# ============================================================
-# LEGACY - Kept for compatibility
-# ============================================================
-
-# Discovers commands in a directory by reading 'id' field from config.yaml
-discover_commands_in_dir() {
-    local base_dir="$1"
-    local category="$2"
-
-    if [ ! -d "$base_dir" ]; then
-        return 0
-    fi
-
-    # Legacy function - no longer used
+    # If lock file doesn't exist, return empty
     return 1
 }
 
-# --- Functions to read Individual Command Config ---
+# ============================================================
+# CONFIG FILE READING FUNCTIONS
+# These functions are used ONLY by 'susa self lock' to generate the lock file
+# and for finding the script path when executing commands
+# The CLI does NOT read config files for metadata in runtime
+# ============================================================
 
 # Reads a field from a command config
+# WARNING: Used only by 'susa self lock' and for script path lookup
 get_command_config_field() {
     local config_file="$1"
     local field="$2"
@@ -414,6 +251,7 @@ get_command_config_field() {
 }
 
 # Finds the config file of a command based on directory path
+# WARNING: Used only for finding script path when executing commands
 find_command_config() {
     local category="$1"       # Can be "install" or "install/python"
     local command_id="$2"
@@ -460,15 +298,15 @@ is_plugin_command() {
     return 1
 }
 
-# Gets information from a specific command
+# Gets information from a specific command from lock file only
 get_command_info() {
     local yaml_file="$1"  # Kept for compatibility, but not used
     local category="$2"
     local command_id="$3"
     local field="$4"  # name, description, script, sudo, os, group
 
-    # If lock file exists and we're getting metadata, try it first
-    if has_valid_lock_file && [ "$field" != "script" ]; then
+    # Only read from lock file
+    if has_valid_lock_file; then
         local value=$(get_command_info_from_lock "$category" "$command_id" "$field")
         if [ -n "$value" ] && [ "$value" != "null" ]; then
             echo "$value"
@@ -476,78 +314,54 @@ get_command_info() {
         fi
     fi
 
-    # Fallback to config file lookup (needed for script field and when lock is missing)
-    local config_file=$(find_command_config "$category" "$command_id")
-
-    if [ -z "$config_file" ]; then
-        return 1
-    fi
-
-    get_command_config_field "$config_file" "$field"
+    # If lock file doesn't exist or value not found, return empty
+    return 1
 }
 
-# Function to check if command is compatible with current OS
+# Function to check if command is compatible with current OS from lock file only
 is_command_compatible() {
     local yaml_file="$1"  # Kept for compatibility
     local category="$2"
     local command_id="$3"
-    local current_os="$4"  # linux ou mac
+    local current_os="$4"  # linux or mac
 
-    local config_file=$(find_command_config "$category" "$command_id")
-
-    if [ -z "$config_file" ]; then
-        return 1
-    fi
-
-    local supported_os=$(get_command_config_field "$config_file" "os")
-
-    # If there's no OS restriction, it's compatible
-    if [ -z "$supported_os" ]; then
-        return 0
-    fi
-
-    # Checks if current OS is in the list
-    if echo "$supported_os" | grep -qw "$current_os"; then
-        return 0
-    fi
-
-    return 1
+    # Use lock file function directly
+    is_command_compatible_from_lock "$category" "$command_id" "$current_os"
 }
 
-# Function to check if command requires sudo
+# Function to check if command requires sudo from lock file only
 requires_sudo() {
     local yaml_file="$1"  # Kept for compatibility
     local category="$2"
     local command_id="$3"
 
-    local config_file=$(find_command_config "$category" "$command_id")
-
-    if [ -z "$config_file" ]; then
-        return 1
-    fi
-
-    local needs_sudo=$(get_command_config_field "$config_file" "sudo")
-
-    if [ "$needs_sudo" = "true" ]; then
-        return 0
+    # Only read from lock file
+    if has_valid_lock_file; then
+        local needs_sudo=$(get_command_info_from_lock "$category" "$command_id" "sudo")
+        if [ "$needs_sudo" = "true" ]; then
+            return 0
+        fi
     fi
 
     return 1
 }
 
-# Function to get the group of a command
+# Function to get the group of a command from lock file only
 get_command_group() {
     local yaml_file="$1"  # Kept for compatibility
     local category="$2"
     local command_id="$3"
 
-    local config_file=$(find_command_config "$category" "$command_id")
-
-    if [ -z "$config_file" ]; then
-        return 0
+    # Only read from lock file
+    if has_valid_lock_file; then
+        local group=$(get_command_info_from_lock "$category" "$command_id" "group")
+        if [ -n "$group" ] && [ "$group" != "null" ]; then
+            echo "$group"
+            return 0
+        fi
     fi
 
-    get_command_config_field "$config_file" "group"
+    return 1
 }
 
 # Function to get unique list of groups in a category
