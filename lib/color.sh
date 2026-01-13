@@ -16,7 +16,6 @@ LIGHT_BLUE='\033[0;94m'         # Light Blue
 MAGENTA='\033[0;35m'            # Magenta
 LIGHT_MAGENTA='\033[0;95m'      # Light Magenta
 CYAN='\033[0;36m'               # Cyan
-CYAN_DARK='\033[0;96m'          # Dark Cyan
 LIGHT_CYAN='\033[0;96m'         # Light Cyan
 GRAY='\033[0;90m'               # Gray
 LIGHT_GRAY='\033[2;37m'         # Light Gray

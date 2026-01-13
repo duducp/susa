@@ -18,6 +18,8 @@ show_help() {
     echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo "  -u, --uninstall   Desinstala o Podman do sistema"
     echo "  --update          Atualiza o Podman para a versão mais recente"
+    echo "  -v, --verbose     Habilita saída detalhada para depuração"
+    echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     echo -e "${LIGHT_GREEN}Exemplos:${NC}"
     echo "  susa setup podman              # Instala o Podman"
@@ -493,6 +495,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --update)
             ACTION="update"
+            ;;
+        -v|--verbose)
+            export DEBUG=true
+            ;;
+        -q|--quiet)
+            export SILENT=true
             ;;
         *)
             log_error "Opção desconhecida: $1"

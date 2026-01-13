@@ -18,6 +18,8 @@ show_help() {
     echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo "  -u, --uninstall   Desinstala o ASDF do sistema"
     echo "  --update          Atualiza o ASDF para a versão mais recente"
+    echo "  -v, --verbose     Habilita saída detalhada para depuração"
+    echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     echo -e "${LIGHT_GREEN}Exemplos:${NC}"
     echo "  susa setup asdf              # Instala o ASDF"
@@ -452,7 +454,7 @@ uninstall_asdf() {
 
 # Main function
 main() {
-    local action="${1:-install}"
+    local action="${1:-install}" # Default action is install
 
     case "$action" in
         install)
@@ -471,7 +473,7 @@ main() {
     esac
 }
 
-# Parse arguments first, before running main
+# Parse arguments
 ACTION="install"
 
 while [[ $# -gt 0 ]]; do
@@ -480,13 +482,17 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
+        -v|--verbose)
+            export DEBUG=true
+            ;;
+        -q|--quiet)
+            export SILENT=true
+            ;;
         -u|--uninstall)
             ACTION="uninstall"
-            shift
             ;;
         --update)
             ACTION="update"
-            shift
             ;;
         *)
             log_error "Opção desconhecida: $1"

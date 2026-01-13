@@ -68,8 +68,8 @@ susa setup podman --uninstall
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
 | `--update` | Atualiza o Podman para a versão mais recente |
-| `-u, --uninstall` | Remove o Podman do sistema |
-
+| `-u, --uninstall` | Remove o Podman do sistema || `-v, --verbose` | Habilita saída detalhada para depuração |
+| `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 ## Guia Rápido de Uso
 
 ### Comandos Básicos
