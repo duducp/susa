@@ -3,5 +3,6 @@ nav:
   - Visão Geral: index.md
   - ASDF: asdf.md
   - Podman: podman.md
+  - Poetry: poetry.md
   - iTerm: iterm.md
   - Tilix: tilix.md

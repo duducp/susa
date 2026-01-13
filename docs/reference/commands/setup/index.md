@@ -16,6 +16,10 @@ Instala e configura o iTerm2, um substituto avançado para o Terminal padrão do
 
 Instala e configura o Podman, um motor de container open-source para desenvolvimento, gerenciamento e execução de containers OCI. É uma alternativa daemon-less e rootless ao Docker.
 
+### [Poetry](poetry.md)
+
+Instala e configura o Poetry, um gerenciador de dependências e empacotamento para Python. Facilita o gerenciamento de bibliotecas, criação de ambientes virtuais e publicação de pacotes Python. **Disponível para Linux e macOS.**
+
 ### [Tilix](tilix.md)
 
 Instala e configura o Tilix, um emulador de terminal avançado para Linux usando GTK+ 3, com suporte a tiles (painéis lado a lado), notificações, transparência e temas personalizáveis. **Disponível apenas para Linux.**

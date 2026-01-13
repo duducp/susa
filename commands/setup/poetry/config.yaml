@@ -1,0 +1,6 @@
+name: "Poetry"
+description: "Instala Poetry (gerenciador de dependências Python)"
+script: "main.sh"
+sudo: false
+group: python
+os: ["linux", "mac"]

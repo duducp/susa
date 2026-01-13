@@ -371,12 +371,12 @@ main() {
                 shift
                 ;;
             --verbose|-v)
-                export SUSA_DEBUG=1
+                export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
             --quiet|-q)
-                export SUSA_QUIET=1
+                export SILENT=1
                 shift
                 ;;
             *)
