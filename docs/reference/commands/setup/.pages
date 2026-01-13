@@ -4,5 +4,6 @@ nav:
   - ASDF: asdf.md
   - Podman: podman.md
   - Poetry: poetry.md
+  - UV: uv.md
   - iTerm: iterm.md
   - Tilix: tilix.md

@@ -23,3 +23,7 @@ Instala e configura o Poetry, um gerenciador de dependências e empacotamento pa
 ### [Tilix](tilix.md)
 
 Instala e configura o Tilix, um emulador de terminal avançado para Linux usando GTK+ 3, com suporte a tiles (painéis lado a lado), notificações, transparência e temas personalizáveis. **Disponível apenas para Linux.**
+
+### [UV](uv.md)
+
+Instala e configura o UV (by Astral), um gerenciador de pacotes e projetos Python extremamente rápido, escrito em Rust. Substitui pip, pip-tools, pipx, poetry, pyenv, virtualenv e muito mais, com velocidade 10-100x superior. **Disponível para Linux e macOS.**
