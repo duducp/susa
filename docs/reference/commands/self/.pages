@@ -1,0 +1,8 @@
+title: Self
+nav:
+  - Visão Geral: index.md
+  - Completion: completion.md
+  - Info: info.md
+  - Update: update.md
+  - Version: version.md
+  - plugins

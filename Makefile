@@ -18,7 +18,12 @@ help:
 
 install: ## Instala dependências para documentação
 	@pip install --upgrade pip
-	@pip install mkdocs mkdocs-material pymdown-extensions
+	@pip install mkdocs-material
+	@pip install pymdown-extensions
+	@pip install mkdocs-awesome-pages-plugin
+	@pip install mkdocs-glightbox
+	@pip install mkdocs-panzoom-plugin
+	@pip install mkdocs-include-markdown-plugin
 
 serve doc: ## Inicia servidor de documentação local
 	@echo "$(GREEN)🌐 Iniciando servidor MkDocs...$(NC)"

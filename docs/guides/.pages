@@ -1,0 +1,7 @@
+title: Guias
+nav:
+  - Subcategorias: subcategories.md
+  - Adicionando Comandos: adding-commands.md
+  - Funcionalidades: features.md
+  - Configuração: configuration.md
+  - Shell Completion: shell-completion.md

@@ -11,34 +11,60 @@ theme:
   name: material
   language: pt
   palette:
-    # Palette toggle for light mode
-    - scheme: default
-      primary: indigo
-      accent: indigo
+    - media: "(prefers-color-scheme)"
       toggle:
-        icon: material/brightness-7
-        name: Mudar para modo escuro
-    # Palette toggle for dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
+        icon: material/lightbulb-auto
+        name: Mude para o modo claro
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: black
+      accent: orange
       toggle:
-        icon: material/brightness-4
-        name: Mudar para modo claro
+        icon: material/lightbulb
+        name: Mude para o modo escuro
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: black
+      accent: orange
+      toggle:
+        icon: material/lightbulb-outline
+        name: Mude para as preferências do sistema
+  font:
+    text: Roboto
+    code: Roboto Mono
   features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.footnote.tooltips
+    - content.tabs.link
+    - content.tooltips
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.preview
+    - navigation.instant.progress
+    - navigation.path
     - navigation.tabs
-    - navigation.sections
-    - navigation.expand
+    - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
-    - search.suggest
     - search.highlight
-    - content.code.copy
-    - content.code.annotate
+    - search.share
+    - search.suggest
+    - toc.follow
 
 plugins:
+  - tags
+  - include-markdown
   - search:
       lang: pt
+  - awesome-pages
+  - glightbox
+  - panzoom:
+      full_screen: true
+      key: "ctrl"
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -55,26 +81,7 @@ markdown_extensions:
   - toc:
       permalink: true
 
-nav:
-  - Home: index.md
-  - Início Rápido:
-    - Instalação: quick-start.md
-  - Guias:
-    - Subcategorias: guides/subcategories.md
-    - Adicionando Comandos: guides/adding-commands.md
-    - Funcionalidades: guides/features.md
-    - Configuração: guides/configuration.md
-    - Shell Completion: guides/shell-completion.md
-  - Plugins:
-    - Visão Geral: plugins/overview.md
-    - Arquitetura: plugins/architecture.md
-  - Referência:
-    - Bibliotecas: reference/libraries.md
-  - Sobre:
-    - Contribuindo: about/contributing.md
-    - Licença: about/license.md
-
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/carlosdorneles-mb
+      link: https://github.com/carlosdorneles-mb/susa

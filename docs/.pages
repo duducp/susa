@@ -1,0 +1,7 @@
+nav:
+  - Home: index.md
+  - Início Rápido: quick-start.md
+  - guides
+  - plugins
+  - reference
+  - about

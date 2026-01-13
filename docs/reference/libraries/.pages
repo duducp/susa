@@ -1,0 +1,15 @@
+title: Bibliotecas
+nav:
+  - Visão Geral: index.md
+  - Cores: color.md
+  - Logger: logger.md
+  - Sistema Operacional: os.md
+  - Shell: shell.md
+  - Sudo: sudo.md
+  - Strings: string.md
+  - Dependências: dependencies.md
+  - Kubernetes: kubernetes.md
+  - CLI: cli.md
+  - YAML: yaml.md
+  - Plugins: plugin.md
+  - Registry: registry.md

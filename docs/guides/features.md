@@ -1,68 +1,61 @@
 # 🎯 Funcionalidades do Susa CLI
 
-> Guia completo das funcionalidades e capacidades do framework Susa CLI
+> Guia completo das funcionalidades do Susa CLI
 
 ## 📋 Índice
 
 - [Visão Geral](#visao-geral)
 - [Conceitos Chave](#conceitos-chave)
-- [Arquitetura de Configuração](#arquitetura-de-configuracao)
-- [Sistema de Discovery](#sistema-de-discovery)
+- [Descoberta Automática](#descoberta-automatica)
 - [Categorias e Subcategorias](#categorias-e-subcategorias)
-- [Sistema de Grupos](#sistema-de-grupos)
-- [Filtragem por SO](#filtragem-por-sistema-operacional)
-- [Gerenciamento de Sudo](#gerenciamento-de-sudo)
-- [Help Customizado](#help-customizado-para-comandos)
+- [Filtragem por SO](#filtragem-por-so)
 - [Sistema de Plugins](#sistema-de-plugins)
 - [Bibliotecas](#bibliotecas-disponiveis)
-- [Adicionar Comandos](#como-adicionar-novos-comandos)
-- [Referencia Rapida](#referencia-rapida)
+- [Referência Rápida](#referencia-rapida)
 
 ---
 
 ## 🎯 Visão Geral
 
-O **Susa CLI** é um framework modular e extensível para criar ferramentas de linha de comando em Bash. Diferente de CLIs tradicionais, o Susa usa **discovery automático** e **configurações descentralizadas**, eliminando a necessidade de manter um grande arquivo de configuração centralizado.
+O **Susa CLI** é um framework modular e extensível para criar ferramentas de linha de comando em Bash. O Susa usa **descoberta automática** e **configurações descentralizadas**.
 
 ### ✨ Características Principais
 
 | Funcionalidade | Descrição |
 |----------------|------------|
-| 🔍 **Discovery Automático** | Comandos descobertos automaticamente da estrutura de diretórios |
+| 🔍 **Descoberta Automática** | Comandos descobertos da estrutura de diretórios |
 | 📄 **Config Descentralizada** | Cada comando tem seu próprio `config.yaml` |
-| 🌍 **Multi-plataforma** | Suporte para Linux e macOS com filtragem automática |
-| 📂 **Subcategorias Ilimitadas** | Hierarquia de comandos sem limites de profundidade |
-| 🔌 **Sistema de Plugins** | Extensão via repositórios Git sem modificar código |
-| 📦 **12 Bibliotecas Úteis** | Logger, detecção de SO, gerenciamento de dependências, etc |
-| 🎨 **Grupos Visuais** | Organize comandos relacionados em grupos |
-| 🔐 **Indicadores de Sudo** | Marcadores visuais para comandos privilegiados |
-| 📖 **Help Personalizado** | Documentação customizada por comando |
-| ✅ **Validação Automática** | Verifica SO e permissões antes da execução |
+| 🌍 **Multi-plataforma** | Suporte para Linux e macOS |
+| 📂 **Subcategorias** | Hierarquia de comandos ilimitada |
+| 🔌 **Plugins** | Extensão via Git sem modificar código |
+| 📦 **Bibliotecas** | Logger, OS detection, YAML parser, etc |
+| 📖 **Help Customizado** | Documentação por comando |
 
 ### 🚀 Caso de Uso Ideal
-
-O Susa CLI é perfeito para:
 
 - ✅ **DevOps**: Automatizar instalações e configurações
 - ✅ **Administração**: Gerenciar servidores e ambientes
 - ✅ **Desenvolvimento**: Scripts de setup e deploy
-- ✅ **Equipes**: Padronizar workflows entre desenvolvedores
+- ✅ **Equipes**: Padronizar workflows
 
 ---
 
 ## 💡 Conceitos Chave
 
-Antes de mergulhar nos detalhes, entenda estes conceitos fundamentais:
+### 🎯 Descoberta Automática
 
-### 🎯 Discovery Automático
-
-O CLI **descobre comandos automaticamente** da estrutura de diretórios. Não é necessário registrar comandos em um arquivo central.
+O CLI **descobre comandos automaticamente** da estrutura de diretórios:
 
 ```bash
 # Criar nova pasta = novo comando disponível
-mkdir -p commands/install/docker
-echo "name: Docker" > commands/install/docker/config.yaml
-echo "#!/bin/bash\necho 'Installing Docker'" > commands/install/docker/main.sh
+mkdir -p commands/setup/docker
+cat > commands/setup/docker/config.yaml << EOF
+category: setup
+id: docker
+name: "Docker"
+description: "Instala Docker Engine"
+script: "main.sh"
+EOF
 
 # Comando já está disponível!
 susa setup docker
@@ -70,181 +63,129 @@ susa setup docker
 
 ### 📄 Configuração Descentralizada
 
-Cada comando tem seu próprio `config.yaml` com metadados:
+Cada comando tem seu próprio `config.yaml`:
 
 ```yaml
-name: "Docker"              # Nome amigável
-description: "Instala Docker" # Descrição curta
-script: "main.sh"           # Script a executar
-sudo: true                   # Requer privilégios?
-os: ["linux"]                # SOs compatíveis
+category: setup         # Categoria pai
+id: docker              # Identificador único
+name: "Docker"          # Nome amigável
+description: "Instala Docker Engine"
+script: "main.sh"       # Script a executar
+sudo: false             # Requer privilégios?
+os: ["linux", "mac"]    # SOs compatíveis
 ```
 
 ### 📂 Hierarquia de Comandos
 
-Comandos são organizados em categorias e subcategorias:
-
 ```text
-setup/                 # Categoria
-├── docker             # Comando
-└── python/            # Subcategoria
-    ├── basic          # Comando
-    └── tools/         # Sub-subcategoria
-        └── pip        # Comando
-```
-
-### 🔌 Plugins
-
-Plugins são repositórios Git que adicionam comandos sem modificar o código principal:
-
-```bash
-susa self plugin add user/myplugin
-# Comandos do plugin ficam disponíveis imediatamente!
+commands/
+  setup/                 # Categoria
+  ├── asdf/              # Comando
+  │   ├── config.yaml
+  │   └── main.sh
+  └── python/            # Subcategoria
+      ├── config.yaml
+      └── pip/           # Comando
+          ├── config.yaml
+          └── main.sh
 ```
 
 ---
 
-## ⚙️ Arquitetura de Configuração
+## 🔍 Descoberta Automática
 
-O Susa CLI utiliza uma arquitetura de **configurações YAML descentralizadas** com três níveis:
+### Como Funciona
 
-### 1️⃣ Arquivo Global: `cli.yaml`
-
-Configuração principal contendo apenas metadados do CLI:
-
-```yaml
-command: "susa"                      # Nome do executável
-name: "Susa CLI"                     # Nome exibido
-description: "CLI modular e extensível" # Descrição
-version: "2.0.0"                     # Versão atual
-commands_dir: "commands"             # Onde ficam os comandos
-plugins_dir: "plugins"               # Onde ficam os plugins
-```
-
-#### 📋 Referência de Campos
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|------------|
-| `command` | `string` | ✅ | Nome do executável (ex: `susa`) |
-| `name` | `string` | ✅ | Nome amigável exibido na versão |
-| `description` | `string` | ✅ | Descrição exibida no help |
-| `version` | `string` | ✅ | Versão semântica (ex: `2.0.0`) |
-| `commands_dir` | `string` | ❌ | Diretório de comandos (padrão: `commands`) |
-| `plugins_dir` | `string` | ❌ | Diretório de plugins (padrão: `plugins`) |
-
-!!! tip "Dica"
-    O arquivo `cli.yaml` raramente precisa ser editado. Ele contém apenas metadados globais do CLI.
-
-### Arquivos de Categoria: `<categoria>/config.yaml`
-
-Cada categoria/subcategoria pode ter metadados:
-
-```yaml
-name: "Install"
-description: "Instalação de ferramentas e dependências"
-```
-
-### Arquivos de Comando: `<comando>/config.yaml`
-
-Cada comando **obrigatoriamente** tem seu `config.yaml`:
-
-```yaml
-name: "Docker"                    # Nome exibido
-description: "Instala Docker Engine" # Descrição curta
-script: "main.sh"                 # Script a executar
-sudo: true                        # Requer sudo? (opcional)
-os: ["linux"]                     # SOs compatíveis (opcional)
-group: "development"              # Grupo visual (opcional)
-```
-
-**Campos de Comando:**
-
-| Campo | Tipo | Obrigatório | Descrição |
-| ----- | ---- | ----------- | --------- |
-| `name` | string | ✅ | Nome amigável do comando |
-| `description` | string | ✅ | Descrição exibida na listagem |
-| `script` | string | ✅ | Nome do arquivo script (geralmente `main.sh`) |
-| `sudo` | boolean | ❌ | Se `true`, indica que o comando requer privilégios de superusuário |
-| `os` | array | ❌ | Lista de SOs compatíveis: `["linux"]`, `["mac"]` ou `["linux", "mac"]` |
-| `group` | string | ❌ | Nome do grupo para agrupamento visual na listagem |
-
----
-
-## 🔍 Sistema de Discovery
-
-O **discovery automático** é o coração do Susa CLI. Ele elimina a necessidade de registrar comandos manualmente em arquivos de configuração centralizados.
-
-### 🔄 Como Funciona
-
-O sistema funciona em 3 etapas:
-
-```mermaid
-graph LR
-    A[Scanner] --> B[Detecção]
-    B --> C[Disponibilização]
-    C --> D[Comando Pronto]
-```
+O sistema varre diretórios em 3 etapas:
 
 #### 1. Scanner de Diretórios
 
-Varre recursivamente:
+Procura em:
+
 - 📁 `commands/` - Comandos nativos
 - 📁 `plugins/*/` - Comandos de plugins
 
 #### 2. Detecção de Tipo
 
-Para cada diretório encontrado, determina:
+| Condição | Tipo | Resultado |
+|----------|------|-----------|
+| Tem `config.yaml` + campo `script` + arquivo existe | **Comando** | Executável |
+| Tem `config.yaml` sem script | **Categoria** | Navegável |
+| Sem `config.yaml` | **Ignorado** | - |
 
-| Condição | Tipo | Disponível como |
-|----------|------|------------------|
-| ✅ Tem `config.yaml` + campo `script` + arquivo existe | **Comando** | Executável |
-| ✅ Tem `config.yaml` + **sem** script | **Categoria** | Navegável |
-| ❌ Sem `config.yaml` | **Ignorado** | - |
+#### 3. Disponibilização Imediata
 
-#### 3. Disponibilização
-
-Comandos descobertos ficam imediatamente disponíveis:
+Comandos ficam disponíveis automaticamente:
 
 ```bash
-# Criar estrutura
 mkdir -p commands/deploy/production
 cat > commands/deploy/production/config.yaml << EOF
+category: deploy
+id: production
 name: "Production"
 description: "Deploy para produção"
 script: "main.sh"
 EOF
 
-# Comando JÁ está disponível!
+echo '#!/bin/bash\necho "Deploying..."' > commands/deploy/production/main.sh
+chmod +x commands/deploy/production/main.sh
+
+# Já funciona!
 susa deploy production
 ```
 
-!!! success "Vantagem"
-    Adicionar um novo comando é tão simples quanto criar uma pasta com dois arquivos!
+### Vantagens
 
-### Estrutura de Diretórios
+- ✅ Sem YAML centralizado
+- ✅ Cada comando é independente
+- ✅ Fácil adicionar/remover (apenas pasta)
+- ✅ Plugins não modificam arquivos centrais
+
+---
+
+## 📂 Categorias e Subcategorias
+
+### Navegação Hierárquica
+
+```bash
+# Ver categorias
+susa
+# Output: self, setup
+
+# Ver comandos da categoria
+susa setup
+# Output: asdf, ...
+
+# Navegar subcategoria
+susa setup python
+# Output: pip, venv, ...
+
+# Executar comando
+susa setup python pip
+```
+
+### Estrutura Exemplo
 
 ```text
 commands/
-├── install/             # Categoria
-│   ├── config.yaml      # Metadados da categoria
-│   ├── docker/          # Comando
-│   │   ├── config.yaml  # Config do comando
-│   │   └── main.sh      # Script executável
+├── setup/               # Categoria
+│   ├── config.yaml
+│   ├── asdf/            # Comando
+│   │   ├── config.yaml
+│   │   └── main.sh
 │   └── python/          # Subcategoria
-│       ├── config.yaml  # Metadados da subcategoria
-│       ├── basic/       # Comando
-│       │   ├── config.yaml
-│       │   └── main.sh
-│       └── tools/       # Sub-subcategoria
-│           └── pip/     # Comando
-│               ├── config.yaml
-│               └── main.sh
+│       ├── config.yaml
+│       └── pip/         # Comando
+│           ├── config.yaml
+│           └── main.sh
 └── self/                # Categoria
+    ├── config.yaml
     ├── version/         # Comando
     │   ├── config.yaml
     │   └── main.sh
     └── plugin/          # Subcategoria
-        ├── install/     # Comando
+        ├── config.yaml
+        ├── add/         # Comando
         │   ├── config.yaml
         │   └── main.sh
         └── list/        # Comando
@@ -252,1053 +193,279 @@ commands/
             └── main.sh
 ```
 
-### Lógica de Detecção
+### Boas Práticas
 
-O arquivo `lib/yaml.sh` usa a função `is_command_dir()`:
+- Mantenha 2-3 níveis de profundidade
+- Use nomes descritivos e curtos
+- Agrupe comandos relacionados
+- Cada nível pode ter `config.yaml` com metadados
 
-```bash
-# Verifica se um diretório é um comando
-is_command_dir() {
-    local item_dir="$1"
-    
-    # Deve ter config.yaml
-    [ ! -f "$item_dir/config.yaml" ] && return 1
-    
-    # Lê o campo script usando yq
-    local script_name=$(yq eval '.script' "$item_dir/config.yaml" 2>/dev/null)
-    
-    # Se tem campo script E o arquivo existe, é um comando
-    if [ -n "$script_name" ] && [ "$script_name" != "null" ] && [ -f "$item_dir/$script_name" ]; then
-        return 0
-    fi
-    
-    return 1
-}
-```
-
-**Vantagens:**
-- ✅ Sem YAML centralizado gigante
-- ✅ Cada comando é independente
-- ✅ Fácil adicionar/remover comandos (apenas adiciona/remove pasta)
-- ✅ Plugins não precisam modificar arquivos centrais
+Para mais detalhes, veja [Guia de Subcategorias](subcategories.md).
 
 ---
 
-## 📂 Categorias e Subcategorias
-
-O Susa CLI suporta **hierarquia ilimitada** de categorias, permitindo organização complexa de comandos.
-
-### 🗺️ Navegação Hierárquica
-
-Navegue pela hierarquia adicionando níveis ao comando:
-
-```bash
-# Nível 0: Ver categorias disponíveis
-susa
-# Output: self, setup
-
-# Nível 1: Ver comandos da categoria
-susa setup
-# Output: docker, nodejs, python, ...
-
-# Nível 2: Ver comandos da subcategoria
-susa setup python
-# Output: basic, venv, tools, ...
-
-# Nível 3: Ver comandos da sub-subcategoria
-susa setup python tools
-# Output: pip, poetry, ...
-
-# Executar comando final
-susa setup python tools pip
-# Output: Instalando pip...
-```
-
-### 📊 Visualização da Hierarquia
-
-```text
-📦 susa (CLI raiz)
-├─ 🏠 self (categoria)
-│  ├─ 📌 version (comando)
-│  └─ 🔌 plugin (subcategoria)
-│     ├─ 📥 install (comando)
-│     ├─ 📋 list (comando)
-│     ├─ 🔄 update (comando)
-│     └─ 🗑️  remove (comando)
-└─ ⚙️  setup (categoria)
-   ├─ 🐳 docker (comando)
-   ├─ 📦 nodejs (comando)
-   └─ 🐍 python (subcategoria)
-      ├─ ⭐ basic (comando)
-      ├─ 📦 venv (comando)
-      └─ 🔧 tools (sub-subcategoria)
-         ├─ 📥 pip (comando)
-         └─ 📖 poetry (comando)
-```
-
-### Exemplo de Hierarquia
-
-```text
-setup/                     # Nível 1
-├── docker                   # Comando
-├── nodejs                   # Comando
-└── python/                  # Nível 2
-    ├── basic                # Comando
-    ├── venv                 # Comando
-    └── tools/               # Nível 3
-        ├── pip              # Comando
-        └── poetry           # Comando
-```
-
-**Comandos:**
-```bash
-susa setup docker               # ✅ Funciona
-susa setup python basic         # ✅ Funciona
-susa setup python tools pip     # ✅ Funciona
-```
-
-### Boas Práticas para Subcategorias
-
-- Use subcategorias para agrupar comandos relacionados
-- Mantenha hierarquia simples (2-3 níveis ideal)
-- Cada subcategoria pode ter `config.yaml` com `name` e `description`
-- Comandos e subcategorias podem coexistir no mesmo nível
-
-### Detalhes Técnicos
-
-Para mais informações sobre subcategorias, veja [Guia de Subcategorias](subcategories.md).
-
----
-
-## Sistema de Grupos
-
-Grupos permitem agrupar visualmente comandos relacionados dentro de uma mesma categoria.
+## 🌍 Filtragem por SO
 
 ### Como Funciona
 
-Quando comandos têm o campo `group` definido, eles aparecem agrupados na listagem:
-
-```text
-Commands:
-  docker          Instala Docker Engine [sudo]
-  
-development
-  nodejs          Instala Node.js via NVM
-  python          Instala Python via deadsnakes PPA [sudo]
-```
-
-### Regras de Agrupamento
-
-1. **Comandos sem grupo** aparecem primeiro
-2. **Comandos com grupo** aparecem depois, organizados por grupo
-3. **Ordem**: Comandos aparecem na ordem descoberta
-4. **Compatibilidade**: Apenas comandos compatíveis com o SO atual são exibidos
-
-### Exemplo de Configuração
+O campo `os` no `config.yaml` filtra comandos automaticamente:
 
 ```yaml
-# commands/install/docker/config.yaml
-name: "Docker"
-description: "Instala Docker Engine"
-script: "main.sh"
-# Sem grupo - aparece primeiro
+# Apenas Linux
+os: ["linux"]
 
-# commands/install/nodejs/config.yaml
-name: "Node.js"
-description: "Instala Node.js via NVM"
-script: "main.sh"
-group: "development"
+# Apenas macOS
+os: ["mac"]
 
-# commands/install/python/config.yaml
-name: "Python"
-description: "Instala Python via deadsnakes PPA"
-script: "main.sh"
-group: "development"
-sudo: true
+# Ambos
+os: ["linux", "mac"]
+
+# Omitir = todos os SOs
 ```
-
-### Casos de Uso
-
-- **Linguagens de programação**: `group: "languages"`
-- **Ferramentas de desenvolvimento**: `group: "devtools"`
-- **Servidores**: `group: "servers"`
-- **Bancos de dados**: `group: "databases"`
-
----
-
-## Filtragem por Sistema Operacional
-
-O CLI filtra automaticamente comandos baseado no sistema operacional do usuário.
-
-### Valores Suportados
-
-| Valor | Descrição | Detecta |
-| ----- | --------- | ------- |
-| `linux` | Sistemas Linux (Ubuntu, Debian, Fedora, etc) | Qualquer distro Linux |
-| `mac` | macOS | Darwin/macOS |
-| Omitido | Compatível com todos os SOs | - |
-
-### Comportamento
-
-1. **Listagem**: Comandos incompatíveis não aparecem na listagem
-2. **Execução**: Tentativa de executar comando incompatível retorna erro
-3. **Multi-plataforma**: Use `os: ["linux", "mac"]` para ambos
 
 ### Exemplos
 
 ```yaml
-# Apenas Linux - commands/update/system/config.yaml
-name: "APT Update"
+# commands/setup/apt/config.yaml
+category: setup
+id: apt
+name: "APT Tools"
+description: "Ferramentas APT (Ubuntu/Debian)"
 script: "main.sh"
-os: ["linux"]
-  
-# Apenas macOS - commands/update/brew/config.yaml
-name: "Brew Update"
+os: ["linux"]  # Só aparece no Linux
+```
+
+```yaml
+# commands/setup/brew/config.yaml
+category: setup
+id: brew
+name: "Homebrew"
+description: "Gerenciador de pacotes"
 script: "main.sh"
-os: ["mac"]
-  
-# Ambos - commands/install/nodejs/config.yaml
-name: "Node.js"
-script: "main.sh"
-os: ["linux", "mac"]
-  
-# Todos (campo omitido) - commands/daily/backup/config.yaml
-name: "Backup"
-script: "main.sh"
+os: ["mac"]  # Só aparece no macOS
 ```
 
 ### Detecção de SO
 
-O CLI detecta automaticamente usando `lib/os.sh`:
+O CLI detecta automaticamente:
 
-- **Linux**: Ubuntu, Debian, Fedora, RHEL, CentOS, Rocky, AlmaLinux
-- **macOS**: Darwin (macOS)
-- **Desconhecido**: Marca como `unknown` e oculta comandos com restrição de OS
+- `linux` - Detecta distribuições Linux
+- `mac` - Detecta macOS
 
-Função disponível: `get_simple_os` retorna `"linux"` ou `"mac"`.
+### Validação
 
----
+Antes de executar
 
-## Gerenciamento de Sudo
-
-O CLI gerencia privilégios de superusuário de forma inteligente.
-
-### Campo `sudo`
-
-```yaml
-name: "Docker"
-description: "Instala Docker Engine"
-script: "main.sh"
-sudo: true     # Indica que requer sudo
-```
-
-### Comportamento
-
-1. **Indicador Visual**: Comandos com `sudo: true` exibem marcador `[sudo]` em amarelo
-2. **Aviso**: Antes da execução, exibe: `[WARNING] Este comando requer privilégios de superusuário (sudo)`
-3. **Validação**: Verifica se o usuário está executando como root ou tem permissão sudo
-4. **Não Bloqueante**: O aviso é informativo, não impede a execução
-
-### Exemplo de Saída
-
-```bash
-$ susa setup
-
-Commands:
-  docker          Instala Docker Engine [sudo]
-  nodejs          Instala Node.js via NVM
-  python          Instala Python via PPA [sudo]
-```
-
-### Boas Práticas
-
-- Defina `sudo: true` para comandos que:
-  - Instalam pacotes do sistema
-  - Modificam arquivos de sistema
-  - Alteram configurações globais
-  - Gerenciam serviços do sistema
-
-- Use `sudo: false` ou omita para comandos que:
-  - Instalam em diretório do usuário
-  - Fazem backup de arquivos
-  - Consultam informações
-  - Scripts que gerenciam seu próprio sudo
+1. Se o comando é compatível com o SO atual
+2. Se tem permissões necessárias (sudo)
+3. Se dependências existem
 
 ---
 
-## Help Customizado para Comandos
+## 🔌 Sistema de Plugins
 
-Cada comando pode ter sua própria documentação de ajuda personalizada.
+Plugins estendem o CLI via repositórios Git.
 
-### Como Implementar
-
-1. **Adicione função `show_help()`** no script do comando:
+### Instalação
 
 ```bash
-#!/bin/bash
+# Usando URL completa
+susa self plugin add https://github.com/usuario/plugin
 
-show_help() {
-    echo "Instalação do Docker Engine"
-    echo ""
-    echo -e "${LIGHT_GREEN}Usage:${NC} susa setup docker [options]"
-    echo ""
-    echo -e "${LIGHT_GREEN}Description:${NC}"
-    echo "  Instala o Docker Engine, CLI e Docker Compose no Ubuntu."
-    echo ""
-    echo -e "${LIGHT_GREEN}Options:${NC}"
-    echo "  -h, --help    Mostra esta mensagem"
-    echo ""
-    echo -e "${LIGHT_GREEN}Examples:${NC}"
-    echo "  susa setup docker"
-}
-
-install_docker() {
-    # ... código de instalação
-}
-
-# Executa instalação se não for help
-if [ "${1:-}" != "--help" ] && [ "${1:-}" != "-h" ]; then
-    install_docker
-fi
+# Usando formato user/repo
+susa self plugin add usuario/plugin
 ```
 
-### Como Funciona
-
-1. **Detecção**: Quando `--help` ou `-h` é passado, o CLI verifica se existe `show_help()` no script
-2. **Execução**: Se existe, carrega o script e executa apenas `show_help()`
-3. **Sem Help**: Se não existe, finaliza silenciosamente (não executa nada)
-4. **Proteção**: O script deve proteger sua execução principal verificando argumentos
-
-### Variáveis de Cor Disponíveis
-
-Use as cores da `lib/color.sh`:
-
-```bash
-${LIGHT_GREEN}    # Verde claro (títulos)
-${LIGHT_CYAN}     # Ciano claro (comandos)
-${CYAN}           # Ciano (texto secundário)
-${YELLOW}         # Amarelo (avisos)
-${GRAY}           # Cinza (texto secundário)
-${NC}             # Reset de cor
-```
-
-### Estrutura Recomendada
-
-```bash
-show_help() {
-    echo "Título do Comando"
-    echo ""
-    echo -e "${LIGHT_GREEN}Usage:${NC} cli <categoria> <comando> [opcoes]"
-    echo ""
-    echo -e "${LIGHT_GREEN}Description:${NC}"
-    echo "  Descrição detalhada do que o comando faz"
-    echo ""
-    echo -e "${LIGHT_GREEN}Options:${NC}"
-    echo "  -h, --help       Mostra ajuda"
-    echo "  -v, --verbose    Modo verboso"
-    echo ""
-    echo -e "${LIGHT_GREEN}Examples:${NC}"
-    echo "  cli categoria comando"
-    echo "  cli categoria comando --verbose"
-    echo ""
-    echo -e "${YELLOW}Nota: Informação importante${NC}"
-}
-```
-
----
-
-## Bibliotecas Disponíveis
-
-O CLI fornece bibliotecas utilitárias que podem ser usadas nos scripts de comando.
-
-### lib/logger.sh
-
-Funções de logging com timestamp:
-
-```bash
-log_info "Mensagem informativa"      # [INFO] timestamp - mensagem
-log_success "Operação bem-sucedida"  # [SUCCESS] timestamp - mensagem
-log_warning "Aviso importante"        # [WARNING] timestamp - mensagem
-log_error "Erro encontrado"           # [ERROR] timestamp - mensagem
-```
-
-### lib/color.sh
-
-Variáveis de cor ANSI:
-
-```bash
-${RED}, ${GREEN}, ${YELLOW}, ${BLUE}, ${MAGENTA}, ${CYAN}, ${WHITE}
-${LIGHT_RED}, ${LIGHT_GREEN}, ${LIGHT_YELLOW}, ${LIGHT_BLUE}
-${LIGHT_MAGENTA}, ${LIGHT_CYAN}, ${LIGHT_WHITE}
-${GRAY}, ${LIGHT_GRAY}
-${BOLD}, ${UNDERLINE}, ${REVERSE}
-${NC}  # Reset
-```
-
-### lib/os.sh
-
-Detecção de sistema operacional:
-
-```bash
-$OS_TYPE              # "debian", "macos", "fedora", "unknown"
-get_simple_os         # Retorna "linux" ou "mac"
-```
-
-### lib/sudo.sh
-
-Gerenciamento de sudo:
-
-```bash
-check_sudo           # Verifica se está rodando como root
-required_sudo        # Requer sudo ou falha
-```
-
----
-
-## Sistema de Plugins
-
-O CLI suporta extensão via **plugins externos** hospedados em repositórios Git.
-
-### O que são Plugins?
-
-Plugins são repositórios Git que adicionam **categorias e comandos** ao CLI sem modificar o código principal.
-
-### Estrutura de um Plugin
+### Estrutura de Plugin
 
 ```text
-myplugin/                    # Repositório Git
-├── README.md
-├── version.txt              # Versão do plugin (opcional)
-└── deploy/                  # Categoria adicionada
+meu-plugin/
+├── categoria1/
+│   ├── config.yaml
+│   └── comando1/
+│       ├── config.yaml
+│       └── main.sh
+└── categoria2/
     ├── config.yaml
-    ├── dev/
-    │   ├── config.yaml
-    │   └── main.sh
-    └── prod/
+    └── comando2/
         ├── config.yaml
         └── main.sh
 ```
 
-### Gerenciamento de Plugins
-
-O CLI fornece comandos para gerenciar plugins:
+### Gerenciamento
 
 ```bash
-susa self plugin add <url>           # Instala plugin de repositório Git
-susa self plugin list                # Lista plugins instalados
-susa self plugin update <nome>       # Atualiza plugin específico
-susa self plugin remove <nome>       # Remove plugin
+# Listar plugins
+susa self plugin list
+
+# Atualizar plugin
+susa self plugin update nome-plugin
+
+# Remover plugin
+susa self plugin remove nome-plugin
 ```
 
-### Registry de Plugins
+### Vantagens
 
-Plugins instalados são registrados em `plugins/registry.yaml`:
+- ✅ Não modifica código principal
+- ✅ Comandos disponíveis imediatamente
+- ✅ Atualizações independentes
+- ✅ Fácil compartilhamento
+
+Para mais detalhes, veja:
+
+- [Visão Geral de Plugins](../plugins/overview.md)
+- [Arquitetura de Plugins](../plugins/architecture.md)
+
+---
+
+## 📦 Bibliotecas Disponíveis
+
+O Susa CLI oferece bibliotecas úteis em `lib/`:
+
+### Logger (`lib/logger.sh`)
+
+```bash
+log_info "Informação"
+log_success "Sucesso"
+log_warning "Aviso"
+log_error "Erro"
+log_debug "Debug (só com DEBUG=true)"
+```
+
+### Colors (`lib/color.sh`)
+
+```bash
+echo -e "${LIGHT_GREEN}Verde${NC}"
+echo -e "${LIGHT_CYAN}Ciano${NC}"
+echo -e "${RED}Vermelho${NC}"
+echo -e "${BOLD}Negrito${NC}"
+```
+
+### Shell (`lib/shell.sh`)
+
+```bash
+detect_shell_type        # Detecta bash, zsh, fish
+get_completion_status    # Status do autocompletar
+```
+
+### OS (`lib/os.sh`)
+
+```bash
+detect_os                # Detecta Linux, macOS
+get_os_release_info      # Info da distribuição
+```
+
+Para documentação completa, veja [Referência de Bibliotecas](../reference/libraries/index.md).
+
+---
+
+## 🎯 Referência Rápida
+
+### Estrutura de Arquivos
 
 ```yaml
+# cli.yaml (raiz)
+name: "Susa CLI"
+description: "Gerenciador de Shell Scripts"
 version: "1.0.0"
-
-plugins:
-  - name: "myplugin"
-    source: "https://github.com/user/myplugin.git"
-    version: "1.2.0"
-    installed_at: "2026-01-12T14:30:00Z"
+commands_dir: "commands"
+plugins_dir: "plugins"
 ```
-
-### Como Funciona
-
-1. **Instalação**: Plugin é clonado para `plugins/<nome>/`
-2. **Discovery**: Categorias do plugin são descobertas automaticamente
-3. **Integração**: Comandos aparecem junto com comandos nativos
-4. **Isolamento**: Cada plugin fica em seu diretório próprio
-
-### Exemplo de Uso
-
-```bash
-# Instalar plugin do GitHub
-susa self plugin add https://github.com/user/devops-tools.git
-
-# Ou formato curto
-susa self plugin add user/devops-tools
-
-# Comandos do plugin ficam disponíveis imediatamente
-susa deploy dev
-```
-
-Para mais detalhes, veja [Sistema de Plugins](../plugins/overview.md).
-
----
-
-## Bibliotecas do Sistema
-
-O CLI fornece **12 bibliotecas** utilitárias que podem ser usadas nos scripts de comando.
-
-### Principais Bibliotecas
-
-#### lib/logger.sh
-Funções de logging com timestamp e cores:
-
-```bash
-log_info "Mensagem informativa"      # [INFO] timestamp - mensagem
-log_success "Operação bem-sucedida"  # [SUCCESS] timestamp - mensagem
-log_warning "Aviso importante"        # [WARNING] timestamp - mensagem
-log_error "Erro encontrado"           # [ERROR] timestamp - mensagem
-log_debug "Debug info"                # [DEBUG] apenas com DEBUG=true
-```
-
-#### lib/color.sh
-Variáveis de cor ANSI:
-
-```bash
-${RED}, ${GREEN}, ${YELLOW}, ${BLUE}, ${CYAN}
-${LIGHT_RED}, ${LIGHT_GREEN}, ${LIGHT_CYAN}
-${GRAY}, ${BOLD}, ${UNDERLINE}
-${NC}  # Reset
-```
-
-#### lib/os.sh
-Detecção de sistema operacional:
-
-```bash
-$OS_TYPE              # "debian", "macos", "fedora", "unknown"
-get_simple_os         # Retorna "linux" ou "mac"
-```
-
-#### lib/sudo.sh
-Gerenciamento de sudo:
-
-```bash
-check_sudo           # Verifica se está rodando como root
-required_sudo        # Requer sudo ou falha
-```
-
-#### lib/dependencies.sh
-Instalação automática de dependências:
-
-```bash
-ensure_curl_installed    # Instala curl se necessário
-ensure_jq_installed      # Instala jq se necessário
-ensure_yq_installed      # Instala yq v4+ se necessário
-ensure_fzf_installed     # Instala fzf se necessário
-```
-
-#### lib/string.sh
-Manipulação de strings e arrays:
-
-```bash
-to_uppercase "text"              # TEXTO
-to_lowercase "TEXT"              # texto
-strip_whitespace "  text  "      # text
-parse_comma_separated arr        # Divide "a,b,c" em elementos
-join_to_comma_separated arr      # Junta elementos em "a,b,c"
-```
-
-#### lib/shell.sh
-Detecção de shell:
-
-```bash
-detect_shell_config    # Retorna ~/.zshrc, ~/.bashrc ou ~/.profile
-```
-
-#### lib/kubernetes.sh
-Funções para Kubernetes:
-
-```bash
-check_kubectl_installed "exit_on_error"
-check_namespace_exists "namespace" "exit_on_error"
-get_current_context
-print_current_context
-```
-
-#### lib/yaml.sh
-Parser YAML com yq (uso interno principalmente):
-
-```bash
-get_yaml_field "$YAML" "field"
-get_category_info "$YAML" "category" "field"
-get_command_info "$YAML" "category" "command" "field"
-is_command_dir "$dir"
-discover_items_in_category "$base" "$category" "commands"
-```
-
-#### lib/plugin.sh
-Gerenciamento de plugins:
-
-```bash
-ensure_git_installed
-detect_plugin_version "$dir"
-count_plugin_commands "$dir"
-clone_plugin "$url" "$dest"
-normalize_git_url "user/repo"
-extract_plugin_name "$url"
-```
-
-#### lib/registry.sh
-Gerenciamento de registry.yaml:
-
-```bash
-registry_add_plugin "$file" "$name" "$url" "$version"
-registry_remove_plugin "$file" "$name"
-registry_list_plugins "$file"
-registry_get_plugin_info "$file" "$name" "field"
-```
-
-#### lib/cli.sh
-Funções auxiliares do CLI:
-
-```bash
-show_version      # Mostra nome e versão
-show_usage        # Mostra mensagem de uso
-```
-
-### Documentação Completa
-
-Para documentação detalhada de cada biblioteca com exemplos, veja [Referência de Bibliotecas](../reference/libraries.md).
-
-### Como Usar nos Scripts
-
-As bibliotecas estão disponíveis através de imports explícitos:
-
-```bash
-#!/bin/bash
-set -euo pipefail
-
-# Obtém diretórios
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLI_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-
-# Importa bibliotecas necessárias
-source "$CLI_DIR/lib/logger.sh"
-source "$CLI_DIR/lib/color.sh"
-source "$CLI_DIR/lib/os.sh"
-source "$CLI_DIR/lib/dependencies.sh"
-
-# Usa as funções
-log_info "Sistema: $OS_TYPE"
-
-current_os=$(get_simple_os)
-if [ "$current_os" = "linux" ]; then
-    log_info "Instalando via APT..."
-    ensure_curl_installed || exit 1
-    sudo apt-get install package
-fi
-
-log_success "Instalação concluída!"
-```
-
----
-
-## Como Adicionar Novos Comandos
-
-### Método Atual: Discovery Automático
-
-#### Passo 1: Criar Estrutura de Diretórios
-
-```bash
-mkdir -p commands/<categoria>/<comando>
-```
-
-Exemplo:
-
-```bash
-mkdir -p commands/install/postgresql
-```
-
-#### Passo 2: Criar config.yaml do Comando
-
-Crie `commands/<categoria>/<comando>/config.yaml`:
 
 ```yaml
-name: "PostgreSQL"
-description: "Instala servidor PostgreSQL"
+# commands/categoria/config.yaml
+name: "Setup"
+description: "Instalar e configurar ferramentas"
+```
+
+```yaml
+# commands/categoria/comando/config.yaml
+category: setup
+id: asdf
+name: "ASDF"
+description: "Instala ASDF Version Manager"
 script: "main.sh"
-sudo: true
-os: ["linux"]
-group: "databases"  # opcional
-```
-
-#### Passo 3: Criar Script do Comando
-
-Crie `commands/<categoria>/<comando>/main.sh`:
-
-```bash
-#!/bin/bash
-set -euo pipefail
-
-# Obtém diretórios
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLI_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-
-# Importa bibliotecas
-source "$CLI_DIR/lib/logger.sh"
-source "$CLI_DIR/lib/color.sh"
-
-# Função de help (opcional mas recomendada)
-show_help() {
-    echo "Instalação do PostgreSQL"
-    echo ""
-    echo -e "${LIGHT_GREEN}Usage:${NC} susa setup postgresql [version]"
-    echo ""
-    echo -e "${LIGHT_GREEN}Description:${NC}"
-    echo "  Instala PostgreSQL no sistema"
-    echo ""
-    echo -e "${LIGHT_GREEN}Options:${NC}"
-    echo "  version    Versão a instalar (padrão: 15)"
-    echo "  -h, --help Mostra esta ajuda"
-}
-
-# Função principal
-install_postgresql() {
-    local version="${1:-15}"
-    
-    log_info "Instalando PostgreSQL $version..."
-    
-    # Sua lógica aqui
-    sudo apt-get update
-    sudo apt-get install -y postgresql-$version
-    
-    log_success "PostgreSQL $version instalado com sucesso!"
-}
-
-# Executa apenas se não for help
-if [ "${1:-}" != "--help" ] && [ "${1:-}" != "-h" ]; then
-    install_postgresql "$@"
-fi
-```
-
-#### Passo 4: Dar permissão de execução
-
-```bash
-chmod +x commands/install/postgresql/main.sh
-```
-
-#### Passo 5: Testar
-
-```bash
-susa setup              # Lista comandos (postgresql deve aparecer)
-susa setup postgresql   # Executa instalação
-susa setup postgresql --help  # Mostra ajuda
-```
-
-### Pronto! Comando Disponível Automaticamente
-
-O sistema de **discovery automático** encontra o novo comando sem precisar editar o `cli.yaml`. O comando aparece automaticamente na listagem e pode ser executado imediatamente.
-
-### Criando Subcategorias
-
-Para criar uma subcategoria:
-
-```bash
-mkdir -p commands/install/python
-mkdir -p commands/install/python/tools
-mkdir -p commands/install/python/tools/pip
-```
-
-Crie `config.yaml` e `main.sh` em `pip/`:
-
-```bash
-# commands/install/python/tools/pip/config.yaml
-name: "pip"
-description: "Instala e atualiza pip"
-script: "main.sh"
+sudo: false
 os: ["linux", "mac"]
-
-# commands/install/python/tools/pip/main.sh
-#!/bin/bash
-# ... script aqui ...
 ```
 
-Uso:
-
-```bash
-susa setup python tools pip
-```
-
-```bash
-./susa setup                    # Verifica se aparece na lista
-./susa setup postgresql --help  # Testa o help
-./susa setup postgresql         # Testa a execução
-### Guia Detalhado
-
-Para instruções passo-a-passo completas, veja [Adicionar Comandos](adding-commands.md).
-
----
-
-## Boas Práticas Gerais
-
-### Organização de Comandos
-
-1. **Agrupe por funcionalidade**: Use categorias lógicas (install, deploy, backup)
-2. **Use nomes descritivos**: `docker`, `nodejs`, não `d`, `n`
-3. **Descrições claras**: Explique o que o comando faz, não como
-4. **Hierarquia simples**: Evite mais de 3 níveis de subcategorias
-
-### Scripts de Comando
-
-1. **Sempre implemente `show_help()`**: Documenta o uso do comando
-2. **Use as bibliotecas**: `log_*` para mensagens consistentes
-3. **Valide entrada**: Verifique argumentos antes de executar
-4. **Trate erros**: Use `set -euo pipefail` no início
-5. **Seja idempotente**: Comando pode ser executado múltiplas vezes com segurança
-
-### Manutenção
-
-1. **Estrutura limpa**: Cada comando em sua pasta com config.yaml
-2. **Documente mudanças**: Atualize versão em cli.yaml
-3. **Teste multi-plataforma**: Se suportar mac e linux, teste em ambos
-4. **Revise permissões**: Garanta que `sudo` está correto no config.yaml
-5. **Use yq**: Para manipular YAML nos scripts, use `yq` (instalado automaticamente)
-
----
-
-## Referência Rápida
-
-### Comandos do CLI
-
-```bash
-cli                           # Lista categorias
-susa --help, -h               # Ajuda principal
-susa --version, -V            # Versão do Susa CLI
-susa self version             # Versão do Susa CLI (alternativo)
-susa self update              # Atualiza o CLI para versão mais recente
-susa <categoria>              # Lista comandos e subcategorias
-susa <categoria> <comando>    # Executa comando
-susa <cat> <subcat> <cmd>     # Executa comando em subcategoria
-susa <cat> <cmd> --help       # Help do comando (se disponível)
-```
-
-### Comandos de Plugin
-
-```bash
-susa self plugin add <url>          # Instala plugin do Git
-susa self plugin list                # Lista plugins instalados
-susa self plugin update <nome>       # Atualiza plugin específico
-susa self plugin remove <nome>       # Remove plugin
-```
-
-### Estrutura de Arquivos (Arquitetura Atual)
-
-```text
-cli/
-├── cli                      # Executável principal
-├── cli.yaml                 # Config global (metadados)
-├── Makefile                 # Automação (install, uninstall, docs)
-├── install.sh               # Script de instalação
-├── uninstall.sh             # Script de desinstalação
-├── commands/                # Comandos nativos
-│   ├── install/
-│   │   ├── config.yaml     # Config da categoria
-│   │   ├── docker/
-│   │   │   ├── config.yaml # Config do comando
-│   │   │   └── main.sh     # Script executável
-│   │   └── python/         # Subcategoria
-│   │       ├── config.yaml
-│   │       ├── basic/
-│   │       └── tools/      # Sub-subcategoria
-│   └── self/
-│       ├── version/
-│       └── plugin/
-├── plugins/                 # Plugins externos
-│   ├── registry.yaml       # Registry de plugins instalados
-│   └── <nome-plugin>/      # Plugin clonado do Git
-│       └── <categoria>/
-├── lib/                     # Bibliotecas compartilhadas
-│   ├── yaml.sh             # Parser YAML (yq)
-│   ├── dependencies.sh     # Gestão de dependências
-│   ├── logger.sh           # Sistema de logs
-│   ├── color.sh            # Cores ANSI
-│   ├── os.sh               # Detecção de SO
-│   ├── sudo.sh             # Gestão sudo
-│   ├── string.sh           # Manipulação strings
-│   ├── shell.sh            # Detecção shell
-│   ├── kubernetes.sh       # Funções K8s
-│   ├── plugin.sh           # Gestão plugins
-│   ├── registry.sh         # Gestão registry
-│   ├── cli.sh              # Funções CLI
-│   └── utils.sh            # Agregador
-├── docs/                    # Documentação MkDocs
-│   ├── index.md
-│   ├── quick-start.md
-│   ├── first-steps.md
-│   ├── guides/
-│   │   ├── adding-commands.md
-│   │   ├── features.md
-│   │   ├── subcategories.md
-│   │   └── configuration.md
-│   ├── plugins/
-│   │   ├── overview.md
-│   │   └── architecture.md
-│   ├── reference/
-│   │   ├── libraries.md
-│   │   └── changelog-v2.md
-│   └── about/
-│       ├── contributing.md
-│       └── license.md
-├── mkdocs.yml               # Configuração MkDocs
-└── .github/
-    └── workflows/
-        └── docs.yml         # Deploy automático GitHub Pages
-```
-
-### Campos config.yaml - Referência
-
-#### Global (cli.yaml)
-```yaml
-command: string              # Nome do executável
-name: string                 # Nome do CLI
-description: string          # Descrição
-version: string              # Versão semântica
-commands_dir: string         # Diretório de comandos (padrão: "commands")
-plugins_dir: string          # Diretório de plugins (padrão: "plugins")
-```
-
-#### Categoria (<categoria>/config.yaml)
-```yaml
-name: string                 # Nome da categoria
-description: string          # Descrição
-```
-
-#### Comando (<comando>/config.yaml)
-```yaml
-name: string                 # Nome (obrigatório)
-description: string          # Descrição (obrigatório)
-script: string               # Arquivo .sh (obrigatório)
-sudo: boolean                # Requer sudo (opcional)
-os: array                    # ["linux"|"mac"] (opcional)
-group: string                # Nome do grupo (opcional)
-```
-
----
-
-## Dependências do Sistema
-
-### Obrigatórias
-
-- **Bash 4.0+**: Shell script
-- **Git**: Para sistema de plugins
-- **yq v4+**: Parser YAML (instalado automaticamente se ausente)
-
-### Opcionais (instaladas automaticamente quando necessário)
-
-- **curl**: Para downloads (instalado por dependencies.sh)
-- **jq**: Para parsear JSON (instalado por dependencies.sh)
-- **fzf**: Para seleção interativa (instalado por dependencies.sh)
-
-### Verificação de Dependências
-
-O CLI verifica e instala dependências automaticamente:
-
-```bash
-# yq é verificado e instalado ao iniciar
-# lib/dependencies.sh: ensure_yq_installed()
-
-# Outras dependências são instaladas sob demanda
-# Exemplo: lib/dependencies.sh: ensure_curl_installed()
-```
-
----
-
-## Migração para yq
-
-O CLI usa **yq v4+** para parsear YAML ao invés de awk/grep.
-
-### Por que yq?
-
-- ✅ Parser YAML completo e robusto
-- ✅ Suporta estruturas complexas e aninhadas
-- ✅ Menos propenso a erros de parsing
-- ✅ Sintaxe clara e legível
-- ✅ Instalação automática gerenciada
-
-### Instalação Automática
-
-O yq é instalado automaticamente na primeira execução:
-
-1. Detecta plataforma (linux/darwin) e arquitetura (amd64/arm64/386)
-2. Baixa última versão do GitHub
-3. Instala em `/usr/local/bin/yq`
-4. Requer sudo para instalação
-
-### Uso Interno
-
-```bash
-# lib/yaml.sh usa yq internamente
-yq eval '.name' cli.yaml
-yq eval '.categories | keys | .[]' config.yaml
-yq eval '.script' commands/install/docker/config.yaml
-```
-
-### Para Desenvolvedores
-
-Se você criar scripts que precisam ler YAML:
+### Template de Comando
 
 ```bash
 #!/bin/bash
-source "$CLI_DIR/lib/dependencies.sh"
+set -euo pipefail
 
-# Garante yq disponível
-ensure_yq_installed || exit 1
+setup_command_env
 
-# Usa yq
-name=$(yq eval '.name' config.yaml)
-version=$(yq eval '.version' config.yaml)
+show_help() {
+    show_description
+    echo ""
+    show_usage
+    echo ""
+    echo -e "${LIGHT_GREEN}Opções:${NC}"
+    echo "  -h, --help    Mostra ajuda"
+}
+
+install() {
+    log_info "Instalando..."
+    # Código aqui
+    log_success "Instalado!"
+}
+
+# Parse argumentos
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        *)
+            log_error "Opção desconhecida: $1"
+            exit 1
+            ;;
+    esac
+done
+
+install
 ```
 
----
-
-## Recursos Adicionais
-
-### Documentação
-
-- **[Início Rápido](../quick-start.md)** - Instalação e primeiros passos
-- **[Guia de Subcategorias](subcategories.md)** - Navegação hierárquica
-- **[Adicionar Comandos](adding-commands.md)** - Passo-a-passo detalhado
-- **[Sistema de Plugins](../plugins/overview.md)** - Extensão via Git
-- **[Arquitetura de Plugins](../plugins/architecture.md)** - Detalhes técnicos
-- **[Referência de Bibliotecas](../reference/libraries.md)** - API completa
-- **[Contribuir](../about/contributing.md)** - Como contribuir
-
-### Automação (Makefile)
+### Comandos Úteis
 
 ```bash
-# CLI
-make cli-install      # Instala CLI no sistema
-make cli-uninstall    # Remove CLI do sistema
-make test             # Testa CLI
+# Listar categorias
+susa
 
-# Documentação
-make install          # Instala dependências MkDocs
-make serve            # Serve docs localmente (http://127.0.0.1:8000)
-make build            # Gera site estático
-make deploy           # Deploy manual para GitHub Pages
-make clean            # Remove arquivos gerados
+# Listar comandos
+susa setup
 
-# Ajuda
-make help             # Mostra todos os comandos disponíveis
+# Executar comando
+susa setup asdf
+
+# Ver ajuda
+susa setup asdf --help
+
+# Debug
+DEBUG=true susa setup asdf
+
+# Plugins
+susa self plugin list
+susa self plugin add user/plugin
+susa self plugin update plugin
+susa self plugin remove plugin
+
+# Informações
+susa self version
+susa self info
+susa self update
 ```
-
-### GitHub Pages
-
-A documentação é publicada automaticamente no GitHub Pages via GitHub Actions:
-
-- **Trigger**: Push em `main` com mudanças em `docs/**` ou `mkdocs.yml`
-- **URL**: `https://<usuario>.github.io/<repositorio>/`
-- **Tema**: Material for MkDocs com suporte dark/light mode
 
 ---
 
-## Conclusão
+## 📚 Próximos Passos
 
-Este CLI oferece um framework flexível e extensível para criar ferramentas de linha de comando:
-
-✅ **Discovery Automático** - Comandos descobertos da estrutura de diretórios  
-✅ **Configuração Descentralizada** - Cada comando com seu config.yaml  
-✅ **Subcategorias Multi-nível** - Hierarquia ilimitada  
-✅ **Sistema de Plugins** - Extensão via Git  
-✅ **12 Bibliotecas Úteis** - Logger, OS detection, dependencies, etc  
-✅ **Parser YAML Robusto** - yq v4+ com instalação automática  
-✅ **Documentação Profissional** - MkDocs + GitHub Pages  
-✅ **Multi-plataforma** - Linux e macOS  
-
-Para começar a usar, veja [Início Rápido](../quick-start.md).
-
-Para adicionar seu primeiro comando, veja [Adicionar Comandos](adding-commands.md).
+- [Adicionar Comandos](adding-commands.md) - Como criar comandos
+- [Configuração](configuration.md) - Personalizar o CLI
+- [Shell Completion](shell-completion.md) - Autocompletar
+- [Subcategorias](subcategories.md) - Hierarquia de comandos
+- [Sistema de Plugins](../plugins/overview.md) - Criar plugins

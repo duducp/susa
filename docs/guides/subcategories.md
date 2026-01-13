@@ -21,7 +21,7 @@ O sistema verifica:
 - **Tem `script:` E arquivo existe** → É um **comando executável**
   - Sistema executa o script
   - Aparece na seção "Commands"
-  
+
 - **Não tem `script:` OU arquivo não existe** → É uma **subcategoria navegável**
   - Sistema permite navegar (listar sub-itens)
   - Aparece na seção "Subcategories"
@@ -32,7 +32,7 @@ Tanto comandos quanto subcategorias têm `config.yaml`, mas com campos diferente
 
 | Tipo | Campos no config.yaml |
 | ---- | --------------------- |
-| **Comando** | `name`, `description`, `script` (obrigatório), `sudo`, `os`, `group` |
+| **Comando** | `category`, `id`, `name`, `description`, `script` (obrigatório), `sudo`, `os` |
 | **Subcategoria** | `name`, `description` (sem campo `script`) |
 
 **Vantagens dessa abordagem:**
@@ -45,15 +45,15 @@ Tanto comandos quanto subcategorias têm `config.yaml`, mas com campos diferente
 
 ```text
 commands/
-  install/                          # Categoria principal
+  setup/                            # Categoria principal
     config.yaml                     # name, description (sem script)
     asdf/                           # Comando direto
-      config.yaml                   # name, description, script, sudo, os
+      config.yaml                   # category, id, name, description, script, sudo, os
       main.sh                       # Script executável
     python/                         # Subcategoria
       config.yaml                   # name, description (sem script)
       pip/                          # Comando
-        config.yaml                 # name, description, script
+        config.yaml                 # category, id, name, description, script
         main.sh
       poetry/                       # Comando
         config.yaml
@@ -61,12 +61,12 @@ commands/
       tools/                        # Sub-subcategoria (nível 3)
         config.yaml                 # name, description (sem script)
         venv/                       # Comando nível 3
-          config.yaml               # name, description, script
+          config.yaml               # category, id, name, description, script
           main.sh
     nodejs/                         # Subcategoria
       config.yaml                   # name, description (sem script)
       npm/                          # Comando
-        config.yaml                 # name, description, script
+        config.yaml                 # category, id, name, description, script
         main.sh
 ```
 
@@ -76,25 +76,25 @@ commands/
 
 ```bash
 # Listar categorias principais
-./cli
+susa
 
 # Listar subcategorias e comandos de uma categoria
-./susa setup
+susa setup
 
 # Navegar para uma subcategoria
-./susa setup python
+susa setup python
 
 # Navegar para sub-subcategoria (nível 3)
-./susa setup python tools
+susa setup python tools
 
 # Executar comando direto
-./susa setup asdf
+susa setup asdf
 
 # Executar comando em subcategoria
-./susa setup python pip
+susa setup python pip
 
 # Executar comando em sub-subcategoria
-./susa setup python tools venv
+susa setup python tools venv
 ```
 
 ## 📝 Arquivos de Configuração
@@ -121,12 +121,13 @@ description: "Ferramentas Python"
 Configuração completa de um comando executável.
 
 ```yaml
+category: setup
+id: pip
 name: "Pip"
 description: "Instala gerenciador de pacotes Python (pip)"
 script: "main.sh"        # ← Este campo indica que é executável
 sudo: false
 os: ["linux", "mac"]
-group: "Package Managers"  # Opcional
 ```
 
 **Localização:** `commands/{categoria}/.../{comando}/config.yaml`
@@ -139,12 +140,13 @@ group: "Package Managers"  # Opcional
 
 | Campo | Tipo | Obrigatório | Descrição |
 | ----- | ---- | ----------- | --------- |
+| `category` | string | ✅ | Nome da categoria (deve corresponder ao diretório pai) |
+| `id` | string | ✅ | Identificador único do comando |
 | `name` | string | ✅ | Nome exibido do comando |
 | `description` | string | ✅ | Descrição curta |
 | `script` | string | ✅ | Nome do arquivo do script (ex: "main.sh") |
 | `sudo` | boolean | ❌ | Requer permissões de superusuário (padrão: false) |
 | `os` | array | ❌ | Sistemas compatíveis: `["linux", "mac"]` |
-| `group` | string | ❌ | Agrupa comandos relacionados na listagem |
 
 ### Para Subcategorias (Navegáveis)
 

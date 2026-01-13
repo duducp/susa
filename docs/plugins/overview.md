@@ -32,44 +32,7 @@ meu-plugin/
 
 ## 🚀 Comandos de Gerenciamento
 
-### Listar Plugins
-
-```bash
-susa self plugin list
-```
-
-Mostra todos os plugins instalados com:
-- Origem (URL Git ou local)
-- Versão
-- Número de comandos
-- Categorias
-- Data de instalação
-
-### Instalar Plugin
-
-```bash
-# De URL completa
-susa self plugin add https://github.com/user/cli-plugin-name
-
-# Atalho GitHub
-susa self plugin add user/cli-plugin-name
-```
-
-### Atualizar Plugin
-
-```bash
-susa self plugin update plugin-name
-```
-
-Atualiza o plugin para a versão mais recente do repositório Git.
-
-### Remover Plugin
-
-```bash
-susa self plugin remove plugin-name
-```
-
-Remove completamente o plugin e suas entradas do registro.
+Veja nas [referências](../reference/commands/self/plugins/index.md) todos os comandos disponíveis.
 
 ## 🏗️ Criando um Plugin
 
@@ -105,6 +68,8 @@ chmod +x meu-plugin/deploy/staging/main.sh
 ```bash
 echo "1.0.0" > meu-plugin/version.txt
 ```
+
+Tambem pode se utilizar o arquivo com a nomeclatura `.version`.
 
 ### 3. Publicar no GitHub
 

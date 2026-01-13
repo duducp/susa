@@ -51,6 +51,10 @@ jobs:
           pip install --upgrade pip
           pip install mkdocs-material
           pip install pymdown-extensions
+          pip install mkdocs-awesome-pages-plugin
+          pip install mkdocs-glightbox
+          pip install mkdocs-panzoom-plugin
+          pip install mkdocs-include-markdown-plugin
       
       - name: Build documentation
         run: mkdocs build --strict

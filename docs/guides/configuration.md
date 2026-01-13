@@ -10,27 +10,25 @@ O CLI usa dois tipos de configuração:
 
 ### 1. `cli.yaml` - Configuração Global
 
-Arquivo principal localizado na raiz do CLI que define metadados gerais.
+Arquivo principal localizado na raiz do Susa CLI que define metadados gerais.
 
-**Localização:** `/caminho/para/cli/cli.yaml`
+**Localização:** `/caminho/para/susa/cli.yaml`
 
 **Conteúdo:**
 
 ```yaml
-command: "cli"                        # Nome do executável
-name: "MyCLI"                         # Nome exibido
-description: "Meu CLI personalizado"  # Descrição na ajuda
-version: "2.0.0"                      # Versão do CLI
-commands_dir: "commands"              # Diretório de comandos
-plugins_dir: "plugins"                # Diretório de plugins
+name: "Susa CLI"
+description: "Gerenciador de Shell Scripts para automação"
+version: "1.0.0"
+commands_dir: "commands"
+plugins_dir: "plugins"
 ```
 
 **Campos:**
 
 | Campo | Tipo | Descrição | Padrão |
 | ----- | ---- | --------- | ------ |
-| `command` | string | Nome usado para invocar o CLI | `cli` |
-| `name` | string | Nome amigável exibido em `--version` | - |
+| `name` | string | Nome amigável exibido no help e versão | - |
 | `description` | string | Descrição exibida no help principal | - |
 | `version` | string | Versão semântica (major.minor.patch) | - |
 | `commands_dir` | string | Diretório onde ficam os comandos | `commands` |
@@ -96,8 +94,8 @@ Cada categoria pode ter metadados descritivos.
 **Exemplo:**
 
 ```yaml
-name: "Install"
-description: "Instalação de ferramentas e dependências"
+name: "Setup"
+description: "Instalar e configurar ferramentas"
 ```
 
 **Campos:**
@@ -124,24 +122,26 @@ Cada comando **obrigatoriamente** tem seu próprio config.yaml.
 **Exemplo:**
 
 ```yaml
-name: "Docker"
-description: "Instala Docker Engine e Docker Compose"
+category: setup
+id: asdf
+name: "ASDF"
+description: "Instala ASDF Version Manager"
 script: "main.sh"
-sudo: true
-os: ["linux"]
-group: "development"
+sudo: false
+os: ["linux", "mac"]
 ```
 
 **Campos:**
 
 | Campo | Tipo | Obrigatório | Descrição |
 | ----- | ---- | ----------- | --------- |
+| `category` | string | ✅ | Nome da categoria (deve corresponder ao diretório pai) |
+| `id` | string | ✅ | Identificador único do comando |
 | `name` | string | ✅ | Nome amigável do comando |
 | `description` | string | ✅ | Descrição exibida na listagem |
 | `script` | string | ✅ | Nome do arquivo script (geralmente `main.sh`) |
 | `sudo` | boolean | ❌ | Se `true`, comando requer privilégios sudo |
 | `os` | array | ❌ | SOs compatíveis: `["linux"]`, `["mac"]` ou ambos |
-| `group` | string | ❌ | Nome do grupo para agrupamento visual |
 
 **Quando Criar:**
 
@@ -221,14 +221,14 @@ GLOBAL_CONFIG_FILE=/tmp/test-cli.yaml ./susa --version
 Edite `cli.yaml`:
 
 ```yaml
-command: "meuapp"      # Era: cli
-name: "MeuApp CLI"     # Era: CLI
+name: "MeuApp CLI"     # Era: Susa CLI
+description: "Meu gerenciador customizado"
 ```
 
 Renomeie o executável:
 
 ```bash
-mv cli meuapp
+mv susa meuapp
 ```
 
 Reinstale:
@@ -240,8 +240,8 @@ Reinstale:
 Agora use:
 
 ```bash
-meuapp setup docker
-meuapp --version
+meuapp setup asdf
+meuapp self version
 ```
 
 ---
@@ -300,8 +300,8 @@ alias clip='susa self plugin'
 Uso:
 
 ```bash
-clic docker       # Equivale a: susa setup docker
-cliu system       # Equivale a: cli update system
+clic asdf         # Equivale a: susa setup asdf
+cliu              # Equivale a: susa self update
 clip list         # Equivale a: susa self plugin list
 ```
 
@@ -309,18 +309,18 @@ clip list         # Equivale a: susa self plugin list
 
 ### Configurar PATH
 
-Se o CLI foi instalado em `/opt/cli`, adicione ao PATH:
+Se o Susa CLI foi instalado em `/opt/susa`, adicione ao PATH:
 
 ```bash
 # Adicione ao ~/.zshrc ou ~/.bashrc
-export PATH="$PATH:/opt/cli"
+export PATH="$PATH:/opt/susa"
 ```
 
 Ou durante instalação, o `install.sh` já faz isso automaticamente:
 
 ```bash
 ./install.sh
-# Adiciona symlink em /usr/local/bin/cli automaticamente
+# Adiciona symlink em /usr/local/bin/susa automaticamente
 ```
 
 ---
@@ -328,25 +328,21 @@ Ou durante instalação, o `install.sh` já faz isso automaticamente:
 ## 🗂️ Estrutura de Configuração Completa
 
 ```text
-cli/
+susa/
 ├── cli.yaml                     # ✅ Config global (obrigatório)
 ├── config/
-│   ├── settings.conf           # ⚠️ Opcional (não usado por padrão)
-│   ├── production/
-│   │   ├── database.conf
-│   │   └── api.conf
-│   └── development/
-│       ├── database.conf
-│       └── api.conf
+│   └── settings.conf           # ⚠️ Opcional (não usado por padrão)
 ├── commands/
-│   ├── install/
+│   ├── setup/
 │   │   ├── config.yaml         # ⚠️ Opcional (metadados da categoria)
-│   │   └── docker/
+│   │   └── asdf/
 │   │       ├── config.yaml     # ✅ Obrigatório (config do comando)
 │   │       └── main.sh         # ✅ Obrigatório (script)
 │   └── self/
+│       ├── config.yaml
 │       └── plugin/
-│           └── install/
+│           ├── config.yaml
+│           └── add/
 │               ├── config.yaml # ✅ Obrigatório
 │               └── main.sh     # ✅ Obrigatório
 └── plugins/
@@ -570,7 +566,7 @@ DEBUG=true susa setup docker
 
 - [Funcionalidades](features.md) - Visão geral do sistema
 - [Adicionar Comandos](adding-commands.md) - Como criar comandos
-- [Referência de Bibliotecas](../reference/libraries.md) - API das libs
+- [Referência de Bibliotecas](../reference/libraries/index.md) - API das libs
 - [Sistema de Plugins](../plugins/overview.md) - Extensão via Git
 
 ---

@@ -1,151 +1,239 @@
 # Como Adicionar Novos Comandos
 
-Este guia mostra como adicionar novos comandos ao CLI de forma dinâmica.
+Este guia mostra como adicionar novos comandos ao Susa CLI de forma dinâmica.
 
 ## 📋 Estrutura de um Comando
 
-Cada comando deve seguir esta estrutura:
+Cada comando deve seguir esta estrutura hierárquica:
 
 ```text
 commands/
   <categoria>/
+    config.yaml           # Configuração da categoria
     <comando>/
-      main.sh        # Script principal do comando
-      config.yml     # (opcional) Configurações específicas
-      README.md      # (opcional) Documentação do comando
+      config.yaml         # Configuração do comando
+      main.sh             # Script principal executável
+```
+
+**Exemplo real:**
+
+```text
+commands/
+  setup/
+    config.yaml
+    asdf/
+      config.yaml
+      main.sh
+    docker/
+      config.yaml
+      main.sh
 ```
 
 ## ➕ Passos para Adicionar um Comando
 
-### 1. Criar o Diretório
+### 1. Criar a Estrutura de Diretórios
 
 ```bash
-mkdir -p commands/<categoria>/<nome-comando>
+# Criar categoria (se não existir)
+mkdir -p commands/<categoria>/<comando>
 ```
 
 **Exemplo:**
 
 ```bash
-mkdir -p commands/install/vscode
+mkdir -p commands/setup/vscode
 ```
 
-### 2. Criar o Script Principal
+### 2. Configurar a Categoria
 
-Crie o arquivo `main.sh` dentro do diretório:
-
-```bash
-#!/bin/bash
-
-# ============================================================
-# Nome do Comando
-# ============================================================
-
-CLI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-
-meu_comando() {
-    log_info "Executando meu comando..."
-    
-    # Seu código aqui
-    
-    log_success "Comando executado com sucesso!"
-}
-
-# Executa o comando
-meu_comando "$@"
-```
-
-### 3. Tornar o Script Executável
-
-```bash
-chmod +x commands/<categoria>/<nome-comando>/main.sh
-```
-
-### 4. Registrar no cli.yml
-
-Adicione o comando no arquivo `commands/cli.yml`:
+Crie ou edite `commands/<categoria>/config.yaml`:
 
 ```yaml
-categories:
-  <categoria>:
-    name: "Nome da Categoria"
-    description: "Descrição da categoria"
-    commands:
-      - id: <nome-comando>
-        order: 40
-        name: "Nome Amigável"
-        description: "Descrição do comando"
-        script: "main.sh"
+name: "Setup"
+description: "Instalar e configurar ferramentas"
+```
+
+### 3. Configurar o Comando
+
+Crie `commands/<categoria>/<comando>/config.yaml`:
+
+```yaml
+category: <categoria>
+id: <comando>
+name: "Nome Amigável"
+description: "Descrição clara e objetiva do comando"
+script: "main.sh"
+sudo: false
+os: ["linux", "mac"]
 ```
 
 **Exemplo completo:**
 
 ```yaml
-categories:
-  install:
-    name: "Install"
-    description: "Instalar software (Ubuntu)"
-    commands:
-      - id: vscode
-        order: 40
-        name: "VS Code"
-        description: "Instala Visual Studio Code"
-        script: "main.sh"
+category: setup
+id: vscode
+name: "VS Code"
+description: "Instala Visual Studio Code"
+script: "main.sh"
+sudo: false
+os: ["linux", "mac"]
 ```
 
-### 5. Testar o Comando
+**Campos disponíveis:**
+
+- `category`: Nome da categoria (deve corresponder ao diretório pai)
+- `id`: Identificador único do comando
+- `name`: Nome amigável exibido ao usuário
+- `description`: Descrição breve do comando
+- `script`: Nome do arquivo executável (geralmente `main.sh`)
+- `sudo`: Se requer privilégios de administrador (`true`/`false`)
+- `os`: Sistemas suportados (`["linux"]`, `["mac"]`, `["linux", "mac"]`)
+
+### 4. Criar o Script Principal
+
+Crie `commands/<categoria>/<comando>/main.sh`:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+
+# Help function
+show_help() {
+    show_description
+    echo ""
+    show_usage
+    echo ""
+    echo -e "${LIGHT_GREEN}O que é:${NC}"
+    echo "  Descrição detalhada da ferramenta ou funcionalidade"
+    echo ""
+    echo -e "${LIGHT_GREEN}Opções:${NC}"
+    echo "  -h, --help        Mostra esta mensagem de ajuda"
+    echo "  -u, --uninstall   Remove a instalação"
+    echo ""
+    echo -e "${LIGHT_GREEN}Exemplos:${NC}"
+    echo "  susa <categoria> <comando>              # Instala"
+    echo "  susa <categoria> <comando> --uninstall  # Remove"
+    echo ""
+}
+
+# Main installation function
+install() {
+    log_info "Instalando..."
+
+    # Seu código de instalação aqui
+
+    log_success "Instalado com sucesso!"
+}
+
+# Uninstall function
+uninstall() {
+    log_info "Removendo..."
+
+    # Seu código de remoção aqui
+
+    log_success "Removido com sucesso!"
+}
+
+# Parse arguments
+UNINSTALL=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --uninstall|-u)
+            UNINSTALL=true
+            shift
+            ;;
+        *)
+            log_error "Opção desconhecida: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
+# Execute main logic
+if [ "$UNINSTALL" = true ]; then
+    uninstall
+else
+    install
+fi
+```
+
+### 5. Tornar o Script Executável
+
+```bash
+chmod +x commands/<categoria>/<comando>/main.sh
+```
+
+### 6. Testar o Comando
 
 ```bash
 # Listar comandos da categoria
-./susa setup
+susa <categoria>
 
 # Executar o comando
-./susa setup vscode
+susa <categoria> <comando>
+
+# Exibir ajuda
+susa <categoria> <comando> --help
 ```
 
-## 📚 Funções Disponíveis
-
-Seus scripts têm acesso a todas as funções das bibliotecas em `lib/`:
-
-### Logger
+**Exemplo:**
 
 ```bash
-log_info "Mensagem informativa"
-log_success "Operação bem-sucedida"
-log_warning "Aviso importante"
-log_error "Erro encontrado"
+susa setup              # Lista todos os comandos de setup
+susa setup vscode       # Instala o VS Code
+susa setup vscode -h    # Mostra ajuda do comando
 ```
 
-### Colors
+## 📚 Bibliotecas Disponíveis
 
-```bash
-echo -e "${GREEN}Texto verde${NC}"
-echo -e "${CYAN}Texto ciano${NC}"
-echo -e "${RED}Texto vermelho${NC}"
-```
-
-### OS Detection
-
-```bash
-detect_os  # Detecta o sistema operacional
-```
-
-### Utils
-
-```bash
-ensure_curl_installed  # Garante que curl está instalado
-```
+Para detalhes completos de todas as bibliotecas, veja [Referência de Bibliotecas](../reference/libraries/index.md).
 
 ## 🎯 Boas Práticas
 
-1. **Use log functions**: Sempre use `log_info`, `log_success`, etc.
-2. **Valide entradas**: Verifique os parâmetros recebidos
-3. **Tratamento de erros**: Use `set -e` ou verifique códigos de retorno
-4. **Documentação**: Adicione comentários explicativos
-5. **Parâmetros**: Aceite parâmetros via `"$@"`
+1. **Sempre use `setup_command_env`**: Primeira linha após `set -euo pipefail`
+2. **Funções de log**: Use `log_*` em vez de `echo` para mensagens
+3. **Função de ajuda**: Sempre implemente `show_help()` com `show_description` e `show_usage`
+4. **Tratamento de erros**: Use `set -euo pipefail` no início
+5. **Parse de argumentos**: Use `while` + `case` para processar opções
+6. **Validação**: Verifique se dependências estão instaladas antes de usar
+7. **Cores com reset**: Sempre termine mensagens coloridas com `${NC}`
 
-## 🔄 Ordem de Execução
+## 🔍 Descoberta Automática
 
-O campo `order` no `cli.yml` define a ordem de exibição dos comandos:
+O Susa CLI descobre comandos **automaticamente**:
 
-- Números menores aparecem primeiro
-- Use incrementos de 10 (10, 20, 30...) para facilitar inserções futuras
+- Não há registro central de comandos
+- O CLI varre o diretório `commands/` em tempo de execução
+- Cada `config.yaml` é lido dinamicamente
+- Plugins funcionam da mesma forma em `plugins/`
+
+## 🧪 Testando Localmente
+
+```bash
+# Testar descoberta de comandos
+susa
+
+# Testar categoria específica
+susa setup
+
+# Executar comando
+susa setup vscode
+
+# Testar com debug
+DEBUG=true susa setup vscode
+
+# Ver ajuda
+susa setup vscode --help
+```
+
+## 📖 Exemplo Completo
+
+Veja o comando [setup asdf](../reference/commands/setup/asdf.md) como referência completa de implementação.

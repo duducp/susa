@@ -1,3 +1,7 @@
+---
+icon: material/home
+---
+
 # Susa CLI
 
 Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamento de software.
@@ -13,7 +17,6 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 - 📦 **Sistema de Plugins** - Extensão via repositórios Git externos
 - 🎯 **Subcategorias Multi-nível** - Navegação hierárquica ilimitada
 - 🖥️ **Multi-plataforma** - Suporte para Linux (Debian, Fedora) e macOS
-- 📚 **12 Bibliotecas Úteis** - Logger, detecção de SO, gerenciamento de dependências
 - 🎨 **Interface Rica** - Logs coloridos, agrupamento visual, help customizado
 - ⚙️ **Parser YAML Robusto** - yq v4+ com instalação automática
 - 🔐 **Gestão de Permissões** - Indicadores e verificação de sudo
@@ -21,78 +24,30 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 
 ## 🚀 Instalação Rápida
 
-### Instalação com um comando (Recomendado)
-
 ```bash
 curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/install-remote.sh | bash
 ```
 
-Este comando irá:
-
-- ✅ Detectar seu sistema operacional automaticamente
-- ✅ Instalar dependências necessárias (git, yq)
-- ✅ Clonar o repositório
-- ✅ Executar a instalação
-- ✅ Configurar o PATH automaticamente
-
-### Desinstalação
-
-```bash
-# Desinstalar remotamente
-curl -LsSf https://raw.githubusercontent.com/carlosdorneles-mb/susa/main/uninstall-remote.sh | bash
-```
-
-### Verificar Instalação
-
-```bash
-susa --version
-susa --help
-```
+Para instruções completas de instalação, desinstalação e verificação, veja o [Guia de Início Rápido](quick-start.md).
 
 ## 📖 Uso Básico
-
-### Comandos Principais
 
 ```bash
 # Listar categorias
 susa
 
-# Listar comandos de uma categoria
-susa setup
-
 # Executar comando
-susa setup docker
+susa setup asdf
 
-# Navegar subcategorias (multi-nível)
-susa setup python tools pip
-
-# Help de comando específico
-susa setup docker --help
-
-# Versão do CLI
-susa --version
-susa self version
-
-# Atualizar CLI
-susa self update
-```
-
-### Gerenciar Plugins
-
-```bash
-# Instalar plugin do GitHub
+# Gerenciar plugins
 susa self plugin add user/repo
-susa self plugin add https://github.com/user/repo.git
-
-# Listar plugins instalados
 susa self plugin list
 
-# Atualizar plugin
-susa self plugin update nome-plugin
-
-# Remover plugin
-susa self plugin remove nome-plugin
+# Autocompletar
+susa self completion bash --install
 ```
+
+Para exemplos detalhados e tutoriais práticos, veja o [Guia de Início Rápido](quick-start.md).
 
 ## 📖 Estrutura do Projeto
 
@@ -133,31 +88,18 @@ cli/
 - [Sistema de Plugins](plugins/overview.md) - Estendendo o Susa CLI
 - [Funcionalidades](guides/features.md) - Guia completo de features
 
-## 🔧 Exemplo de Uso
+## 🔧 Desenvolvimento
 
-### Navegação Multinível
+### Criar um Comando
 
-```bash
-# Categoria → Subcategoria → Comando
-susa setup python pip
-susa setup python tools venv
-
-# Plugins também suportam subcategorias
-susa deploy aws ec2
-susa deploy staging
-```
-
-### Criando um Comando
+Comandos são descobertos automaticamente da estrutura de diretórios:
 
 ```bash
-# Estrutura mínima
-commands/
-  minha-categoria/
-    config.yaml           # name, description
-    meu-comando/
-      config.yaml         # name, description, script
-      main.sh            # Script executável
+mkdir -p commands/setup/docker
+# Criar config.yaml e main.sh
 ```
+
+Veja o [Guia de Adição de Comandos](guides/adding-commands.md) para instruções completas.
 
 ## 🔌 Plugins
 
