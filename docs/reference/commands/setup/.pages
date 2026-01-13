@@ -5,5 +5,6 @@ nav:
   - Podman: podman.md
   - Poetry: poetry.md
   - UV: uv.md
+  - Mise: mise.md
   - iTerm: iterm.md
   - Tilix: tilix.md

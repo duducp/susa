@@ -1,5 +1,5 @@
 name: "ASDF"
-description: "Instala ASDF Version Manager"
+description: "Instala ASDF (gerenciador de versões polyglot)"
 script: "main.sh"
 sudo: false
 os: ["linux", "mac"]
