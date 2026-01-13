@@ -1,6 +1,6 @@
 name: "Podman"
 description: "Instala Podman (gerenciador de containers)"
 script: "main.sh"
-sudo: false
+sudo: true
 group:
 os: ["linux", "mac"]

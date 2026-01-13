@@ -2,6 +2,7 @@ title: Setup
 nav:
   - Visão Geral: index.md
   - ASDF: asdf.md
+  - Docker: docker.md
   - Podman: podman.md
   - Poetry: poetry.md
   - UV: uv.md

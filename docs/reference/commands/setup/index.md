@@ -8,6 +8,10 @@ Comandos para configuração e instalação de ferramentas e ambientes de desenv
 
 Instala e configura o ASDF, um gerenciador de versões para múltiplas linguagens de programação.
 
+### [Docker](docker.md)
+
+Instala e configura o Docker CLI e Engine para gerenciamento de containers. Esta instalação inclui apenas o Docker CLI e Engine, sem o Docker Desktop. **Disponível para Linux e macOS.**
+
 ### [iTerm2](iterm.md)
 
 Instala e configura o iTerm2, um substituto avançado para o Terminal padrão do macOS, com recursos como split panes, busca avançada, autocompletar e muito mais. **Disponível apenas para macOS.**
