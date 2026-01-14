@@ -5,6 +5,7 @@ setup_command_env
 
 # Source completion library
 source "$LIB_DIR/completion.sh"
+source "$LIB_DIR/args.sh"
 
 # Help function
 show_help() {
@@ -90,20 +91,7 @@ main() {
 }
 
 # Parse arguments
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --help|-h)
-            show_help
-            exit 0
-            ;;
-        *)
-            log_error "Unknown option: $1"
-            show_usage
-            exit 1
-            ;;
-    esac
-    shift
-done
+parse_simple_help_only "$@"
 
 # Execute main function
 main

@@ -3,6 +3,9 @@ set -euo pipefail
 
 setup_command_env
 
+# Source libraries
+source "$LIB_DIR/args.sh"
+
 # Settings
 REPO_URL="${CLI_REPO_URL:-https://github.com/duducp/susa.git}"
 REPO_BRANCH="${CLI_REPO_BRANCH:-main}"
@@ -236,20 +239,7 @@ main() {
 }
 
 # Parse arguments first, before running main
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --help|-h)
-            show_help
-            exit 0
-            ;;
-        *)
-            log_error "Opção desconhecida: $1"
-            show_usage
-            exit 1
-            ;;
-    esac
-    shift
-done
+parse_simple_help_only "$@"
 
 # Execute main function
 main

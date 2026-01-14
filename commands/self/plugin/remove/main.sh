@@ -6,6 +6,7 @@ setup_command_env
 # Source necessary libraries
 source "$LIB_DIR/registry.sh"
 source "$LIB_DIR/plugin.sh"
+source "$LIB_DIR/args.sh"
 
 # Help function
 show_help() {
@@ -78,10 +79,7 @@ main() {
 }
 
 # Parse arguments first, before running main
-if [ $# -eq 0 ]; then
-    show_help
-    exit 1
-fi
+require_arguments "$@"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -98,12 +96,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Checks if plugin name was provided
-if [ -z "${PLUGIN_ARG:-}" ]; then
-    log_error "Nome do plugin não fornecido"
-    show_usage
-    exit 1
-fi
+# Validate required argument
+validate_required_arg "${PLUGIN_ARG:-}" "Nome do plugin" "<plugin-name>"
 
 # Execute main function
 main "$PLUGIN_ARG"

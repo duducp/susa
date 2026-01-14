@@ -8,6 +8,7 @@ source "$LIB_DIR/color.sh"
 source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/registry.sh"
 source "$LIB_DIR/plugin.sh"
+source "$LIB_DIR/args.sh"
 
 # Help function
 show_help() {
@@ -102,20 +103,8 @@ main() {
 }
 
 # Parse arguments first, before running main
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            log_error "Opção desconhecida: $1"
-            show_usage
-            exit 1
-            ;;
-    esac
-    shift
-done
+parse_simple_help_only "$@"
 
 # Execute main function
+main
 main

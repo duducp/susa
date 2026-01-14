@@ -6,6 +6,7 @@ setup_command_env
 # Source necessary libraries
 source "$LIB_DIR/registry.sh"
 source "$LIB_DIR/plugin.sh"
+source "$LIB_DIR/args.sh"
 
 # Help function
 show_help() {
@@ -231,12 +232,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Checks if URL was provided
-if [ -z "${PLUGIN_ARG:-}" ]; then
-    log_error "URL ou nome do plugin não fornecido"
-    show_usage "<git-url|user/repo> [opções]"
-    exit 1
-fi
+# Validate required argument
+validate_required_arg "${PLUGIN_ARG:-}" "URL ou nome do plugin" "<git-url|user/repo> [opções]"
 
 # Execute main function
 main "$PLUGIN_ARG" "$USE_SSH" "$PROVIDER"

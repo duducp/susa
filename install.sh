@@ -90,7 +90,7 @@ configure_shell() {
     # Add PATH configuration
     cat >> "$shell_config" << 'EOF'
 
-# Susa CLI
+# Path Bin
 export PATH="$HOME/.local/bin:$PATH"
 EOF
     echo "  ✓ $shell_name configurado"

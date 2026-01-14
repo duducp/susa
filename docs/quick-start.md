@@ -58,7 +58,7 @@ sudo pacman -S zsh
 
 # macOS (já vem instalado por padrão)
 
-# 2. Adicionar o Susa CLI ao PATH no ~/.zshrc
+# 2. Adicionar o PATH do .local no ~/.zshrc
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 
 # 3. Configurar o autocompletar do Susa CLI para Zsh
