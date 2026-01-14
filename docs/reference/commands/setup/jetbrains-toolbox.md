@@ -42,7 +42,7 @@ susa setup jetbrains-toolbox [opções]
 | Opção | Descrição |
 |---|---|
 | `-h, --help` | Mostra mensagem de ajuda |
-| `-u, --uninstall` | Desinstala o JetBrains Toolbox |
+| `--uninstall` | Desinstala o JetBrains Toolbox |
 | `--update` | Atualiza para a versão mais recente |
 | `-v, --verbose` | Modo detalhado com logs de debug |
 | `-q, --quiet` | Modo silencioso |

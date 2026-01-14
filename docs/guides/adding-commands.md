@@ -108,7 +108,7 @@ show_help() {
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
-    echo "  -u, --uninstall   Remove a instalação"
+    echo "  --uninstall       Remove a instalação"
     echo ""
     echo -e "${LIGHT_GREEN}Exemplos:${NC}"
     echo "  susa <categoria> <comando>              # Instala"

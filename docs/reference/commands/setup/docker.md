@@ -35,7 +35,7 @@ susa setup docker [opções]
 | Opção | Descrição |
 |---|---|
 | `-h, --help` | Mostra mensagem de ajuda |
-| `-u, --uninstall` | Desinstala o Docker |
+| `--uninstall` | Desinstala o Docker |
 | `--update` | Atualiza para a versão mais recente |
 | `-v, --verbose` | Modo detalhado com logs de debug |
 | `-q, --quiet` | Modo silencioso |

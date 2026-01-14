@@ -68,7 +68,7 @@ Remove o Mise do sistema. Você terá a opção de também remover o cache salvo
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
 | `--update` | Atualiza o Mise para a versão mais recente |
-| `-u, --uninstall` | Remove o Mise do sistema |
+| `--uninstall` | Remove o Mise do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 

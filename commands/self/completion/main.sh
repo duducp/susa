@@ -24,7 +24,7 @@ show_help() {
     echo -e "${LIGHT_GREEN}Options:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo "  -i, --install     Instala o completion no shell atual"
-    echo "  -u, --uninstall   Remove o completion do shell"
+    echo "  --uninstall       Remove o completion do shell"
     echo "  -p, --print       Apenas imprime o script (não instala)"
     echo ""
     echo -e "${LIGHT_GREEN}Examples:${NC}"
@@ -654,7 +654,7 @@ main() {
                 action="install"
                 shift
                 ;;
-            -u|--uninstall)
+            --uninstall)
                 action="uninstall"
                 shift
                 ;;

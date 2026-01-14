@@ -16,7 +16,7 @@ show_help() {
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
-    echo "  -u, --uninstall   Desinstala o Tilix do sistema"
+    echo "  --uninstall       Desinstala o Tilix do sistema"
     echo "  --update          Atualiza o Tilix para a versão mais recente"
     echo "  -v, --verbose     Habilita saída detalhada para depuração"
     echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
@@ -42,7 +42,7 @@ show_help() {
 # Detect package manager
 detect_package_manager() {
     log_debug "Detectando gerenciador de pacotes..."
-    
+
     if command -v apt-get &>/dev/null; then
         echo "apt"
         log_debug "Gerenciador de pacotes: apt (Debian/Ubuntu)"
@@ -67,7 +67,7 @@ detect_package_manager() {
 # Check if Tilix is already installed
 check_existing_installation() {
     log_debug "Verificando instalação existente do Tilix..."
-    
+
     if ! command -v tilix &>/dev/null; then
         log_debug "Tilix não está instalado"
         return 0
@@ -163,7 +163,7 @@ install_tilix() {
         local version=$(tilix --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
         log_success "Tilix $version instalado com sucesso!"
         log_debug "Executável: $(which tilix)"
-        
+
         # Check for VTE configuration
         log_debug "Verificando configuração VTE..."
         if [ -f /etc/profile.d/vte.sh ]; then
@@ -172,7 +172,7 @@ install_tilix() {
             log_info "Para melhor integração, adicione ao seu ~/.bashrc ou ~/.zshrc:"
             echo "  source /etc/profile.d/vte.sh"
         fi
-        
+
         return 0
     else
         log_error "Falha ao verificar instalação do Tilix"
@@ -251,13 +251,13 @@ update_tilix() {
     esac
 
     local new_version=$(tilix --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
-    
+
     if [ "$current_version" = "$new_version" ]; then
         log_info "Tilix já está na versão mais recente ($current_version)"
     else
         log_success "Tilix atualizado de $current_version para $new_version"
     fi
-    
+
     log_debug "Atualização concluída"
 }
 
@@ -295,12 +295,12 @@ uninstall_tilix() {
         apt)
             log_debug "Executando: sudo apt-get remove -y tilix"
             sudo apt-get remove -y tilix 2>&1 | while read -r line; do log_debug "apt: $line"; done
-            
+
             # Ask about purge
             echo ""
             echo -e "${YELLOW}Deseja remover também os arquivos de configuração? (s/N)${NC}"
             read -r purge_response
-            
+
             if [[ "$purge_response" =~ ^[sS]$ ]]; then
                 log_debug "Executando: sudo apt-get purge -y tilix"
                 sudo apt-get purge -y tilix 2>&1 | while read -r line; do log_debug "apt: $line"; done
@@ -354,7 +354,7 @@ uninstall_tilix() {
 # Main function
 main() {
     local action="install"
-    
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in

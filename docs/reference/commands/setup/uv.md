@@ -68,7 +68,7 @@ Remove o UV do sistema. Você terá a opção de também remover o cache salvo e
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
 | `--update` | Atualiza o UV para a versão mais recente |
-| `-u, --uninstall` | Remove o UV do sistema |
+| `--uninstall` | Remove o UV do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 
@@ -452,13 +452,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      
+
       - name: Install dependencies
         run: uv sync --extra dev
-      
+
       - name: Run tests
         run: uv run pytest
 ```

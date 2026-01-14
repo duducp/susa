@@ -16,7 +16,7 @@ show_help() {
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
-    echo "  -u, --uninstall   Desinstala o UV do sistema"
+    echo "  --uninstall       Desinstala o UV do sistema"
     echo "  --update          Atualiza o UV para a versão mais recente"
     echo "  -v, --verbose     Habilita saída detalhada para depuração"
     echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
@@ -46,7 +46,7 @@ get_uv_bin_dir() {
 # Check if UV is already installed
 check_existing_installation() {
     log_debug "Verificando instalação existente do UV..."
-    
+
     if ! command -v uv &>/dev/null; then
         log_debug "UV não está instalado"
         return 0  # Não instalado, pode continuar
@@ -73,26 +73,26 @@ configure_shell() {
     fi
 
     log_debug "Configurando $shell_config..."
-    
+
     echo "" >> "$shell_config"
     echo "# Local binaries PATH" >> "$shell_config"
     echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$shell_config"
-    
+
     log_debug "Configuração adicionada ao shell"
 }
 
 # Setup UV environment for current session
 setup_uv_environment() {
     local bin_dir="$1"
-    
+
     export PATH="$bin_dir:$PATH"
-    
+
     log_debug "Ambiente configurado para sessão atual"
     log_debug "PATH atualizado com: $bin_dir"
 }
 
 # Install UV
-install_uv() {    
+install_uv() {
     # Check if UV is already installed
     if command -v uv &>/dev/null; then
         local current_version=$(uv --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
@@ -104,7 +104,7 @@ install_uv() {
 
     local bin_dir=$(get_uv_bin_dir)
     log_debug "Diretório de instalação: $bin_dir"
-    
+
     # Create bin directory if it doesn't exist
     mkdir -p "$bin_dir"
     log_debug "Diretório criado/verificado: $bin_dir"
@@ -112,21 +112,21 @@ install_uv() {
     # Download and install UV using official installer
     log_info "Baixando instalador do UV..."
     log_debug "URL: https://astral.sh/uv/install.sh"
-    
+
     local install_script="/tmp/uv-installer-$$.sh"
-    
+
     if ! curl -sSfL https://astral.sh/uv/install.sh -o "$install_script"; then
         log_error "Falha ao baixar o instalador do UV"
         rm -f "$install_script"
         return 1
     fi
-    
+
     log_debug "Instalador baixado em: $install_script"
-    
+
     # Run installer
     log_info "Instalando UV..."
     log_debug "Executando instalador..."
-    
+
     if bash "$install_script" 2>&1 | while read -r line; do log_debug "installer: $line"; done; then
         log_debug "Instalação concluída com sucesso"
     else
@@ -134,7 +134,7 @@ install_uv() {
         rm -f "$install_script"
         return 1
     fi
-    
+
     rm -f "$install_script"
     log_debug "Instalador removido"
 
@@ -146,25 +146,25 @@ install_uv() {
 
     # Verify installation
     log_debug "Verificando instalação..."
-    
+
     if command -v uv &>/dev/null; then
         local version=$(uv --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
         log_success "UV $version instalado com sucesso!"
         log_debug "Executável: $(which uv)"
-        
+
         echo ""
         echo "Próximos passos:"
         local shell_config=$(detect_shell_config)
         echo -e "  1. Reinicie o terminal ou execute: ${LIGHT_CYAN}source $shell_config${NC}"
         echo -e "  2. Crie um novo projeto: ${LIGHT_CYAN}uv init meu-projeto${NC}"
         echo -e "  3. Use ${LIGHT_CYAN}susa setup uv --help${NC} para mais informações"
-        
+
         # Show uvx info
         echo ""
         echo -e "${LIGHT_GREEN}Dica:${NC} Use ${LIGHT_CYAN}uvx${NC} para executar ferramentas Python sem instalação:"
         echo "  uvx ruff check .    # Executar ruff"
         echo "  uvx black .         # Executar black"
-        
+
         return 0
     else
         log_error "UV foi instalado mas não está disponível no PATH"
@@ -180,7 +180,7 @@ update_uv() {
 
     # Check if UV is installed
     log_debug "Verificando se UV está instalado..."
-    
+
     if ! command -v uv &>/dev/null; then
         log_error "UV não está instalado"
         echo ""
@@ -195,7 +195,7 @@ update_uv() {
     # Update UV using self update command
     log_info "Executando atualização do UV..."
     log_debug "Comando: uv self update"
-    
+
     if uv self update 2>&1 | while read -r line; do log_debug "uv: $line"; done; then
         log_debug "Comando de atualização executado com sucesso"
     else
@@ -205,17 +205,17 @@ update_uv() {
 
     # Verify update
     log_debug "Verificando nova versão..."
-    
+
     if command -v uv &>/dev/null; then
         local new_version=$(uv --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
-        
+
         if [ "$current_version" = "$new_version" ]; then
             log_info "UV já está na versão mais recente ($current_version)"
         else
             log_success "UV atualizado de $current_version para $new_version!"
             log_debug "Atualização concluída com sucesso"
         fi
-        
+
         return 0
     else
         log_error "Falha na atualização do UV"
@@ -229,7 +229,7 @@ uninstall_uv() {
 
     # Check if UV is installed
     log_debug "Verificando se UV está instalado..."
-    
+
     if ! command -v uv &>/dev/null; then
         log_warning "UV não está instalado"
         log_info "Nada a fazer"
@@ -255,12 +255,12 @@ uninstall_uv() {
 
     # Remove UV binary and related tools
     log_info "Removendo binários do UV..."
-    
+
     if [ -f "$bin_dir/uv" ]; then
         rm -f "$bin_dir/uv"
         log_debug "Removido: $bin_dir/uv"
     fi
-    
+
     if [ -f "$bin_dir/uvx" ]; then
         rm -f "$bin_dir/uvx"
         log_debug "Removido: $bin_dir/uvx"
@@ -275,7 +275,7 @@ uninstall_uv() {
 
     # Remove shell configurations (only UV-specific, not .local/bin)
     local shell_config=$(detect_shell_config)
-    
+
     if [ -f "$shell_config" ]; then
         # Only remove if the PATH export was added specifically for UV
         # Since .local/bin might be used by other tools, we don't remove it
@@ -284,11 +284,11 @@ uninstall_uv() {
 
     # Verify removal
     log_debug "Verificando remoção..."
-    
+
     if ! command -v uv &>/dev/null; then
         log_success "UV desinstalado com sucesso!"
         log_debug "Executável removido"
-        
+
         echo ""
         log_info "Reinicie o terminal ou execute: source $shell_config"
     else
@@ -303,13 +303,13 @@ uninstall_uv() {
 
     if [[ "$cache_response" =~ ^[sS]$ ]]; then
         log_debug "Removendo cache..."
-        
+
         local cache_dir="$HOME/.cache/uv"
         if [ -d "$cache_dir" ]; then
             rm -rf "$cache_dir" 2>/dev/null || true
             log_debug "Cache removido: $cache_dir"
         fi
-        
+
         log_success "Cache removido"
     else
         log_info "Cache mantido em ~/.cache/uv"
@@ -319,7 +319,7 @@ uninstall_uv() {
 # Main function
 main() {
     local action="install"
-    
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -336,7 +336,7 @@ main() {
                 export SILENT=1
                 shift
                 ;;
-            -u|--uninstall)
+            --uninstall)
                 action="uninstall"
                 shift
                 ;;
@@ -354,7 +354,7 @@ main() {
 
     # Execute action
     log_debug "Ação selecionada: $action"
-    
+
     case "$action" in
         install)
             install_uv

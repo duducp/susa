@@ -69,7 +69,7 @@ Remove o Tilix do sistema. Você terá a opção de também remover as configura
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
 | `--update` | Atualiza o Tilix para a versão mais recente |
-| `-u, --uninstall` | Remove o Tilix do sistema |
+| `--uninstall` | Remove o Tilix do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 

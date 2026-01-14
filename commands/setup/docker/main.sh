@@ -16,7 +16,7 @@ show_help() {
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
-    echo "  -u, --uninstall   Desinstala o Docker do sistema"
+    echo "  --uninstall       Desinstala o Docker do sistema"
     echo "  --update          Atualiza o Docker para a versão mais recente"
     echo "  -v, --verbose     Habilita saída detalhada para depuração"
     echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
@@ -595,7 +595,7 @@ main() {
                 export SILENT=1
                 shift
                 ;;
-            -u|--uninstall)
+            --uninstall)
                 action="uninstall"
                 shift
                 ;;

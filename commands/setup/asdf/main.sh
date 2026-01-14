@@ -16,7 +16,7 @@ show_help() {
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
-    echo "  -u, --uninstall   Desinstala o ASDF do sistema"
+    echo "  --uninstall       Desinstala o ASDF do sistema"
     echo "  --update          Atualiza o ASDF para a versão mais recente"
     echo "  -v, --verbose     Habilita saída detalhada para depuração"
     echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
@@ -455,7 +455,7 @@ uninstall_asdf() {
 # Main function
 main() {
     local action="install"
-    
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -472,7 +472,7 @@ main() {
                 export SILENT=1
                 shift
                 ;;
-            -u|--uninstall)
+            --uninstall)
                 action="uninstall"
                 shift
                 ;;

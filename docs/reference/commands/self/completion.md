@@ -45,7 +45,7 @@ susa self completion fish --print
 |-------|-----------|
 | `-h, --help` | Mostra ajuda |
 | `-i, --install` | Instala o completion no shell |
-| `-u, --uninstall` | Remove o completion do shell |
+| `--uninstall` | Remove o completion do shell |
 | `-p, --print` | Apenas imprime o script |
 
 ## Após a instalação

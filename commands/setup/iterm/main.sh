@@ -16,7 +16,7 @@ show_help() {
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
-    echo "  -u, --uninstall   Desinstala o iTerm2 do sistema"
+    echo "  --uninstall       Desinstala o iTerm2 do sistema"
     echo "  --update          Atualiza o iTerm2 para a versão mais recente"
     echo "  -v, --verbose     Habilita saída detalhada para depuração"
     echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
@@ -41,7 +41,7 @@ show_help() {
 # Check if iTerm2 is already installed
 check_existing_installation() {
     log_debug "Verificando instalação existente do iTerm2..."
-    
+
     if ! brew list --cask iterm2 &>/dev/null; then
         log_debug "iTerm2 não está instalado"
         return 0
@@ -130,7 +130,7 @@ update_iterm() {
     # Check for updates
     log_debug "Verificando atualizações disponíveis..."
     local outdated=$(brew outdated --cask iterm2 2>/dev/null)
-    
+
     if [ -z "$outdated" ]; then
         log_info "iTerm2 já está na versão mais recente ($current_version)"
         return 0
@@ -161,14 +161,14 @@ uninstall_iterm() {
     log_debug "Verificando se iTerm2 está instalado..."
     if ! brew list --cask iterm2 &>/dev/null; then
         log_warning "iTerm2 não está instalado via Homebrew"
-        
+
         # Check if app exists manually
         if [ -d "/Applications/iTerm.app" ]; then
             log_warning "iTerm2 encontrado em /Applications mas não via Homebrew"
             echo ""
             echo -e "${YELLOW}Deseja remover manualmente? (s/N)${NC}"
             read -r response
-            
+
             if [[ "$response" =~ ^[sS]$ ]]; then
                 log_debug "Removendo /Applications/iTerm.app"
                 rm -rf "/Applications/iTerm.app"
@@ -230,7 +230,7 @@ uninstall_iterm() {
 # Main function
 main() {
     local action="install"
-    
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -273,7 +273,7 @@ main() {
 
     # Execute action
     log_debug "Ação selecionada: $action"
-  
+
     case "$action" in
         install)
             if ! check_existing_installation; then

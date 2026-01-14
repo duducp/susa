@@ -69,7 +69,7 @@ Remove o Poetry do sistema. Você terá a opção de também remover o cache e c
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
 | `--update` | Atualiza o Poetry para a versão mais recente |
-| `-u, --uninstall` | Remove o Poetry do sistema |
+| `--uninstall` | Remove o Poetry do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 
@@ -441,13 +441,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Install Poetry
         run: curl -sSL https://install.python-poetry.org | python3 -
-      
+
       - name: Install dependencies
         run: poetry install
-      
+
       - name: Run tests
         run: poetry run pytest
 ```
