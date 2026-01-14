@@ -141,6 +141,25 @@ Execute manualmente apenas se adicionar comandos diretamente no diretório `comm
 susa self completion --install
 ```
 
+## � Quality Assurance
+
+O projeto usa **ShellCheck** para garantir a qualidade dos scripts:
+
+```bash
+# Executar verificação de qualidade
+make shellcheck
+
+# Ou usar alias
+make lint
+
+# Executar todos os testes
+make test
+```
+
+Para mais informações sobre o ShellCheck, veja [SHELLCHECK.md](.github/SHELLCHECK.md).
+
+[![CI Status](https://github.com/duducp/susa/actions/workflows/ci.yml/badge.svg)](https://github.com/duducp/susa/actions/workflows/ci.yml)
+
 ## 📚 Documentação
 
 - **[Documentação Completa](https://duducp.github.io/susa/)** - Guias e referências
@@ -148,6 +167,11 @@ susa self completion --install
 ## 🤝 Contribuindo
 
 Contribuições são bem-vindas! Veja [CONTRIBUTING.md](docs/about/contributing.md).
+
+Antes de enviar seu PR:
+
+1. Execute `make shellcheck` para verificar a qualidade do código
+2. Certifique-se de que todos os testes passam no CI
 
 ## 📄 Licença
 

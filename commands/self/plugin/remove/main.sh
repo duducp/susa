@@ -74,7 +74,7 @@ main() {
 
     local REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
 
-    if rm -rf "$PLUGINS_DIR/$PLUGIN_NAME"; then
+    if rm -rf "${PLUGINS_DIR:?}/${PLUGIN_NAME:?}"; then
         log_debug "Diretório removido com sucesso"
 
         # Remove from registry too

@@ -271,7 +271,9 @@ install_docker_debian() {
     # Add Docker's official GPG key
     log_info "Adicionando chave GPG do Docker..."
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL ${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg >/dev/null 2>&1
+    local distro
+    distro=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
+    curl -fsSL "${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/${distro}/gpg" | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg >/dev/null 2>&1
     sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
     # Set up repository

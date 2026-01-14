@@ -280,7 +280,8 @@ execute_plugin_command() {
     log_debug "[execute_plugin_command] Executando: $script_path" >&2
 
     # Get plugin directory from script path
-    local plugin_dir=$(dirname $(dirname $(dirname "$script_path")))
+    local plugin_dir
+    plugin_dir=$(dirname "$(dirname "$(dirname "$script_path")")")
 
     # Get command directory and config file
     local command_dir=$(dirname "$script_path")
@@ -416,7 +417,9 @@ run_plugin_command() {
     log_debug "=== Preparando execução ===" >&2
     if [ "$is_dev_plugin" = true ]; then
         log_info "Executando plugin em modo de desenvolvimento: $plugin_name"
-        log_output "  ${MAGENTA}[DEV]${NC} Diretório: $(dirname $(dirname $(dirname "$script_path")))"
+        local dev_dir
+        dev_dir=$(dirname "$(dirname "$(dirname "$script_path")")")
+        log_output "  ${MAGENTA}[DEV]${NC} Diretório: $dev_dir"
     else
         log_info "Executando plugin instalado: $plugin_name"
     fi

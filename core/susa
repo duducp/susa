@@ -252,7 +252,20 @@ list_commands() {
 
     # If not top-level, validate if directory exists
     if [ "$is_top_level" = false ]; then
-        if [ ! -d "$CLI_DIR/commands/$category" ] && [ ! -d "$CLI_DIR/plugins"/*/"$category" 2>/dev/null ]; then
+        local found=false
+        if [ -d "$CLI_DIR/commands/$category" ]; then
+            found=true
+        fi
+        # Check in plugins directories
+        if [ -d "$CLI_DIR/plugins" ]; then
+            for plugin_dir in "$CLI_DIR/plugins"/*/; do
+                if [ -d "${plugin_dir}${category}" ]; then
+                    found=true
+                    break
+                fi
+            done
+        fi
+        if [ "$found" = false ]; then
             log_error "Categoria '$category' não encontrada"
             return 1
         fi

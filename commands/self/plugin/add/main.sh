@@ -205,7 +205,7 @@ main() {
     if ! clone_plugin "$plugin_url" "$PLUGINS_DIR/$plugin_name"; then
         log_error "Falha ao clonar o repositório"
         log_debug "Removendo diretório parcial"
-        rm -rf "$PLUGINS_DIR/$plugin_name"
+        rm -rf "${PLUGINS_DIR:?}/${plugin_name:?}"
         exit 1
     fi
     log_debug "Clone concluído com sucesso"

@@ -1,9 +1,10 @@
-.PHONY: help install serve build deploy clean cli-install cli-uninstall test
+.PHONY: help install serve build deploy clean cli-install cli-uninstall test shellcheck lint
 
 # Cores para output
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
 BLUE := \033[0;34m
+RED := \033[0;31m
 NC := \033[0m
 
 help:
@@ -12,8 +13,11 @@ help:
 	@echo "$(BLUE)CLI Commands:$(NC)"
 	@grep -E '^cli-[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
 	@echo ""
+	@echo "$(BLUE)Quality Assurance Commands:$(NC)"
+	@grep -E '^(shellcheck|lint|test):.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
+	@echo ""
 	@echo "$(BLUE)Documentation Commands:$(NC)"
-	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -v '^cli-' | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -v '^cli-' | grep -v '^shellcheck' | grep -v '^lint' | grep -v '^test' | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 
 install: ## Instala dependências para documentação
@@ -57,3 +61,44 @@ cli-install: ## Instala o CLI no sistema
 cli-uninstall: ## Remove o CLI do sistema
 	@echo "$(YELLOW)🗑️  Desinstalando CLI...$(NC)"
 	@./uninstall.sh
+
+# Quality Assurance
+shellcheck: ## Executa ShellCheck em todos os scripts
+	@echo "$(GREEN)🔍 Executando ShellCheck...$(NC)"
+	@command -v shellcheck >/dev/null 2>&1 || { echo "$(RED)❌ ShellCheck não está instalado. Instale com: sudo apt install shellcheck$(NC)"; exit 1; }
+	@echo ""
+	@errors=0; \
+	total=0; \
+	echo "$(BLUE)Verificando core/susa...$(NC)"; \
+	if shellcheck -x core/susa 2>&1 | grep -v "^$$"; then \
+		errors=$$((errors + 1)); \
+	fi; \
+	total=$$((total + 1)); \
+	for lib in core/lib/*.sh core/lib/internal/*.sh; do \
+		if [ -f "$$lib" ]; then \
+			echo "$(BLUE)Verificando $$lib...$(NC)"; \
+			if shellcheck -x "$$lib" 2>&1 | grep -v "^$$"; then \
+				errors=$$((errors + 1)); \
+			fi; \
+			total=$$((total + 1)); \
+		fi; \
+	done; \
+	for script in $$(find commands -name "main.sh" -o -name "*.sh" | grep -v "/node_modules/"); do \
+		echo "$(BLUE)Verificando $$script...$(NC)"; \
+		if shellcheck -x "$$script" 2>&1 | grep -v "^$$"; then \
+			errors=$$((errors + 1)); \
+		fi; \
+		total=$$((total + 1)); \
+	done; \
+	echo ""; \
+	if [ $$errors -eq 0 ]; then \
+		echo "$(GREEN)✅ Todos os $$total scripts passaram na verificação!$(NC)"; \
+	else \
+		echo "$(RED)❌ $$errors de $$total arquivo(s) com problemas$(NC)"; \
+		exit 1; \
+	fi
+
+lint: shellcheck ## Alias para shellcheck
+
+test: shellcheck ## Executa todos os testes
+	@echo "$(GREEN)✅ Todos os testes passaram!$(NC)"
