@@ -5,7 +5,7 @@ set -euo pipefail
 setup_command_env
 
 source "$LIB_DIR/logger.sh"
-source "$LIB_DIR/yaml.sh"
+source "$LIB_DIR/internal/yaml.sh"
 
 # ============================================================
 # Help Function

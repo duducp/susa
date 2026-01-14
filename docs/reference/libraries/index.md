@@ -52,6 +52,14 @@ Funções auxiliares para trabalhar com Kubernetes. Valida instalação do `kube
 
 Funções específicas do framework CLI. Configura ambiente de comandos, exibe versão, uso e descrições formatadas.
 
+#### [args.sh](args.md)
+
+Parsing consistente de argumentos de linha de comando. Valida argumentos obrigatórios, processa flags e elimina código duplicado.
+
+#### [completion.sh](completion.md)
+
+Gerenciamento de autocompletar (tab completion) para Bash e Zsh. Verifica instalação, status e carregamento de scripts de completion.
+
 #### [yaml.sh](yaml.md)
 
 Parser YAML completo para configurações. Descobre categorias, comandos e lê metadados dos arquivos `config.yaml`.
@@ -69,7 +77,15 @@ Gerenciamento do arquivo `registry.yaml` de plugins. Adiciona, remove e lista pl
 ```text
 cli.sh
 ├── color.sh
+├── args.sh
 └── yaml.sh
+
+args.sh
+└── logger.sh
+    └── color.sh
+
+completion.sh
+└── shell.sh
 
 yaml.sh
 ├── dependencies.sh
@@ -96,14 +112,23 @@ kubernetes.sh
 #!/bin/bash
 set -euo pipefail
 
-# Obtém diretórios
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLI_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+# Setup environment
+setup_command_env
 
 # Importa bibliotecas necessárias
 source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/color.sh"
 source "$LIB_DIR/os.sh"
+source "$LIB_DIR/internal/args.sh"
+
+# Help function
+show_help() {
+    echo "Uso: susa comando [opções]"
+    echo "Descrição do comando"
+}
+
+# Parse argumentos
+parse_simple_help_only "$@"
 
 # Lógica do comando
 log_info "Iniciando..."

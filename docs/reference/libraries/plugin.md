@@ -191,7 +191,7 @@ echo "$name"  # awesome-plugin
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/plugin.sh"
+source "$LIB_DIR/internal/plugin.sh"
 source "$LIB_DIR/logger.sh"
 
 # Parse argumentos

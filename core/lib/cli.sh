@@ -2,7 +2,7 @@
 
 # Get the lib directory
 source "$LIB_DIR/color.sh"
-source "$LIB_DIR/yaml.sh"
+source "$LIB_DIR/internal/yaml.sh"
 
 # --- CLI Helper Functions ---
 
@@ -11,7 +11,7 @@ setup_command_env() {
     # BASH_SOURCE[1] points to the script that called this function
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
     CONFIG_FILE="$SCRIPT_DIR/config.yaml"
-    
+
     # Export so that subprocesses also have access
     export SCRIPT_DIR
     export CONFIG_FILE
@@ -21,18 +21,18 @@ setup_command_env() {
 # Example: commands/self/plugin/add -> self plugin add
 build_command_path() {
     local script_dir="${SCRIPT_DIR:-${1:-}}"
-    
+
     # If no script_dir is available, return empty
     [ -z "$script_dir" ] && return 0
-    
+
     # Remove the prefix up to /commands/
     local relative_path="${script_dir#*commands/}"
-    
+
     # If it didn't change, try removing /plugins/
     if [ "$relative_path" = "$script_dir" ]; then
         relative_path="${script_dir#*plugins/*/}"
     fi
-    
+
     # Convert / to space
     echo "$relative_path" | tr '/' ' '
 }
@@ -47,7 +47,7 @@ show_usage() {
     local command_path=$(build_command_path)
     local show_options=true
     local custom_args=""
-    
+
     # Parse arguments
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -61,30 +61,30 @@ show_usage() {
                 ;;
         esac
     done
-    
+
     # Trim leading space from custom_args
     custom_args="${custom_args# }"
-    
+
     # If no custom arguments and show_options is true, use [opções]
     if [ -z "$custom_args" ] && [ "$show_options" = true ]; then
         custom_args="[opções]"
     fi
-    
+
     # Build usage string
     local usage_string="${LIGHT_GREEN}Uso:${NC} ${LIGHT_CYAN}${cli_name}${NC}"
-    
+
     # Add command path if available
     if [ -n "$command_path" ]; then
         usage_string="$usage_string ${CYAN}${command_path}${NC}"
     else
         usage_string="$usage_string ${CYAN}<comando>${NC}"
     fi
-    
+
     # Add custom args if available
     if [ -n "$custom_args" ]; then
         usage_string="$usage_string ${GRAY}${custom_args}${NC}"
     fi
-    
+
     echo -e "$usage_string"
 }
 

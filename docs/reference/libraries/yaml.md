@@ -171,7 +171,7 @@ fi
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/yaml.sh"
+source "$LIB_DIR/internal/yaml.sh"
 source "$LIB_DIR/os.sh"
 
 # Configuração

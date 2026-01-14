@@ -4,7 +4,7 @@ set -euo pipefail
 setup_command_env
 
 # Source libraries
-source "$LIB_DIR/args.sh"
+source "$LIB_DIR/internal/args.sh"
 
 # Settings
 REPO_URL="${CLI_REPO_URL:-https://github.com/duducp/susa.git}"

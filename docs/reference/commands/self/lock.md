@@ -116,7 +116,7 @@ Quando usando `susa self plugin run` sem `--prepare`, o plugin dev:
 - Tem `source` apontando para diretório atual
 - É automaticamente removido após execução
 
-Veja [Self Plugin Run](../plugins/run.md) para detalhes.
+Veja [Self Plugin Run](plugins/run.md) para detalhes.
 
 ## Observações
 

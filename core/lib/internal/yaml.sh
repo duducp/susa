@@ -6,7 +6,7 @@
 # Parser to read YAML configurations (centralized and decentralized)
 
 # Source registry lib
-source "$LIB_DIR/registry.sh"
+source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/dependencies.sh"
 
 # Make sure yq is installed

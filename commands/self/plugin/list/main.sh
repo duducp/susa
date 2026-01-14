@@ -6,9 +6,9 @@ setup_command_env
 # Source libs
 source "$LIB_DIR/color.sh"
 source "$LIB_DIR/logger.sh"
-source "$LIB_DIR/registry.sh"
-source "$LIB_DIR/plugin.sh"
-source "$LIB_DIR/args.sh"
+source "$LIB_DIR/internal/registry.sh"
+source "$LIB_DIR/internal/plugin.sh"
+source "$LIB_DIR/internal/args.sh"
 
 # Help function
 show_help() {

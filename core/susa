@@ -37,7 +37,7 @@ source "$LIB_DIR/string.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/sudo.sh"
 
-source "$LIB_DIR/yaml.sh"
+source "$LIB_DIR/internal/yaml.sh"
 source "$LIB_DIR/cli.sh"
 source "$LIB_DIR/shell.sh"
 source "$LIB_DIR/dependencies.sh"

@@ -4,8 +4,8 @@ set -euo pipefail
 setup_command_env
 
 # Source required libraries
-source "$LIB_DIR/registry.sh"
-source "$LIB_DIR/plugin.sh"
+source "$LIB_DIR/internal/registry.sh"
+source "$LIB_DIR/internal/plugin.sh"
 
 # Check if command exists in lock file
 # Returns: "found:is_dev" or "not_found"
