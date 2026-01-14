@@ -104,8 +104,10 @@ register_plugin() {
     local plugin_name="$2"
     local plugin_url="$3"
     local plugin_version="$4"
+    local cmd_count="$5"
+    local categories="$6"
 
-    if registry_add_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version"; then
+    if registry_add_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version" "false" "$cmd_count" "$categories"; then
         log_debug "Plugin registrado no registry.yaml"
         return 0
     else
@@ -184,13 +186,14 @@ main() {
     # Detect plugin version
     local plugin_version=$(detect_plugin_version "$PLUGINS_DIR/$plugin_name")
 
+    # Count installed commands and get categories
+    local cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$plugin_name")
+    local categories=$(find "$PLUGINS_DIR/$plugin_name" -mindepth 1 -maxdepth 1 -type d ! -name ".git" -exec basename {} \; | tr '\n' ',' | sed 's/,$//')
+
     # Register in registry.yaml
     local registry_file="$PLUGINS_DIR/registry.yaml"
     ensure_registry_exists "$registry_file"
-    register_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version"
-
-    # Count installed commands
-    local cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$plugin_name")
+    register_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version" "$cmd_count" "$categories"
 
     # Show success message
     show_installation_success "$plugin_name" "$plugin_url" "$plugin_version" "$cmd_count"

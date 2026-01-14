@@ -112,20 +112,24 @@ main() {
         # Detect new version
         local NEW_VERSION=$(detect_plugin_version "$PLUGINS_DIR/$PLUGIN_NAME")
 
-        # Update registry (remove and add again)
+        # Count commands and get categories (search in the entire plugin directory)
+        local cmd_count=$(find "$PLUGINS_DIR/$PLUGIN_NAME" -type f -name "main.sh" 2>/dev/null | wc -l | xargs)
+        local categories=$(find "$PLUGINS_DIR/$PLUGIN_NAME" -mindepth 1 -maxdepth 1 -type d ! -name ".git" -exec basename {} \; 2>/dev/null | sort | paste -sd "," -)
+
+        # Update registry (remove and add again with metadata)
         registry_remove_plugin "$REGISTRY_FILE" "$PLUGIN_NAME"
-        registry_add_plugin "$REGISTRY_FILE" "$PLUGIN_NAME" "$SOURCE_URL" "$NEW_VERSION"
+        registry_add_plugin "$REGISTRY_FILE" "$PLUGIN_NAME" "$SOURCE_URL" "$NEW_VERSION" "false" "$cmd_count" "$categories"
 
         # Remove backup
         rm -rf "$BACKUP_DIR"
-
-        # Count commands
-        local cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$PLUGIN_NAME")
 
         echo ""
         log_success "Plugin '$PLUGIN_NAME' atualizado com sucesso!"
         echo -e "  ${GRAY}Nova versão: $NEW_VERSION${NC}"
         echo -e "  ${GRAY}Comandos: $cmd_count${NC}"
+        if [ -n "$categories" ]; then
+            echo -e "  ${GRAY}Categorias: $categories${NC}"
+        fi
 
         # Update lock file if it exists
         if [ -f "$CLI_DIR/susa.lock" ]; then

@@ -210,15 +210,28 @@ plugins:
     source: "https://github.com/user/backup-tools.git"
     version: "1.2.0"
     installed_at: "2026-01-11T22:30:00Z"
+    commands: 4
+    categories: backup, restore
     dev: false
 ```
+
+**Campos:**
+
+- `name`: Nome do plugin
+- `source`: URL do repositório Git
+- `version`: Versão instalada
+- `installed_at`: Data/hora da instalação
+- `commands`: Quantidade de comandos disponíveis (calculado automaticamente)
+- `categories`: Lista de categorias de comandos (calculado automaticamente)
+- `dev`: Flag indicando se é plugin em desenvolvimento
 
 **Funcionalidades:**
 
 - **Tracking**: Origem, versão, data de instalação
 - **Histórico**: Mantém registro de todos os plugins
-- **Metadados**: Informações úteis para atualização futura
+- **Metadados**: Comandos e categorias para listagem rápida
 - **Dev Mode**: Campo `dev: true` para plugins em desenvolvimento
+- **Performance**: Evita varredura de diretórios ao listar plugins
 
 ## 📄 Lock File (susa.lock)
 

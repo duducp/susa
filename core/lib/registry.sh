@@ -14,6 +14,8 @@ registry_add_plugin() {
     local source_url="$3"
     local version="${4:-1.0.0}"
     local is_dev="${5:-false}"
+    local cmd_count="${6:-}"
+    local categories="${7:-}"
 
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -40,6 +42,16 @@ EOF
     yq eval -i ".plugins[$plugin_index].source = \"$source_url\"" "$registry_file"
     yq eval -i ".plugins[$plugin_index].version = \"$version\"" "$registry_file"
     yq eval -i ".plugins[$plugin_index].installed_at = \"$timestamp\"" "$registry_file"
+
+    # Add commands count if provided
+    if [ -n "$cmd_count" ] && [ "$cmd_count" != "0" ]; then
+        yq eval -i ".plugins[$plugin_index].commands = $cmd_count" "$registry_file"
+    fi
+
+    # Add categories if provided
+    if [ -n "$categories" ]; then
+        yq eval -i ".plugins[$plugin_index].categories = \"$categories\"" "$registry_file"
+    fi
 
     # Add dev flag if it's a dev plugin
     if [ "$is_dev" = "true" ]; then
@@ -92,14 +104,6 @@ registry_get_plugin_info() {
         return 1
     fi
 
-    awk -v plugin="$plugin_name" -v fld="$field" '
-    BEGIN { found=0 }
-    /- name:/ && $0 ~ "\""plugin"\"" { found=1; next }
-    found && $0 ~ fld":" {
-        gsub(/.*'"$field"': "|".*/, "")
-        gsub(/.*'"$field"': /, "")
-        print
-        exit
-    }
-    ' "$registry_file"
+    # Use yq to get the field value
+    yq eval ".plugins[] | select(.name == \"$plugin_name\") | .$field" "$registry_file" 2>/dev/null
 }

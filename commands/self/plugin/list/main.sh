@@ -32,58 +32,72 @@ main() {
     echo -e "${BOLD}Plugins Instalados${NC}"
     echo ""
 
-    if [ ! -d "$PLUGINS_DIR" ]; then
-        log_warning "Diretório de plugins não encontrado"
-        return 0
-    fi
-
     REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
 
-    # Find all plugins
-    local plugin_count=0
-    for plugin_dir in "$PLUGINS_DIR"/*; do
-        [ ! -d "$plugin_dir" ] && continue
-        [ "$(basename "$plugin_dir")" = "registry.yaml" ] && continue
-        [ "$(basename "$plugin_dir")" = "README.md" ] && continue
-
-        local plugin_name=$(basename "$plugin_dir")
-
-        # Counts plugin commands
-        local cmd_count=$(find "$plugin_dir" -name "config.yaml" -type f | wc -l)
-
-        # List categories
-        local categories=$(find "$plugin_dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | tr '\n' ', ' | sed 's/,$//')
-
-        # Get registry information if it exists
-        local source_url version installed_at
-        if [ -f "$REGISTRY_FILE" ]; then
-            source_url=$(registry_get_plugin_info "$REGISTRY_FILE" "$plugin_name" "source")
-            version=$(registry_get_plugin_info "$REGISTRY_FILE" "$plugin_name" "version")
-            installed_at=$(registry_get_plugin_info "$REGISTRY_FILE" "$plugin_name" "installed_at")
-        else
-            source_url="${GRAY}(não registrado)${NC}"
-            version="${GRAY}(desconhecida)${NC}"
-            installed_at="${GRAY}(desconhecida)${NC}"
-        fi
-
-        echo -e "${LIGHT_CYAN}📦 $plugin_name${NC}"
-        [ -n "$source_url" ] && echo -e "   Origem: ${GRAY}$source_url${NC}"
-        [ -n "$version" ] && echo -e "   Versão: ${GRAY}$version${NC}"
-        echo -e "   Comandos: ${GRAY}$cmd_count${NC}"
-        echo -e "   Categorias: ${GRAY}$categories${NC}"
-        [ -n "$installed_at" ] && echo -e "   Instalado: ${GRAY}$installed_at${NC}"
-        echo ""
-
-        ((plugin_count++))
-    done
-
-    if [ $plugin_count -eq 0 ]; then
+    if [ ! -f "$REGISTRY_FILE" ]; then
         log_info "Nenhum plugin instalado"
         echo ""
         echo -e "Para instalar plugins, use: ${LIGHT_CYAN}susa self plugin add <url>${NC}"
-    else
-        echo -e "${GREEN}Total: $plugin_count plugin(s)${NC}"
+        return 0
     fi
+
+    # Read plugins from registry using yq
+    local plugin_count=$(yq eval '.plugins | length' "$REGISTRY_FILE" 2>/dev/null || echo 0)
+
+    if [ "$plugin_count" -eq 0 ]; then
+        log_info "Nenhum plugin instalado"
+        echo ""
+        echo -e "Para instalar plugins, use: ${LIGHT_CYAN}susa self plugin add <url>${NC}"
+        return 0
+    fi
+
+    # Iterate through plugins in registry
+    for ((i=0; i<plugin_count; i++)); do
+        local plugin_name=$(yq eval ".plugins[$i].name" "$REGISTRY_FILE" 2>/dev/null)
+        local source_url=$(yq eval ".plugins[$i].source" "$REGISTRY_FILE" 2>/dev/null)
+        local version=$(yq eval ".plugins[$i].version" "$REGISTRY_FILE" 2>/dev/null)
+        local installed_at=$(yq eval ".plugins[$i].installed_at" "$REGISTRY_FILE" 2>/dev/null)
+        local is_dev=$(yq eval ".plugins[$i].dev" "$REGISTRY_FILE" 2>/dev/null)
+        local cmd_count=$(yq eval ".plugins[$i].commands" "$REGISTRY_FILE" 2>/dev/null)
+        local categories=$(yq eval ".plugins[$i].categories" "$REGISTRY_FILE" 2>/dev/null)
+
+        # Skip if plugin name is null
+        [ "$plugin_name" = "null" ] && continue
+
+        # If commands not in registry, count from directory (fallback)
+        if [ "$cmd_count" = "null" ] || [ -z "$cmd_count" ]; then
+            if [ -d "$PLUGINS_DIR/$plugin_name" ]; then
+                cmd_count=$(find "$PLUGINS_DIR/$plugin_name" -name "config.yaml" -type f | wc -l)
+            else
+                cmd_count=0
+            fi
+        fi
+
+        # If categories not in registry, get from directory (fallback)
+        if [ "$categories" = "null" ] || [ -z "$categories" ]; then
+            if [ -d "$PLUGINS_DIR/$plugin_name" ]; then
+                categories=$(find "$PLUGINS_DIR/$plugin_name" -mindepth 1 -maxdepth 1 -type d ! -name ".git" -exec basename {} \; | tr '\n' ', ' | sed 's/,$//')
+            else
+                categories="${GRAY}(não disponível)${NC}"
+            fi
+        fi
+
+        # Display plugin information
+        if [ "$is_dev" = "true" ]; then
+            echo -e "${LIGHT_CYAN}📦 $plugin_name ${MAGENTA}[DEV]${NC}"
+        else
+            echo -e "${LIGHT_CYAN}📦 $plugin_name${NC}"
+        fi
+
+        [ "$source_url" != "null" ] && echo -e "   Origem: ${GRAY}$source_url${NC}"
+        [ "$version" != "null" ] && echo -e "   Versão: ${GRAY}$version${NC}"
+        echo -e "   Comandos: ${GRAY}$cmd_count${NC}"
+        [ -n "$categories" ] && echo -e "   Categorias: ${GRAY}$categories${NC}"
+        [ "$installed_at" != "null" ] && echo -e "   Instalado: ${GRAY}$installed_at${NC}"
+        echo ""
+    done
+
+    echo -e "${GREEN}Total: $plugin_count plugin(s)${NC}"
 }
 
 # Parse arguments first, before running main

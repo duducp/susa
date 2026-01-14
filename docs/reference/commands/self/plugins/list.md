@@ -8,6 +8,15 @@ Lista todos os plugins instalados no Susa CLI, mostrando suas informações e es
 susa self plugin list
 ```
 
+## Como funciona
+
+O comando lê as informações diretamente do arquivo `registry.yaml`, evitando varredura de diretórios:
+
+- **Metadados em cache**: Quantidade de comandos e categorias são calculados durante a instalação
+- **Performance**: Resposta instantânea mesmo com muitos plugins
+- **Fallback**: Se um plugin não tiver metadados, faz varredura sob demanda
+- **Dev mode**: Plugins em desenvolvimento são marcados com `[DEV]`
+
 ## O que mostra?
 
 Para cada plugin instalado, exibe:

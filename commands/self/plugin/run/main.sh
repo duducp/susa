@@ -130,10 +130,14 @@ add_dev_plugin_to_registry() {
         version=$(cat "$plugin_dir/version.txt")
     fi
 
+    # Count commands and get categories
+    local cmd_count=$(find "$plugin_dir" -name "config.yaml" -type f | wc -l)
+    local categories=$(find "$plugin_dir" -mindepth 1 -maxdepth 1 -type d ! -name ".git" -exec basename {} \; | tr '\n' ',' | sed 's/,$//')
+
     log_debug "[add_dev_plugin_to_registry] Adicionando: $plugin_name (v$version)" >&2
 
     # Use PWD as source for dev plugins and mark as dev
-    registry_add_plugin "$registry_file" "$plugin_name" "$plugin_dir" "$version" "true"
+    registry_add_plugin "$registry_file" "$plugin_name" "$plugin_dir" "$version" "true" "$cmd_count" "$categories"
 }
 
 # Remove dev plugin from registry

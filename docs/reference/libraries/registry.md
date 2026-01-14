@@ -14,6 +14,9 @@ Adiciona um plugin ao registry.
 - `$2` - Nome do plugin
 - `$3` - URL do repositório
 - `$4` - Versão (opcional, padrão: "1.0.0")
+- `$5` - Flag dev (opcional: "true" ou "false", padrão: "false")
+- `$6` - Quantidade de comandos (opcional)
+- `$7` - Categorias separadas por vírgula (opcional)
 
 **Retorno:**
 
@@ -23,7 +26,14 @@ Adiciona um plugin ao registry.
 ```bash
 registry_file="/opt/susa/plugins/registry.yaml"
 
+# Adição simples
 registry_add_plugin "$registry_file" "myplugin" "https://github.com/user/plugin.git" "1.2.0"
+
+# Com metadados completos
+registry_add_plugin "$registry_file" "myplugin" "https://github.com/user/plugin.git" "1.2.0" "false" "5" "backup, deploy"
+
+# Plugin dev
+registry_add_plugin "$registry_file" "myplugin" "/path/to/dev" "1.0.0" "true" "3" "test"
 ```
 
 ### `registry_remove_plugin()`
