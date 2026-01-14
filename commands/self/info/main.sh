@@ -17,6 +17,7 @@ show_help() {
     echo "  incluindo versão, caminhos, status de completação e dependências."
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
+    echo "  -v, --verbose     Modo verbose (debug)"
     echo "  -h, --help        Exibe esta mensagem de ajuda"
     echo ""
     echo -e "${LIGHT_GREEN}Informações Exibidas:${NC}"
@@ -36,7 +37,10 @@ show_help() {
 
 # Main function
 main() {
+    log_debug "Iniciando coleta de informações do sistema"
+
     # Find symlink path
+    log_debug "Procurando caminho do executável susa"
     SYMLINK_PATH=""
     if command -v susa &> /dev/null; then
         SUSA_BIN=$(command -v susa)
@@ -50,7 +54,11 @@ main() {
     fi
 
     # Get completion status using library functions
+    log_debug "Detectando tipo de shell atual"
     CURRENT_SHELL=$(detect_shell_type)
+    log_debug "Shell detectado: $CURRENT_SHELL"
+
+    log_debug "Verificando status de completion"
     COMPLETION_STATUS_INFO=$(get_completion_status "$CURRENT_SHELL")
 
     # Parse completion status (format: status:details:file)
@@ -90,7 +98,25 @@ main() {
 }
 
 # Parse arguments
-parse_simple_help_only "$@"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -v|--verbose)
+            export DEBUG=1
+            log_debug "Modo verbose ativado"
+            shift
+            ;;
+        *)
+            log_error "Argumento inválido: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+done
 
 # Execute main function
 main

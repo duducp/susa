@@ -29,6 +29,8 @@ show_help() {
     echo "  Verifica se há atualizações e, se disponível, baixa e instala a nova versão."
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
+    echo "  -v, --verbose     Modo verbose (debug)"
+    echo "  -q, --quiet       Modo silencioso (mínimo de output)"
     echo "  -h, --help        Exibe esta mensagem de ajuda"
     echo ""
     echo -e "${LIGHT_GREEN}Como funciona:${NC}"
@@ -52,7 +54,9 @@ show_help() {
 
 # Function to get the current version
 get_current_version() {
+    log_debug "Obtendo versão atual do config"
     local version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
+    log_debug "Versão atual: $version"
     echo "$version"
 }
 
@@ -61,15 +65,20 @@ get_latest_version() {
     local latest_version
     local method=""
 
+    log_debug "Tentando obter versão via GitHub API"
+
     # Try to obtain via GitHub API
     latest_version=$(curl -s --max-time 10 --connect-timeout 5 \
         https://api.github.com/repos/duducp/susa/releases/latest 2>/dev/null \
         | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
 
     if [[ -n "$latest_version" ]]; then
+        log_debug "Versão obtida via API: $latest_version"
         echo "$latest_version|api"
         return 0
     fi
+
+    log_debug "API falhou, tentando via arquivo cli.yaml remoto"
 
     # If it fails, try to get the version of cli.yaml from the remote repository
     latest_version=$(curl -s --max-time 10 --connect-timeout 5 \
@@ -77,10 +86,12 @@ get_latest_version() {
         | grep 'version:' | head -1 | sed -E 's/.*version: *"?([^"]+)"?/\1/')
 
     if [[ -n "$latest_version" ]]; then
+        log_debug "Versão obtida via cli.yaml: $latest_version"
         echo "$latest_version|raw"
         return 0
     fi
 
+    log_debug "Não foi possível obter versão remota"
     return 1
 }
 
@@ -89,12 +100,16 @@ version_greater_than() {
     local version1=$1
     local version2=$2
 
+    log_debug "Comparando versões: $version1 vs $version2"
+
     # Remove prefix 'v' if exists
     version1=${version1#v}
     version2=${version2#v}
 
     # Uses sort -V for version comparison
     local higher=$(echo -e "$version1\n$version2" | sort -V | tail -n1)
+
+    log_debug "Versão maior: $higher"
 
     [[ "$version2" == "$higher" && "$version1" != "$version2" ]]
 }
@@ -103,6 +118,7 @@ version_greater_than() {
 perform_update() {
     log_info "Iniciando atualização do Susa CLI..."
     log_debug "Diretório temporário: $TEMP_DIR"
+    log_debug "CLI_DIR: $CLI_DIR"
 
     # Clones the repository
     cd "$TEMP_DIR"
@@ -119,6 +135,7 @@ perform_update() {
     cd susa-update
 
     # Check if cli.yaml exists
+    log_debug "Verificando arquivo cli.yaml"
     if [ ! -f "cli.yaml" ]; then
         log_error "Arquivo de configuração não encontrado na versão baixada"
         return 1
@@ -128,11 +145,12 @@ perform_update() {
 
     # Preserve critical files before updating
     log_info "Preservando configurações de plugins..."
+    log_debug "Verificando existência de registry.yaml"
     local backup_registry=""
     if [ -f "$CLI_DIR/plugins/registry.yaml" ]; then
         backup_registry="$TEMP_DIR/registry.yaml.backup"
         cp "$CLI_DIR/plugins/registry.yaml" "$backup_registry"
-        log_debug "Backup do registry de plugins criado"
+        log_debug "Backup do registry de plugins criado em: $backup_registry"
     else
         log_debug "Nenhum registry de plugins para preservar"
     fi
@@ -142,15 +160,18 @@ perform_update() {
     log_debug "Destino: $CLI_DIR"
 
     # Remove .git directory before copying
+    log_debug "Removendo diretório .git"
     rm -rf .git
     log_debug "Diretório .git removido"
 
     # Copy all files to the CLI directory
+    log_debug "Copiando arquivos para $CLI_DIR"
     cp -rf ./* "$CLI_DIR/"
     log_debug "Arquivos copiados com sucesso"
 
     # Restores plugin registry if there was a backup
     if [ -n "$backup_registry" ] && [ -f "$backup_registry" ]; then
+        log_debug "Restaurando registry de plugins"
         cp "$backup_registry" "$CLI_DIR/plugins/registry.yaml"
         log_debug "Registry de plugins restaurado"
     fi
@@ -159,6 +180,7 @@ perform_update() {
 
     # Update lock file after successful update
     log_info "Atualizando arquivo de cache..."
+    log_debug "Executando: $CORE_DIR/susa self lock"
     if "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
         log_debug "Lock file atualizado com sucesso"
     else
@@ -237,8 +259,30 @@ main() {
     fi
 }
 
-# Parse arguments first, before running main
-parse_simple_help_only "$@"
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -v|--verbose)
+            export DEBUG=1
+            log_debug "Modo verbose ativado"
+            shift
+            ;;
+        -q|--quiet)
+            export SILENT=1
+            shift
+            ;;
+        *)
+            log_error "Argumento inválido: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+done
 
 # Execute main function
 main

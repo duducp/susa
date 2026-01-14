@@ -21,6 +21,8 @@ show_help() {
     echo "  fish              Gera completion para Fish"
     echo ""
     echo -e "${LIGHT_GREEN}Options:${NC}"
+    echo "  -v, --verbose     Modo verbose (debug)"
+    echo "  -q, --quiet       Modo silencioso (mínimo de output)"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo "  -i, --install     Instala o completion no shell atual"
     echo "  --uninstall       Remove o completion do shell"
@@ -438,6 +440,7 @@ FISH_COMPLETION_EOF
 # Install autocomplete for Bash
 install_bash_completion() {
     log_info "Instalando o autocompletar para Bash..."
+    log_debug "Verificando se completion já está instalado"
 
     # Check if already installed
     if is_completion_installed "bash"; then
@@ -451,12 +454,19 @@ install_bash_completion() {
     local completion_file=$(get_completion_file_path "bash")
     local shell_config=$(detect_shell_config)
 
+    log_debug "Diretório de completion: $completion_dir"
+    log_debug "Arquivo de completion: $completion_file"
+    log_debug "Config do shell: $shell_config"
+
     # Create directory if it doesn't exist
     mkdir -p "$completion_dir"
+    log_debug "Diretório criado/verificado"
 
     # Generate and save the script
+    log_debug "Gerando script de completion"
     generate_bash_completion > "$completion_file"
     chmod +x "$completion_file"
+    log_debug "Script gerado e permissões configuradas"
 
     log_success "Autocompletar instalado em: $completion_file"
     echo ""
@@ -468,6 +478,7 @@ install_bash_completion() {
 # Install completion for Zsh
 install_zsh_completion() {
     log_info "Instalando autocompletar para Zsh..."
+    log_debug "Verificando se completion já está instalado"
 
     # Check if already installed
     if is_completion_installed "zsh"; then
@@ -481,12 +492,19 @@ install_zsh_completion() {
     local completion_file=$(get_completion_file_path "zsh")
     local shell_config=$(detect_shell_config)
 
+    log_debug "Diretório de completion: $completion_dir"
+    log_debug "Arquivo de completion: $completion_file"
+    log_debug "Config do shell: $shell_config"
+
     # Create directory if it doesn't exist
     mkdir -p "$completion_dir"
+    log_debug "Diretório criado/verificado"
 
     # Generate and save the script
+    log_debug "Gerando script de completion"
     generate_zsh_completion > "$completion_file"
     chmod +x "$completion_file"
+    log_debug "Script gerado e permissões configuradas"
 
     # Add to path if necessary
     if [ -f "$shell_config" ]; then
@@ -508,6 +526,7 @@ install_zsh_completion() {
 # Install completion for Fish
 install_fish_completion() {
     log_info "Instalando autocompletar para Fish..."
+    log_debug "Verificando se completion já está instalado"
 
     # Check if already installed
     if is_completion_installed "fish"; then
@@ -520,30 +539,32 @@ install_fish_completion() {
     local completion_dir=$(get_completion_dir_path "fish")
     local completion_file=$(get_completion_file_path "fish")
 
+    log_debug "Diretório de completion: $completion_dir"
+    log_debug "Arquivo de completion: $completion_file"
+
     # Create directory if it doesn't exist
     mkdir -p "$completion_dir"
+    log_debug "Diretório criado/verificado"
 
     # Generate and save the script
+    log_debug "Gerando script de completion"
     generate_fish_completion > "$completion_file"
     chmod +x "$completion_file"
+    log_debug "Script gerado e permissões configuradas"
 
     log_success "Autocompletar instalado em: $completion_file"
     echo ""
     echo -e "${LIGHT_YELLOW}Próximos passos:${NC}"
     echo -e "  1. O Fish carrega automaticamente os completions"
     echo -e "  2. Abra um novo terminal ou execute: ${LIGHT_CYAN}fish${NC}"
-    echo -e "  3. Teste: ${LIGHT_CYAN}susa <TAB>${NC}"
-}
-
-# Remove completion
-uninstall_completion() {
-    log_info "Removendo o autocompletar..."
+    log_debug "Procurando completions instalados"
 
     local removed=false
 
     # Remove bash completion
     if is_completion_installed "bash"; then
         local bash_completion=$(get_completion_file_path "bash")
+        log_debug "Removendo completion bash: $bash_completion"
         rm "$bash_completion"
         log_debug "Removido: $bash_completion"
         removed=true
@@ -552,8 +573,16 @@ uninstall_completion() {
     # Remove zsh completion
     if is_completion_installed "zsh"; then
         local zsh_completion=$(get_completion_file_path "zsh")
+        log_debug "Removendo completion zsh: $zsh_completion"
         rm "$zsh_completion"
         log_debug "Removido: $zsh_completion"
+        removed=true
+    fi
+
+    # Remove fish completion
+    if is_completion_installed "fish"; then
+        local fish_completion=$(get_completion_file_path "fish")
+        log_debug "Removendo completion fish: $fish_completion"
         removed=true
     fi
 
@@ -578,8 +607,11 @@ uninstall_completion() {
 handle_install() {
     local shell_type="$1"
 
+    log_debug "Iniciando instalação de completion"
+
     # Detecta shell se não especificado
     if [ -z "$shell_type" ]; then
+        log_debug "Shell não especificado, detectando automaticamente"
         shell_type=$(detect_shell_type)
         if [ "$shell_type" = "unknown" ]; then
             log_error "Não foi possível detectar seu shell. Especifique: bash ou zsh"
@@ -648,6 +680,15 @@ main() {
             -h|--help)
                 show_help
                 return 0
+                ;;
+            -v|--verbose)
+                export DEBUG=1
+                log_debug "Modo verbose ativado"
+                shift
+                ;;
+            -q|--quiet)
+                export SILENT=1
+                shift
                 ;;
             -i|--install)
                 action="install"

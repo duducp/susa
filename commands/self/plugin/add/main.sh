@@ -37,6 +37,8 @@ show_help() {
     echo -e "  susa self plugin add user/private-plugin --gitlab --ssh"
     echo ""
     echo -e "${LIGHT_GREEN}Opções:${NC}"
+    echo -e "  -v, --verbose     Modo verbose (debug)"
+    echo -e "  -q, --quiet       Modo silencioso (mínimo de output)"
     echo -e "  --gitlab      Usa GitLab (para formato user/repo)"
     echo -e "  --bitbucket   Usa Bitbucket (para formato user/repo)"
     echo -e "  --ssh         Força uso de SSH (recomendado para repos privados)"
@@ -51,24 +53,31 @@ show_help() {
 check_plugin_already_installed() {
     local plugin_name="$1"
 
+    log_debug "Verificando se plugin '$plugin_name' já está instalado"
+
     if [ ! -d "$PLUGINS_DIR/$plugin_name" ]; then
+        log_debug "Plugin não encontrado no diretório de plugins"
         return 1
     fi
 
     log_warning "Plugin '$plugin_name' já está instalado"
+    log_debug "Diretório encontrado: $PLUGINS_DIR/$plugin_name"
     echo ""
 
     # Show plugin information
     local registry_file="$PLUGINS_DIR/registry.yaml"
     if [ -f "$registry_file" ]; then
+        log_debug "Lendo informações do registry"
         local current_version=$(registry_get_plugin_info "$registry_file" "$plugin_name" "version")
         local install_date=$(registry_get_plugin_info "$registry_file" "$plugin_name" "installed_at")
 
         if [ -n "$current_version" ]; then
             echo -e "  ${GRAY}Versão atual: $current_version${NC}"
+            log_debug "Versão atual: $current_version"
         fi
         if [ -n "$install_date" ]; then
             echo -e "  ${GRAY}Instalado em: $install_date${NC}"
+            log_debug "Instalado em: $install_date"
         fi
     fi
 
@@ -138,11 +147,20 @@ main() {
     local use_ssh="${2:-false}"
     local provider="${3:-github}"
 
+    log_debug "=== Iniciando instalação de plugin ==="
+    log_debug "Plugin URL: $plugin_url"
+    log_debug "Use SSH: $use_ssh"
+    log_debug "Provider: $provider"
+
     # Normalize URL (convert user/repo to full URL)
+    log_debug "Normalizando URL do plugin"
     plugin_url=$(normalize_git_url "$plugin_url" "$use_ssh" "$provider")
+    log_debug "URL normalizada: $plugin_url"
 
     # Extract plugin name from URL
+    log_debug "Extraindo nome do plugin da URL"
     local plugin_name=$(extract_plugin_name "$plugin_url")
+    log_debug "Nome do plugin: $plugin_name"
 
     log_info "Instalando plugin: $plugin_name"
     log_debug "URL: $plugin_url"
@@ -150,16 +168,20 @@ main() {
     echo ""
 
     # Check if plugin is already installed
+    log_debug "Verificando se plugin já está instalado"
     if check_plugin_already_installed "$plugin_name"; then
         exit 0
     fi
 
     # Check if git is installed
+    log_debug "Verificando se Git está instalado"
     ensure_git_installed || exit 1
 
     # Validate repository access
+    log_debug "Validando acesso ao repositório"
     if ! validate_repo_access "$plugin_url"; then
         log_error "Não foi possível acessar o repositório"
+        log_debug "Falha na validação de acesso ao repositório"
         echo ""
         echo -e "${LIGHT_YELLOW}Possíveis causas:${NC}"
         echo -e "  • Repositório não existe"
@@ -171,35 +193,53 @@ main() {
         echo -e "  • Configure credential helper: ${CYAN}git config --global credential.helper store${NC}"
         exit 1
     fi
+    log_debug "Acesso ao repositório validado com sucesso"
 
     # Create plugins directory if it doesn't exist
+    log_debug "Criando diretório de plugins se necessário: $PLUGINS_DIR"
     mkdir -p "$PLUGINS_DIR"
 
     # Clone the repository
     log_info "Clonando de $plugin_url..."
+    log_debug "Destino: $PLUGINS_DIR/$plugin_name"
     if ! clone_plugin "$plugin_url" "$PLUGINS_DIR/$plugin_name"; then
         log_error "Falha ao clonar o repositório"
+        log_debug "Removendo diretório parcial"
         rm -rf "$PLUGINS_DIR/$plugin_name"
         exit 1
     fi
+    log_debug "Clone concluído com sucesso"
 
     # Detect plugin version
+    log_debug "Detectando versão do plugin"
     local plugin_version=$(detect_plugin_version "$PLUGINS_DIR/$plugin_name")
+    log_debug "Versão detectada: $plugin_version"
 
     # Count installed commands and get categories
+    log_debug "Contando comandos do plugin"
     local cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$plugin_name")
+    log_debug "Total de comandos: $cmd_count"
+
+    log_debug "Obtendo categorias do plugin"
     local categories=$(get_plugin_categories "$PLUGINS_DIR/$plugin_name")
+    log_debug "Categorias: $categories"
 
     # Register in registry.yaml
     local registry_file="$PLUGINS_DIR/registry.yaml"
+    log_debug "Registry file: $registry_file"
+    log_debug "Garantindo existência do registry"
     ensure_registry_exists "$registry_file"
+
+    log_debug "Registrando plugin no registry"
     register_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version" "$cmd_count" "$categories"
 
     # Show success message
     show_installation_success "$plugin_name" "$plugin_url" "$plugin_version" "$cmd_count"
 
     # Update lock file if it exists
+    log_debug "Atualizando lock file"
     update_lock_file
+    log_debug "=== Instalação concluída ==="
 }
 
 # Parse arguments first, before running main
@@ -210,6 +250,15 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             show_help
             exit 0
+            ;;
+        -v|--verbose)
+            export DEBUG=1
+            log_debug "Modo verbose ativado"
+            shift
+            ;;
+        -q|--quiet)
+            export SILENT=1
+            shift
             ;;
         --ssh)
             USE_SSH="true"
