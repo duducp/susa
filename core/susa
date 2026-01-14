@@ -186,7 +186,7 @@ list_ungrouped_commands() {
         print_command_line "$category" "$cmd" "$cmd_desc"
     done
 
-    echo "$has_compatible_commands"
+    [ "$has_compatible_commands" = "true" ] && return 0 || return 1
 }
 
 # List grouped commands
@@ -198,8 +198,7 @@ list_grouped_commands() {
     local has_compatible_commands=false
 
     if [ -z "$groups" ]; then
-        echo "$has_compatible_commands"
-        return 0
+        return 1
     fi
 
     while IFS= read -r group; do
@@ -225,7 +224,7 @@ list_grouped_commands() {
         done
     done <<< "$groups"
 
-    echo "$has_compatible_commands"
+    [ "$has_compatible_commands" = "true" ] && return 0 || return 1
 }
 
 # List available commands and subcategories for a given category
@@ -270,14 +269,16 @@ list_commands() {
         echo -e "${LIGHT_GREEN}Comandos:${NC}"
 
         # List commands without a group
-        local has_ungrouped=$(list_ungrouped_commands "$category" "$commands" "$current_os")
+        list_ungrouped_commands "$category" "$commands" "$current_os"
+        local has_ungrouped=$?
 
         # List grouped commands
         local groups=$(get_category_groups "$GLOBAL_CONFIG_FILE" "$category" "$current_os")
-        local has_grouped=$(list_grouped_commands "$category" "$commands" "$current_os" "$groups")
+        list_grouped_commands "$category" "$commands" "$current_os" "$groups"
+        local has_grouped=$?
 
         # Show message if no compatible commands found
-        if [ "$has_ungrouped" = "false" ] && [ "$has_grouped" = "false" ] && [ -z "$subcategories" ]; then
+        if [ $has_ungrouped -ne 0 ] && [ $has_grouped -ne 0 ] && [ -z "$subcategories" ]; then
             echo -e "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
         fi
     fi
@@ -411,7 +412,7 @@ main() {
     # If no arguments remain, list commands/subcategories for the category
     if [ ${#remaining_args[@]} -eq 0 ]; then
         list_commands "$category"
-        exit 1
+        exit 0
     fi
 
     # The next argument is the command
