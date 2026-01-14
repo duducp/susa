@@ -159,11 +159,11 @@ install_poetry() {
 
     # Download and install Poetry using official installer
     log_info "Baixando instalador do Poetry..."
-    log_debug "URL: https://install.python-poetry.org"
+    log_debug "URL: ${POETRY_INSTALL_URL:-https://install.python-poetry.org}"
 
     local install_script="/tmp/poetry-installer-$$.py"
 
-    if ! curl -sSL https://install.python-poetry.org -o "$install_script"; then
+    if ! curl -sSL ${POETRY_INSTALL_URL:-https://install.python-poetry.org} -o "$install_script"; then
         log_error "Falha ao baixar o instalador do Poetry"
         rm -f "$install_script"
         return 1
@@ -306,11 +306,11 @@ uninstall_poetry() {
 
     # Download uninstaller
     log_info "Baixando desinstalador do Poetry..."
-    log_debug "URL: https://install.python-poetry.org"
+    log_debug "URL: ${POETRY_INSTALL_URL:-https://install.python-poetry.org}"
 
     local uninstall_script="/tmp/poetry-uninstaller-$$.py"
 
-    if ! curl -sSL https://install.python-poetry.org -o "$uninstall_script"; then
+    if ! curl -sSL ${POETRY_INSTALL_URL:-https://install.python-poetry.org} -o "$uninstall_script"; then
         log_error "Falha ao baixar o desinstalador"
         rm -f "$uninstall_script"
 

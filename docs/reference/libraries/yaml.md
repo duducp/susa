@@ -201,6 +201,89 @@ for category in $categories; do
 done
 ```
 
+## Funções - Variáveis de Ambiente
+
+### `load_command_envs()`
+
+> **✨ Novo na versão 1.0+**
+
+Carrega e exporta variáveis de ambiente definidas na seção `envs` do config.yaml de um comando.
+
+**Parâmetros:**
+
+- `$1` - Caminho do arquivo config.yaml do comando
+
+**Comportamento:**
+
+- Lê a seção `envs:` do config.yaml
+- Exporta cada variável como variável de ambiente
+- Expande variáveis como `$HOME`, `$USER`, etc.
+- Ignora se a seção `envs` não existir
+- Chamado automaticamente pelo framework antes de executar o comando
+
+**Uso:**
+
+```bash
+# Carregamento automático (framework faz isso)
+load_command_envs "$CONFIG_FILE"
+
+# No script do comando, as variáveis já estão disponíveis
+local timeout="${MY_TIMEOUT:-30}"
+local url="${MY_API_URL:-https://default.com}"
+```
+
+**Exemplo de config.yaml:**
+
+```yaml
+name: "My Command"
+description: "Meu comando"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux"]
+envs:
+  MY_API_URL: "https://api.example.com"
+  MY_TIMEOUT: "30"
+  MY_INSTALL_DIR: "$HOME/.myapp"
+  MY_MAX_RETRIES: "3"
+```
+
+**Exemplo de uso no script:**
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+
+# Variáveis do config.yaml já estão exportadas
+install_app() {
+    local api_url="${MY_API_URL:-https://api.example.com}"
+    local timeout="${MY_TIMEOUT:-30}"
+    local install_dir="${MY_INSTALL_DIR:-$HOME/.myapp}"
+
+    log_info "Instalando em: $install_dir"
+    curl --max-time "$timeout" "$api_url/download" -o /tmp/app.tar.gz
+    tar -xzf /tmp/app.tar.gz -C "$install_dir"
+}
+
+install_app "$@"
+```
+
+**Características:**
+
+- ✅ Expansão automática de variáveis (`$HOME` → `/home/user`)
+- ✅ Isolamento entre comandos (não vazam)
+- ✅ Sobrescrita por variáveis de sistema (`VAR=value comando`)
+- ✅ Suporta qualquer variável de ambiente válida
+
+**Notas:**
+
+- Não é necessário chamar manualmente; o framework faz isso automaticamente
+- Use sempre valores de fallback no script: `${VAR:-default}`
+- Variáveis são isoladas; cada comando tem seu próprio ambiente
+
+> **📖 Para mais detalhes**, veja [Guia de Variáveis de Ambiente](../../guides/envs.md).
+
 ## Boas Práticas
 
 1. Sempre defina `GLOBAL_CONFIG_FILE` e `CLI_DIR` no início

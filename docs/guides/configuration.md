@@ -186,6 +186,419 @@ GLOBAL_CONFIG_FILE=/tmp/test-cli.yaml ./susa --version
 
 ---
 
+## 🌍 Variáveis de Ambiente por Comando
+
+O Susa CLI permite definir variáveis de ambiente específicas para cada comando através da seção `envs` no `config.yaml`.
+
+### Como Funciona
+
+Cada comando pode ter suas próprias variáveis de ambiente que são automaticamente carregadas e exportadas **apenas durante a execução daquele comando**. Isso garante isolamento e evita conflitos entre comandos.
+
+### Definindo Variáveis no config.yaml
+
+No arquivo `config.yaml` do seu comando, adicione a seção `envs`:
+
+```yaml
+name: "ASDF"
+description: "Instala ASDF (gerenciador de versões polyglot)"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux", "mac"]
+envs:
+  # URLs do repositório
+  ASDF_GITHUB_API_URL: "https://api.github.com/repos/asdf-vm/asdf/releases/latest"
+  ASDF_GITHUB_REPO_URL: "https://github.com/asdf-vm/asdf.git"
+  ASDF_RELEASES_BASE_URL: "https://github.com/asdf-vm/asdf/releases/download"
+
+  # Timeouts (em segundos)
+  ASDF_API_MAX_TIME: "10"
+  ASDF_API_CONNECT_TIMEOUT: "5"
+  ASDF_GIT_TIMEOUT: "5"
+
+  # Configurações de download
+  ASDF_DOWNLOAD_CONNECT_TIMEOUT: "30"
+  ASDF_DOWNLOAD_MAX_TIME: "300"
+  ASDF_DOWNLOAD_RETRY: "3"
+  ASDF_DOWNLOAD_RETRY_DELAY: "2"
+
+  # Diretórios (suporta expansão de variáveis)
+  ASDF_INSTALL_DIR: "$HOME/.asdf"
+  ASDF_LOCAL_BIN_DIR: "$HOME/.local/bin"
+```
+
+### Usando no Script
+
+No `main.sh` do comando, use as variáveis com valores padrão de fallback:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+
+# Usar variáveis com fallback para compatibilidade
+get_latest_version() {
+    local api_url="${ASDF_GITHUB_API_URL:-https://api.github.com/repos/asdf-vm/asdf/releases/latest}"
+    local max_time="${ASDF_API_MAX_TIME:-10}"
+    local connect_timeout="${ASDF_API_CONNECT_TIMEOUT:-5}"
+
+    curl -s --max-time "$max_time" --connect-timeout "$connect_timeout" "$api_url"
+}
+
+install_asdf() {
+    local install_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
+    local download_timeout="${ASDF_DOWNLOAD_MAX_TIME:-300}"
+
+    echo "Instalando em: $install_dir"
+    curl -L --max-time "$download_timeout" "$download_url" -o /tmp/asdf.tar.gz
+}
+```
+
+### Características das Envs por Comando
+
+#### ✅ Expansão de Variáveis
+
+Variáveis como `$HOME`, `$USER`, etc., são automaticamente expandidas:
+
+```yaml
+envs:
+  MY_CONFIG_DIR: "$HOME/.config/myapp"  # Expande para /home/user/.config/myapp
+  BACKUP_PATH: "$HOME/backups/$USER"     # Expande para /home/user/backups/user
+```
+
+#### 🔒 Isolamento Total
+
+As variáveis são **isoladas por comando**. Não há vazamento entre comandos:
+
+```bash
+# Comando 1
+$ susa setup asdf
+  → ASDF_INSTALL_DIR disponível
+  → FIM (variável descartada)
+
+# Comando 2
+$ susa setup docker
+  → ASDF_INSTALL_DIR NÃO está disponível
+  → DOCKER_* envs estão disponíveis
+```
+
+#### 🎯 Escopo de Execução
+
+```text
+Usuario executa comando
+        ↓
+[core/susa] execute_command()
+        ↓
+Valida e localiza config.yaml
+        ↓
+[yaml.sh] load_command_envs(config.yaml)
+        ↓
+Exporta todas as envs (com expansão)
+        ↓
+Executa main.sh
+        ↓
+Script usa ${VAR:-default}
+        ↓
+Fim da execução (envs descartadas)
+```
+
+### Vantagens
+
+✅ **Configurações Centralizadas**: Todos os parâmetros em um único lugar
+✅ **Fácil Customização**: Basta editar o YAML, sem tocar no código
+✅ **Valores de Fallback**: Scripts continuam funcionando sem as envs
+✅ **Expansão Automática**: Variáveis como `$HOME` são expandidas
+✅ **Isolamento**: Comandos não interferem uns nos outros
+✅ **Sem Código Extra**: Framework cuida do carregamento automaticamente
+
+### Boas Práticas
+
+**1. Use Prefixos Únicos**
+
+```yaml
+envs:
+  ASDF_INSTALL_DIR: "..."      # ✅ Prefixo único
+  INSTALL_DIR: "..."           # ❌ Muito genérico
+```
+
+**2. Sempre Forneça Fallbacks**
+
+```bash
+# ✅ Bom: funciona com ou sem env
+local dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
+
+# ❌ Ruim: quebra sem a env
+local dir="$ASDF_INSTALL_DIR"
+```
+
+**3. Documente as Variáveis**
+
+```yaml
+envs:
+  # Timeout máximo para API do GitHub (em segundos)
+  # Padrão: 10
+  ASDF_API_MAX_TIME: "10"
+
+  # Diretório de instalação do ASDF
+  # Padrão: $HOME/.asdf
+  ASDF_INSTALL_DIR: "$HOME/.asdf"
+```
+
+**4. Use Tipos Apropriados**
+
+```yaml
+envs:
+  # Números devem ser strings no YAML
+  TIMEOUT: "30"              # ✅ String
+  RETRY_COUNT: "3"           # ✅ String
+
+  # Booleanos também
+  ENABLE_CACHE: "true"       # ✅ String
+
+  # URLs e paths
+  API_URL: "https://..."     # ✅ String
+  INSTALL_DIR: "$HOME/..."   # ✅ String
+```
+
+### Exemplo Completo
+
+**config.yaml:**
+
+```yaml
+name: "Docker"
+description: "Instala Docker Engine"
+entrypoint: "main.sh"
+sudo: true
+os: ["linux", "mac"]
+envs:
+  # URLs
+  DOCKER_REPO_URL: "https://download.docker.com"
+  DOCKER_GPG_KEY_URL: "https://download.docker.com/linux/ubuntu/gpg"
+
+  # Configurações
+  DOCKER_DATA_ROOT: "/var/lib/docker"
+  DOCKER_LOG_LEVEL: "info"
+  DOCKER_MAX_CONCURRENT_DOWNLOADS: "3"
+
+  # Timeouts
+  DOCKER_DOWNLOAD_TIMEOUT: "300"
+  DOCKER_STARTUP_TIMEOUT: "60"
+```
+
+**main.sh:**
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+source "$LIB_DIR/logger.sh"
+
+download_docker() {
+    local repo_url="${DOCKER_REPO_URL:-https://download.docker.com}"
+    local timeout="${DOCKER_DOWNLOAD_TIMEOUT:-300}"
+
+    log_info "Baixando Docker de: $repo_url"
+    curl -L --max-time "$timeout" "$repo_url/install.sh" | sudo bash
+}
+
+configure_docker() {
+    local data_root="${DOCKER_DATA_ROOT:-/var/lib/docker}"
+    local log_level="${DOCKER_LOG_LEVEL:-info}"
+
+    cat > /etc/docker/daemon.json <<EOF
+{
+  "data-root": "$data_root",
+  "log-level": "$log_level"
+}
+EOF
+}
+
+main() {
+    download_docker
+    configure_docker
+    log_success "Docker instalado com sucesso!"
+}
+
+main "$@"
+```
+
+---
+
+## 🌐 Variáveis de Ambiente Globais
+
+Para configurações que devem estar disponíveis em **todos os comandos**, use `config/settings.conf`.
+
+### Configuração Global
+
+**Localização:** `config/settings.conf`
+
+```bash
+# config/settings.conf
+
+# Configurações globais da API
+API_ENDPOINT="https://api.example.com"
+API_TOKEN="your-token-here"
+
+# Configurações de rede
+HTTP_TIMEOUT="30"
+HTTP_RETRY="3"
+
+# Diretórios globais
+BACKUP_DIR="/var/backups"
+LOG_DIR="/var/log/susa"
+
+# Debug
+DEBUG_MODE="false"
+```
+
+### Carregamento Automático
+
+O arquivo `config/settings.conf` é carregado **automaticamente** no início da execução do CLI (se existir):
+
+```bash
+# core/susa (linha 46)
+[ -f "$CLI_DIR/config/settings.conf" ] && source "$CLI_DIR/config/settings.conf"
+```
+
+### Usando em Comandos
+
+As variáveis globais estão automaticamente disponíveis:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+
+# Variáveis do settings.conf já estão disponíveis
+echo "API Endpoint: ${API_ENDPOINT:-não configurado}"
+echo "HTTP Timeout: ${HTTP_TIMEOUT:-30}"
+echo "Backup Dir: ${BACKUP_DIR:-/var/backups}"
+
+# Fazer requisição usando config global
+curl --max-time "${HTTP_TIMEOUT:-30}" \
+     --retry "${HTTP_RETRY:-3}" \
+     -H "Authorization: Bearer ${API_TOKEN}" \
+     "${API_ENDPOINT}/status"
+```
+
+### Precedência de Variáveis
+
+Quando a mesma variável existe em múltiplos lugares:
+
+```text
+1. Variáveis de Ambiente do Sistema (maior precedência)
+2. Variáveis do Comando (config.yaml envs:)
+3. Variáveis Globais (config/settings.conf)
+4. Valores Padrão no Script (fallback)
+```
+
+**Exemplo:**
+
+```bash
+# settings.conf
+TIMEOUT="30"
+
+# comando/config.yaml
+envs:
+  TIMEOUT: "60"
+
+# No script
+timeout="${TIMEOUT:-10}"  # Usará 60 (do comando)
+
+# Mas se executar com:
+TIMEOUT=90 susa comando   # Usará 90 (do sistema)
+```
+
+### Quando Usar Cada Tipo
+
+| Tipo | Quando Usar | Exemplo |
+|------|-------------|---------|
+| **Envs por Comando** | Configurações específicas do comando | URLs específicas, diretórios de instalação, timeouts customizados |
+| **Envs Globais** | Configurações compartilhadas entre comandos | Credenciais de API, configurações de rede, paths globais |
+| **Variáveis de Sistema** | Override temporário durante execução | `DEBUG=true susa comando`, `TIMEOUT=90 susa comando` |
+| **Valores Padrão** | Fallback quando nada está configurado | `${VAR:-valor_padrao}` |
+
+### Exemplo Prático Completo
+
+**config/settings.conf (global):**
+
+```bash
+# Configurações de rede globais
+HTTP_TIMEOUT="30"
+HTTP_RETRY="3"
+API_BASE_URL="https://api.example.com"
+```
+
+**commands/deploy/app/config.yaml:**
+
+```yaml
+name: "Deploy App"
+description: "Deploy da aplicação"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux"]
+envs:
+  # Específicas deste comando
+  DEPLOY_TARGET_DIR: "/var/www/app"
+  DEPLOY_BACKUP_ENABLED: "true"
+  DEPLOY_ROLLBACK_ENABLED: "true"
+```
+
+**commands/deploy/app/main.sh:**
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+
+deploy_app() {
+    # Usa configuração global
+    local api_url="${API_BASE_URL:-https://api.example.com}"
+    local timeout="${HTTP_TIMEOUT:-30}"
+
+    # Usa configuração do comando
+    local target_dir="${DEPLOY_TARGET_DIR:-/var/www/app}"
+    local backup="${DEPLOY_BACKUP_ENABLED:-true}"
+
+    log_info "Fazendo deploy para: $target_dir"
+    log_info "API URL: $api_url"
+
+    if [ "$backup" = "true" ]; then
+        log_info "Criando backup..."
+        cp -r "$target_dir" "${target_dir}.backup.$(date +%s)"
+    fi
+
+    # Deploy via API
+    curl --max-time "$timeout" \
+         --retry "${HTTP_RETRY:-3}" \
+         -X POST "$api_url/deploy" \
+         -d '{"target": "'"$target_dir"'"}'
+}
+
+deploy_app "$@"
+```
+
+**Execução:**
+
+```bash
+# Usa todas as configs definidas
+$ susa deploy app
+
+# Override de config global
+$ HTTP_TIMEOUT=60 susa deploy app
+
+# Override de config do comando
+$ DEPLOY_TARGET_DIR=/tmp/app susa deploy app
+
+# Override de múltiplas
+$ API_BASE_URL=https://staging.api.com DEPLOY_BACKUP_ENABLED=false susa deploy app
+```
+
+---
+
 ## 🔧 Personalizações Comuns
 
 ### Alterar Nome do CLI
@@ -538,20 +951,65 @@ DEBUG=true susa setup docker
 **Configurações principais:**
 
 1. **`cli.yaml`** - Metadados globais (obrigatório)
-2. **`<comando>/config.yaml`** - Config de cada comando (obrigatório)
-3. **`config/settings.conf`** - Configurações customizadas (opcional)
-4. **Variáveis de ambiente** - `DEBUG`, `CLI_DIR`, etc. (opcional)
+2. **`<comando>/config.yaml`** - Config de cada comando com envs (obrigatório)
+3. **`config/settings.conf`** - Variáveis globais compartilhadas (opcional)
+4. **Variáveis de ambiente do sistema** - Override temporário (opcional)
 
-**Hierarquia de precedência:**
+**Tipos de Variáveis de Ambiente:**
+
+| Tipo | Arquivo | Escopo | Uso |
+|------|---------|--------|-----|
+| **Por Comando** | `config.yaml` (seção `envs:`) | Apenas durante execução do comando | URLs, timeouts, paths específicos |
+| **Globais** | `config/settings.conf` | Todos os comandos | Credenciais, configs de rede |
+| **Sistema** | Linha de comando | Override temporário | `DEBUG=true susa comando` |
+
+**Hierarquia de precedência (maior → menor):**
 
 ```text
-Variáveis de Ambiente
+1. Variáveis de Ambiente do Sistema (export VAR=value ou VAR=value comando)
     ↓
-config/settings.conf
+2. Envs do Comando (config.yaml → envs:)
     ↓
-<comando>/config.yaml
+3. Variáveis Globais (config/settings.conf)
     ↓
-cli.yaml (defaults)
+4. Valores Padrão no Script (${VAR:-default})
 ```
 
-**Para começar:** Apenas `cli.yaml` e `<comando>/config.yaml` são necessários!
+**Características das Envs por Comando:**
+
+✅ Carregamento automático antes da execução
+✅ Expansão de variáveis (`$HOME`, `$USER`)
+✅ Isolamento total entre comandos
+✅ Suporte a fallback (`${VAR:-default}`)
+✅ Sem código adicional necessário
+
+**Para começar:**
+
+- **Básico:** Apenas `cli.yaml` e `<comando>/config.yaml` são necessários
+- **Com envs por comando:** Adicione seção `envs:` no `config.yaml` do comando
+- **Com envs globais:** Crie `config/settings.conf` com variáveis compartilhadas
+
+**Exemplo mínimo com envs:**
+
+```yaml
+# commands/setup/docker/config.yaml
+name: "Docker"
+description: "Instala Docker"
+entrypoint: "main.sh"
+sudo: true
+os: ["linux"]
+envs:
+  DOCKER_REPO_URL: "https://download.docker.com"
+  DOCKER_TIMEOUT: "300"
+```
+
+```bash
+# commands/setup/docker/main.sh
+#!/bin/bash
+setup_command_env
+
+repo="${DOCKER_REPO_URL:-https://download.docker.com}"
+timeout="${DOCKER_TIMEOUT:-300}"
+
+curl --max-time "$timeout" "$repo/install.sh" | sudo bash
+```

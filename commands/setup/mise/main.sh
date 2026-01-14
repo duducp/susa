@@ -43,7 +43,7 @@ show_help() {
 # Get latest Mise version from GitHub
 get_latest_mise_version() {
     # Try to get the latest version via GitHub API
-    local latest_version=$(curl -s --max-time 10 --connect-timeout 5 https://api.github.com/repos/jdx/mise/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    local latest_version=$(curl -s --max-time ${MISE_API_MAX_TIME:-10} --connect-timeout ${MISE_API_CONNECT_TIMEOUT:-5} ${MISE_GITHUB_API_URL:-https://api.github.com/repos/jdx/mise/releases/latest} 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
     if [ -n "$latest_version" ]; then
         log_debug "Versão obtida via API do GitHub: $latest_version" >&2
@@ -53,7 +53,7 @@ get_latest_mise_version() {
 
     # If it fails, try via git ls-remote with semantic version sorting
     log_debug "API do GitHub falhou, tentando via git ls-remote..." >&2
-    latest_version=$(timeout 5 git ls-remote --tags --refs https://github.com/jdx/mise.git 2>/dev/null |
+    latest_version=$(timeout ${MISE_GIT_TIMEOUT:-5} git ls-remote --tags --refs ${MISE_GITHUB_REPO_URL:-https://github.com/jdx/mise.git} 2>/dev/null |
         grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$' |
         sort -V |
         tail -1)
@@ -81,7 +81,7 @@ get_mise_version() {
 
 # Get local bin directory path
 get_local_bin_dir() {
-    echo "$HOME/.local/bin"
+    echo "${MISE_LOCAL_BIN_DIR:-$HOME/.local/bin}"
 }
 
 # Detect operating system and architecture
@@ -283,7 +283,7 @@ install_mise_release() {
     log_info "Instalando Mise $mise_version..."
 
     # Build release URL
-    local download_url="https://github.com/jdx/mise/releases/download/${mise_version}/mise-${mise_version}-${os_name}-${arch}.tar.gz"
+    local download_url="${MISE_RELEASES_BASE_URL:-https://github.com/jdx/mise/releases/download}/${mise_version}/mise-${mise_version}-${os_name}-${arch}.tar.gz"
 
     # Download release
     local tar_file=$(download_mise_release "$download_url")
@@ -450,7 +450,7 @@ uninstall_mise() {
         rm -rf "$mise_data_dir"
     fi
 
-    local mise_config_dir="$HOME/.config/mise"
+    local mise_config_dir="${MISE_CONFIG_DIR:-$HOME/.config/mise}"
     if [ -d "$mise_config_dir" ]; then
         log_debug "Removendo diretório de configuração: $mise_config_dir"
         rm -rf "$mise_config_dir"

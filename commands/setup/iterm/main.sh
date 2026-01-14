@@ -132,7 +132,7 @@ install_iterm() {
     if ! check_homebrew; then
         echo ""
         echo -e "${YELLOW}Para instalar o Homebrew, execute:${NC}"
-        echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        echo "  /bin/bash -c \"\$(curl -fsSL ${ITERM_HOMEBREW_INSTALL_URL:-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh})\""
         return 1
     fi
 

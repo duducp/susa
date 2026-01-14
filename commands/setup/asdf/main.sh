@@ -42,7 +42,7 @@ show_help() {
 
 get_latest_asdf_version() {
     # Try to get the latest version via GitHub API
-    local latest_version=$(curl -s --max-time 10 --connect-timeout 5 https://api.github.com/repos/asdf-vm/asdf/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    local latest_version=$(curl -s --max-time ${ASDF_API_MAX_TIME:-10} --connect-timeout ${ASDF_API_CONNECT_TIMEOUT:-5} ${ASDF_GITHUB_API_URL:-https://api.github.com/repos/asdf-vm/asdf/releases/latest} 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
     if [ -n "$latest_version" ]; then
         log_debug "Versão obtida via API do GitHub: $latest_version" >&2
@@ -52,7 +52,7 @@ get_latest_asdf_version() {
 
     # If it fails, try via git ls-remote with semantic version sorting
     log_debug "API do GitHub falhou, tentando via git ls-remote..." >&2
-    latest_version=$(timeout 5 git ls-remote --tags --refs https://github.com/asdf-vm/asdf.git 2>/dev/null |
+    latest_version=$(timeout ${ASDF_GIT_TIMEOUT:-5} git ls-remote --tags --refs ${ASDF_GITHUB_REPO_URL:-https://github.com/asdf-vm/asdf.git} 2>/dev/null |
         grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$' |
         sort -V |
         tail -1)
@@ -71,7 +71,7 @@ get_latest_asdf_version() {
 
 # Get installed ASDF version
 get_asdf_version() {
-    local asdf_dir="${1:-$HOME/.asdf}"
+    local asdf_dir="${1:-${ASDF_INSTALL_DIR:-$HOME/.asdf}}"
 
     if [ -f "$asdf_dir/bin/asdf" ]; then
         "$asdf_dir/bin/asdf" --version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "desconhecida"
@@ -84,7 +84,7 @@ get_asdf_version() {
 
 # Get local bin directory path
 get_local_bin_dir() {
-    echo "$HOME/.local/bin"
+    echo "${ASDF_LOCAL_BIN_DIR:-$HOME/.local/bin}"
 }
 
 # Detect operating system and architecture
@@ -123,7 +123,7 @@ detect_os_and_arch() {
 
 # Check if ASDF is already installed and ask about update
 check_existing_installation() {
-    local asdf_dir="$HOME/.asdf"
+    local asdf_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
 
     log_debug "Verificando instalação existente do ASDF..."
 
@@ -198,10 +198,10 @@ download_asdf_release() {
     log_info "Baixando ASDF..." >&2
 
     curl -L --progress-bar \
-        --connect-timeout 30 \
-        --max-time 300 \
-        --retry 3 \
-        --retry-delay 2 \
+        --connect-timeout ${ASDF_DOWNLOAD_CONNECT_TIMEOUT:-30} \
+        --max-time ${ASDF_DOWNLOAD_MAX_TIME:-300} \
+        --retry ${ASDF_DOWNLOAD_RETRY:-3} \
+        --retry-delay ${ASDF_DOWNLOAD_RETRY_DELAY:-2} \
         "$download_url" -o "$output_file"
 
     local exit_code=$?
@@ -264,7 +264,7 @@ setup_asdf_environment() {
 
 # Main installation function
 install_asdf_release() {
-    local asdf_dir="$HOME/.asdf"
+    local asdf_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
 
     log_debug "Obtendo última versão..."
     local asdf_version=$(get_latest_asdf_version)
@@ -282,7 +282,7 @@ install_asdf_release() {
     log_info "Instalando ASDF $asdf_version..."
 
     # Build release URL
-    local download_url="https://github.com/asdf-vm/asdf/releases/download/${asdf_version}/asdf-${asdf_version}-${os_name}-${arch}.tar.gz"
+    local download_url="${ASDF_RELEASES_BASE_URL:-https://github.com/asdf-vm/asdf/releases/download}/${asdf_version}/asdf-${asdf_version}-${os_name}-${arch}.tar.gz"
 
     # Download release
     local tar_file=$(download_asdf_release "$download_url")
@@ -300,7 +300,7 @@ install_asdf_release() {
 }
 
 install_asdf() {
-    local asdf_dir="$HOME/.asdf"
+    local asdf_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
 
 	if ! check_existing_installation; then
 		exit 0
@@ -330,7 +330,7 @@ install_asdf() {
 }
 
 update_asdf() {
-    local asdf_dir="$HOME/.asdf"
+    local asdf_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
 
     log_info "Atualizando ASDF..."
 
@@ -383,7 +383,7 @@ update_asdf() {
     rm -rf "$asdf_dir"
 
     # Build release URL
-    local download_url="https://github.com/asdf-vm/asdf/releases/download/${asdf_version}/asdf-${asdf_version}-${os_name}-${arch}.tar.gz"
+    local download_url="${ASDF_RELEASES_BASE_URL:-https://github.com/asdf-vm/asdf/releases/download}/${asdf_version}/asdf-${asdf_version}-${os_name}-${arch}.tar.gz"
 
     # Download release
     local tar_file=$(download_asdf_release "$download_url")
@@ -435,7 +435,7 @@ update_asdf() {
 }
 
 uninstall_asdf() {
-    local asdf_dir="$HOME/.asdf"
+    local asdf_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
     local shell_config=$(detect_shell_config)
 
     log_info "Desinstalando ASDF..."

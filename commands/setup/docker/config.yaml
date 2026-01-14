@@ -3,3 +3,14 @@ description: "Instala Docker CLI e Engine (gerenciador de containers)"
 entrypoint: "main.sh"
 sudo: true
 os: ["linux", "mac"]
+envs:
+  # URLs da API e repositório
+  DOCKER_GITHUB_API_URL: "https://api.github.com/repos/moby/moby/releases/latest"
+  DOCKER_GITHUB_REPO_URL: "https://github.com/moby/moby.git"
+  DOCKER_DOWNLOAD_BASE_URL: "https://download.docker.com"
+  DOCKER_HOMEBREW_INSTALL_URL: "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+
+  # Timeouts para verificação de versão (em segundos)
+  DOCKER_API_MAX_TIME: "10"
+  DOCKER_API_CONNECT_TIMEOUT: "5"
+  DOCKER_GIT_TIMEOUT: "5"

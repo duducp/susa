@@ -9,6 +9,7 @@ Framework modular em Shell Script para criar CLIs extensíveis com descoberta au
 - 🔍 **Discovery Automático** - Comandos descobertos da estrutura de diretórios
 - 📦 **Sistema de Plugins** - Extensível via repositórios Git
 - 🎯 **Subcategorias Multi-nível** - Hierarquia ilimitada de comandos
+- 🌍 **Variáveis de Ambiente** - Configurações isoladas por comando
 - 🖥️ **Multi-plataforma** - Linux e macOS
 - 📚 **Bibliotecas Reutilizáveis** - Logger, detecção de SO, parser YAML e mais
 - ⚡ **Autocompletar** - Tab completion para bash e zsh
@@ -67,7 +68,58 @@ susa/
 
 ### Criar Novo Comando
 
-Consulte a [documentação oficial](https://duducp.github.io/susa/guides/adding-commands/).
+**1. Estrutura básica:**
+
+```bash
+mkdir -p commands/setup/myapp
+```
+
+**2. Configurar comando com envs:**
+
+```yaml
+# commands/setup/myapp/config.yaml
+name: "My App"
+description: "Instala My App"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux", "mac"]
+envs:
+  MYAPP_VERSION: "1.0.0"
+  MYAPP_INSTALL_DIR: "$HOME/.myapp"
+  MYAPP_DOWNLOAD_URL: "https://example.com/myapp"
+  MYAPP_TIMEOUT: "300"
+```
+
+**3. Criar script usando as envs:**
+
+```bash
+# commands/setup/myapp/main.sh
+#!/bin/bash
+set -euo pipefail
+
+setup_command_env
+
+install() {
+    local version="${MYAPP_VERSION:-1.0.0}"
+    local install_dir="${MYAPP_INSTALL_DIR:-$HOME/.myapp}"
+    local url="${MYAPP_DOWNLOAD_URL:-https://example.com/myapp}"
+
+    log_info "Instalando My App $version em $install_dir"
+    curl --max-time "${MYAPP_TIMEOUT:-300}" "$url" -o /tmp/myapp.tar.gz
+    tar -xzf /tmp/myapp.tar.gz -C "$install_dir"
+    log_success "Instalado com sucesso!"
+}
+
+install "$@"
+```
+
+**4. Executar:**
+
+```bash
+susa setup myapp
+```
+
+Para mais detalhes, consulte a [documentação oficial](https://duducp.github.io/susa/guides/adding-commands/).
 
 ### Instalar Plugins
 

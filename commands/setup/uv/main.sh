@@ -164,11 +164,11 @@ install_uv() {
 
     # Download and install UV using official installer
     log_info "Baixando instalador do UV..."
-    log_debug "URL: https://astral.sh/uv/install.sh"
+    log_debug "URL: ${UV_INSTALL_URL:-https://astral.sh/uv/install.sh}"
 
     local install_script="/tmp/uv-installer-$$.sh"
 
-    if ! curl -sSfL https://astral.sh/uv/install.sh -o "$install_script"; then
+    if ! curl -sSfL ${UV_INSTALL_URL:-https://astral.sh/uv/install.sh} -o "$install_script"; then
         log_error "Falha ao baixar o instalador do UV"
         rm -f "$install_script"
         return 1

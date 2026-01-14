@@ -4,3 +4,18 @@ entrypoint: "main.sh"
 sudo: true
 group:
 os: ["linux", "mac"]
+envs:
+  # URLs do repositório
+  PODMAN_GITHUB_API_URL: "https://api.github.com/repos/containers/podman/releases/latest"
+  PODMAN_GITHUB_REPO_URL: "https://github.com/containers/podman.git"
+  PODMAN_RELEASES_BASE_URL: "https://github.com/containers/podman/releases/download"
+  PODMAN_HOMEBREW_INSTALL_URL: "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+
+  # Timeouts para verificação de versão (em segundos)
+  PODMAN_API_MAX_TIME: "10"
+  PODMAN_API_CONNECT_TIMEOUT: "5"
+  PODMAN_GIT_TIMEOUT: "5"
+
+  # Configurações de download
+  PODMAN_DOWNLOAD_CONNECT_TIMEOUT: "30"
+  PODMAN_DOWNLOAD_MAX_TIME: "300"

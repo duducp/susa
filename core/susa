@@ -116,13 +116,13 @@ show_help() {
 
     for cat in $categories; do
         local cat_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$cat" "description")
-        printf "  ${LIGHT_CYAN}%-12s${NC} %s\n" "$cat" "$cat_desc"
+        printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "$cat" "$cat_desc"
     done
 
     echo ""
     echo -e "${LIGHT_GREEN}Opções globais:${NC}"
-    printf "  ${LIGHT_CYAN}%-14s${NC} %s\n" "-h, --help" "Mostra esta mensagem de ajuda"
-    printf "  ${LIGHT_CYAN}%-14s${NC} %s\n" "-V, --version" "Mostra a versão do CLI"
+    printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "-h, --help" "Mostra esta mensagem de ajuda"
+    printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "-V, --version" "Mostra a versão do CLI"
 }
 
 # Print subcategories for a given category
@@ -390,6 +390,9 @@ execute_command() {
     if requires_sudo "$GLOBAL_CONFIG_FILE" "$category" "$command"; then
         required_sudo
     fi
+
+    # Load environment variables from command config
+    load_command_envs "$config_file"
 
     source "$script_path" "$@"
 }

@@ -16,6 +16,7 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 - 🔍 **Discovery Automático** - Comandos descobertos da estrutura de diretórios
 - 📦 **Sistema de Plugins** - Extensão via repositórios Git externos
 - 🎯 **Subcategorias Multi-nível** - Navegação hierárquica ilimitada
+- 🌍 **Variáveis de Ambiente** - Configurações isoladas por comando com expansão automática
 - 🖥️ **Multi-plataforma** - Suporte para Linux (Debian, Fedora) e macOS
 - 🎨 **Interface Rica** - Logs coloridos, agrupamento visual, help customizado
 - ⚙️ **Parser YAML Robusto** - yq v4+ com instalação automática
@@ -88,6 +89,8 @@ cli/
 ## 📚 Documentação
 
 - [Início Rápido](quick-start.md) - Instalação e primeiros passos
+- [Configuração](guides/configuration.md) - Configurações globais e variáveis de ambiente
+- [Variáveis de Ambiente](guides/envs.md) - Guia completo de variáveis por comando
 - [Subcategorias](guides/subcategories.md) - Sistema de navegação multinível
 - [Adicionando Comandos](guides/adding-commands.md) - Como criar novos comandos
 - [Sistema de Plugins](plugins/overview.md) - Estendendo o Susa CLI

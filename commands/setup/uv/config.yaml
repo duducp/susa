@@ -4,3 +4,18 @@ entrypoint: "main.sh"
 sudo: false
 group: python
 os: ["linux", "mac"]
+envs:
+  # URLs do repositório
+  UV_GITHUB_API_URL: "https://api.github.com/repos/astral-sh/uv/releases/latest"
+  UV_GITHUB_REPO_URL: "https://github.com/astral-sh/uv.git"
+  UV_INSTALL_SCRIPT_URL: "https://astral.sh/uv/install.sh"
+
+  # Timeouts para verificação de versão (em segundos)
+  UV_API_MAX_TIME: "10"
+  UV_API_CONNECT_TIMEOUT: "5"
+  UV_GIT_TIMEOUT: "5"
+
+  # Diretórios
+  UV_LOCAL_BIN_DIR: "$HOME/.local/bin"
+  UV_DATA_DIR: "$HOME/.local/share/uv"
+  UV_CACHE_DIR: "$HOME/.cache/uv"

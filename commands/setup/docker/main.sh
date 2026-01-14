@@ -53,7 +53,7 @@ get_latest_docker_version() {
 
     # If it fails, try via git ls-remote with semantic version sorting
     log_debug "API do GitHub falhou, tentando via git ls-remote..." >&2
-    latest_version=$(timeout 5 git ls-remote --tags --refs https://github.com/moby/moby.git 2>/dev/null |
+    latest_version=$(timeout ${DOCKER_GIT_TIMEOUT:-5} git ls-remote --tags --refs ${DOCKER_GITHUB_REPO_URL:-https://github.com/moby/moby.git} 2>/dev/null |
         grep 'docker-v' |
         grep -v '\-rc' |
         grep -oE 'docker-v[0-9]+\.[0-9]+\.[0-9]+$' |
@@ -176,7 +176,7 @@ install_docker_macos() {
     # Check if Homebrew is installed
     if ! command -v brew &>/dev/null; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
-        echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        echo "  /bin/bash -c \"\$(curl -fsSL ${DOCKER_HOMEBREW_INSTALL_URL:-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh})\""
         return 1
     fi
 
@@ -272,13 +272,13 @@ install_docker_debian() {
     # Add Docker's official GPG key
     log_info "Adicionando chave GPG do Docker..."
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg >/dev/null 2>&1
+    curl -fsSL ${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg >/dev/null 2>&1
     sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
     # Set up repository
     log_info "Configurando repositório do Docker..."
     echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] ${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') \
       $(lsb_release -cs) stable" | \
       sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
 
@@ -318,7 +318,7 @@ install_docker_rhel() {
 
     # Add Docker repository
     log_info "Adicionando repositório do Docker..."
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo >/dev/null 2>&1
+    sudo dnf config-manager --add-repo ${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/fedora/docker-ce.repo >/dev/null 2>&1
 
     # Install Docker Engine
     log_info "Instalando Docker Engine, CLI e plugins..."

@@ -42,7 +42,7 @@ show_help() {
 
 get_latest_podman_version() {
     # Try to get the latest version via GitHub API
-    local latest_version=$(curl -s --max-time 10 --connect-timeout 5 https://api.github.com/repos/containers/podman/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    local latest_version=$(curl -s --max-time ${PODMAN_API_MAX_TIME:-10} --connect-timeout ${PODMAN_API_CONNECT_TIMEOUT:-5} ${PODMAN_GITHUB_API_URL:-https://api.github.com/repos/containers/podman/releases/latest} 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
     if [ -n "$latest_version" ]; then
         log_debug "Versão obtida via API do GitHub: $latest_version" >&2
@@ -52,7 +52,7 @@ get_latest_podman_version() {
 
     # If it fails, try via git ls-remote with semantic version sorting
     log_debug "API do GitHub falhou, tentando via git ls-remote..." >&2
-    latest_version=$(timeout 5 git ls-remote --tags --refs https://github.com/containers/podman.git 2>/dev/null |
+    latest_version=$(timeout ${PODMAN_GIT_TIMEOUT:-5} git ls-remote --tags --refs ${PODMAN_GITHUB_REPO_URL:-https://github.com/containers/podman.git} 2>/dev/null |
         grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$' |
         sort -V |
         tail -1)
@@ -123,7 +123,7 @@ install_podman_macos() {
     # Check if Homebrew is installed
     if ! command -v brew &>/dev/null; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
-        echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        echo "  /bin/bash -c \"\$(curl -fsSL ${PODMAN_HOMEBREW_INSTALL_URL:-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh})\""
         return 1
     fi
 

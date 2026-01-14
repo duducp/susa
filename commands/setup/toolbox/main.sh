@@ -41,7 +41,7 @@ show_help() {
 
 get_latest_toolbox_version() {
     # Try to get the latest version from JetBrains data service
-    local latest_version=$(curl -s --max-time 10 --connect-timeout 5 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release' 2>/dev/null | grep -oP '"build"\s*:\s*"\K[^"]+' | head -1)
+    local latest_version=$(curl -s --max-time ${TOOLBOX_API_MAX_TIME:-10} --connect-timeout ${TOOLBOX_API_CONNECT_TIMEOUT:-5} ${TOOLBOX_API_URL:-https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release} 2>/dev/null | grep -oP '"build"\s*:\s*"\K[^"]+' | head -1)
 
     if [ -n "$latest_version" ]; then
         log_debug "Versão obtida via API JetBrains: $latest_version" >&2

@@ -45,7 +45,7 @@ show_help() {
 # Get latest Tilix version
 get_latest_tilix_version() {
     # Try to get the latest version via GitHub API
-    local latest_version=$(curl -s --max-time 10 --connect-timeout 5 https://api.github.com/repos/gnunn1/tilix/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    local latest_version=$(curl -s --max-time ${TILIX_API_MAX_TIME:-10} --connect-timeout ${TILIX_API_CONNECT_TIMEOUT:-5} ${TILIX_GITHUB_API_URL:-https://api.github.com/repos/gnunn1/tilix/releases/latest} 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
     if [ -n "$latest_version" ]; then
         log_debug "Versão obtida via API do GitHub: $latest_version" >&2
@@ -55,7 +55,7 @@ get_latest_tilix_version() {
 
     # If it fails, try via git ls-remote with semantic version sorting
     log_debug "API do GitHub falhou, tentando via git ls-remote..." >&2
-    latest_version=$(timeout 5 git ls-remote --tags --refs https://github.com/gnunn1/tilix.git 2>/dev/null |
+    latest_version=$(timeout ${TILIX_GIT_TIMEOUT:-5} git ls-remote --tags --refs ${TILIX_GITHUB_REPO_URL:-https://github.com/gnunn1/tilix.git} 2>/dev/null |
         grep -oE '[0-9]+\.[0-9]+\.[0-9]+$' |
         sort -V |
         tail -1)

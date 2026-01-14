@@ -474,4 +474,29 @@ get_category_groups() {
     echo "$groups" | grep -v '^$'
 }
 
+# ============================================================
+# Environment Variables Functions
+# ============================================================
 
+# Load environment variables from command config.yaml
+load_command_envs() {
+    local config_file="$1"
+
+    if [ ! -f "$config_file" ]; then
+        return 0
+    fi
+
+    # Check if envs section exists
+    if ! yq eval '.envs' "$config_file" 2>/dev/null | grep -q .; then
+        return 0
+    fi
+
+    # Get all env keys and values, export them
+    while IFS='=' read -r key value; do
+        if [ -n "$key" ] && [ -n "$value" ]; then
+            # Expand variables like $HOME in the value
+            value=$(eval echo "$value")
+            export "$key=$value"
+        fi
+    done < <(yq eval '.envs | to_entries | .[] | .key + "=" + .value' "$config_file" 2>/dev/null)
+}

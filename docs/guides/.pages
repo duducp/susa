@@ -4,4 +4,5 @@ nav:
   - Adicionando Comandos: adding-commands.md
   - Funcionalidades: features.md
   - Configuração: configuration.md
+  - Variáveis de Ambiente: envs.md
   - Shell Completion: shell-completion.md
