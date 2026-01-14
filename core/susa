@@ -149,6 +149,19 @@ print_command_line() {
 
     local indicators=""
 
+    # Add installed indicator for setup commands
+    if [ "$category" = "setup" ]; then
+        # Source installations library if not already loaded
+        if ! declare -f is_installed &>/dev/null; then
+            source "$LIB_DIR/internal/installations.sh" 2>/dev/null || true
+        fi
+
+        # Check if software is installed
+        if declare -f is_installed &>/dev/null && is_installed "$cmd" 2>/dev/null; then
+            indicators="${indicators} ${GREEN}✓${NC}"
+        fi
+    fi
+
     # Add plugin indicator if necessary
     if is_plugin_command "$category" "$cmd"; then
         indicators="${indicators} ${GRAY}[plugin]${NC}"

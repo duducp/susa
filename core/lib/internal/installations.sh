@@ -166,3 +166,221 @@ list_installed() {
     yq eval '.installations[] | select(.installed == true) | .name' "$lock_file" 2>/dev/null
     return 0
 }
+
+# Get list of available setup commands
+# Usage: get_available_setup_commands
+get_available_setup_commands() {
+    local cli_dir="${CLI_DIR}"
+    local setup_dir="${cli_dir}/commands/setup"
+
+    if [ ! -d "$setup_dir" ]; then
+        return 1
+    fi
+
+    for cmd_dir in "$setup_dir"/*; do
+        [ ! -d "$cmd_dir" ] && continue
+        local cmd_name=$(basename "$cmd_dir")
+        [ -f "$cmd_dir/main.sh" ] && echo "$cmd_name"
+    done
+}
+
+# Check if a specific software is actually installed (without prompts)
+# Usage: if check_software_installed "docker"; then ...
+check_software_installed() {
+    local software_name="$1"
+
+    case "$software_name" in
+        docker)
+            command -v docker &>/dev/null
+            ;;
+        podman)
+            command -v podman &>/dev/null
+            ;;
+        mise)
+            command -v mise &>/dev/null
+            ;;
+        asdf)
+            [ -d "$HOME/.asdf" ] && [ -f "$HOME/.asdf/bin/asdf" ]
+            ;;
+        poetry)
+            command -v poetry &>/dev/null
+            ;;
+        uv)
+            command -v uv &>/dev/null
+            ;;
+        tilix)
+            command -v tilix &>/dev/null || ([ "$(uname)" = "Linux" ] && dpkg -l | grep -q tilix)
+            ;;
+        iterm)
+            [ "$(uname)" = "Darwin" ] && [ -d "/Applications/iTerm.app" ]
+            ;;
+        toolbox|jetbrains-toolbox)
+            command -v jetbrains-toolbox &>/dev/null || [ -f "$HOME/.local/bin/jetbrains-toolbox" ]
+            ;;
+        *)
+            # Try generic command check
+            command -v "$software_name" &>/dev/null
+            ;;
+    esac
+}
+
+# Get version of installed software (without prompts)
+# Usage: version=$(get_software_version "docker")
+get_software_version() {
+    local software_name="$1"
+
+    case "$software_name" in
+        docker)
+            if command -v docker &>/dev/null; then
+                docker --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        podman)
+            if command -v podman &>/dev/null; then
+                podman --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        mise)
+            if command -v mise &>/dev/null; then
+                mise --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        asdf)
+            if [ -f "$HOME/.asdf/bin/asdf" ]; then
+                "$HOME/.asdf/bin/asdf" --version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown"
+            fi
+            ;;
+        poetry)
+            if command -v poetry &>/dev/null; then
+                poetry --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        uv)
+            if command -v uv &>/dev/null; then
+                uv --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        tilix)
+            if command -v tilix &>/dev/null; then
+                tilix --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        toolbox|jetbrains-toolbox)
+            if command -v jetbrains-toolbox &>/dev/null; then
+                jetbrains-toolbox --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            elif [ -f "$HOME/.local/bin/jetbrains-toolbox" ]; then
+                "$HOME/.local/bin/jetbrains-toolbox" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+            fi
+            ;;
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+# Sync installed software to lock file (scan system and update lock)
+# Usage: sync_installations
+sync_installations() {
+    local lock_file=$(get_lock_file_path)
+
+    if [ ! -f "$lock_file" ]; then
+        log_error "Lock file not found. Run 'susa self lock' first."
+        return 1
+    fi
+
+    local found_count=0
+    local synced_count=0
+    local removed_count=0
+    local temp_add_file="/tmp/susa_sync_add_$$"
+    local temp_remove_file="/tmp/susa_sync_remove_$$"
+
+    log_debug "Verificando instalações no sistema..."
+
+    # Get all available setup commands
+    local commands_output=$(get_available_setup_commands)
+
+    if [ -z "$commands_output" ]; then
+        log_warning "Nenhum comando de setup encontrado"
+        return 0
+    fi
+
+    # First pass: Check for new installations (system → lock)
+    while IFS= read -r software_name; do
+        [ -z "$software_name" ] && continue
+
+        log_debug "Verificando: $software_name"
+
+        # Check if software is installed on system
+        if check_software_installed "$software_name"; then
+            ((found_count++))
+
+            # Check if it's tracked in lock file
+            if ! is_installed "$software_name"; then
+                # Get version
+                local version=$(get_software_version "$software_name")
+                [ -z "$version" ] && version="unknown"
+
+                # Add to lock file
+                mark_installed "$software_name" "$version"
+                log_success "Sincronizado: $software_name ($version)"
+
+                # Track synced count in temp file
+                echo "1" >> "$temp_add_file"
+            else
+                log_debug "$software_name já está no lock file"
+            fi
+        else
+            log_debug "$software_name não está instalado"
+        fi
+    done <<< "$commands_output"
+
+    # Second pass: Check for removed installations (lock → system)
+    log_debug "Verificando instalações removidas..."
+
+    # Get list of software marked as installed in lock file
+    local installed_in_lock=$(yq eval '.installations[] | select(.installed == true) | .name' "$lock_file" 2>/dev/null)
+
+    if [ -n "$installed_in_lock" ]; then
+        while IFS= read -r software_name; do
+            [ -z "$software_name" ] && continue
+
+            log_debug "Verificando se $software_name ainda está instalado..."
+
+            # Check if software is still installed on system
+            if ! check_software_installed "$software_name"; then
+                # Software was uninstalled, update lock file
+                mark_uninstalled "$software_name"
+                log_warning "Removido do lock: $software_name (não está mais instalado)"
+
+                # Track removed count in temp file
+                echo "1" >> "$temp_remove_file"
+            fi
+        done <<< "$installed_in_lock"
+    fi
+
+    # Count changes from temp files
+    if [ -f "$temp_add_file" ]; then
+        synced_count=$(wc -l < "$temp_add_file")
+        rm -f "$temp_add_file"
+    fi
+
+    if [ -f "$temp_remove_file" ]; then
+        removed_count=$(wc -l < "$temp_remove_file")
+        rm -f "$temp_remove_file"
+    fi
+
+    # Show summary
+    echo ""
+    if [ $synced_count -eq 0 ] && [ $removed_count -eq 0 ]; then
+        log_info "Nenhuma alteração encontrada."
+    else
+        if [ $synced_count -gt 0 ]; then
+            log_success "$synced_count software(s) adicionado(s) ao lock file."
+        fi
+        if [ $removed_count -gt 0 ]; then
+            log_success "$removed_count software(s) removido(s) do lock file."
+        fi
+    fi
+
+    return 0
+}

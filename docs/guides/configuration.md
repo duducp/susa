@@ -103,9 +103,20 @@ BACKUP_DIR="/var/backups"
 
 **Indicadores Visuais:**
 
+- Comandos instalados exibem **`✓`** em verde (apenas categoria `setup`)
 - Comandos com `sudo: true` exibem **`[sudo]`** na listagem
 - Comandos de plugins exibem **`[plugin]`** na listagem
-- Ambos podem aparecer juntos: `comando [plugin] [sudo]`
+- Todos podem aparecer juntos: `comando ✓ [plugin] [sudo]`
+
+**Exemplo:**
+
+```text
+Comandos:
+  asdf            Instala ASDF ✓
+  docker          Instala Docker ✓ [sudo]
+  postgres        Instala PostgreSQL [sudo]
+  deploy-prod     Deploy produção [plugin] [sudo]
+```
 
 > Veja mais sobre indicadores em [Filtros de Sistema Operacional e Sudo](subcategories.md#filtros-de-sistema-operacional-e-sudo) e [Plugins](../plugins/overview.md#indicador-visual).
 

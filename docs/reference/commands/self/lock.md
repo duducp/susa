@@ -13,11 +13,96 @@ O comando `susa self lock` varre os diretórios `commands/` e `plugins/` para de
 - **Performance**: Inicialização ~38% mais rápida
 - **Automático**: Gerado na primeira execução e atualizado ao gerenciar plugins
 - **Obrigatório**: O CLI requer este arquivo para funcionar
+- **Rastreamento**: Mantém registro de instalações de software via `setup` commands
 
 ## Uso
 
 ```bash
+# Regenera o arquivo de lock
 susa self lock
+
+# Regenera e sincroniza instalações do sistema
+susa self lock --sync
+```
+
+## Opções
+
+### `--sync`
+
+Sincroniza o estado das instalações entre o sistema e o lock file:
+
+- **Adiciona**: Detecta aplicações instaladas no sistema e registra no lock file
+- **Remove**: Detecta aplicações desinstaladas e atualiza o lock file
+- **Bidirecional**: Mantém o lock sempre alinhado com o estado real do sistema
+
+**Casos de uso**:
+
+- Após instalar software manualmente (fora do `susa setup`)
+- Após desinstalar software diretamente do sistema
+- Para auditar instalações gerenciadas pelo Susa CLI
+
+### `-v, --verbose`
+
+Habilita saída detalhada com mensagens de debug. Útil para diagnóstico e desenvolvimento.
+
+```bash
+susa self lock --sync --verbose
+# Mostra cada verificação realizada
+```
+
+### `-q, --quiet`
+
+Minimiza a saída, desabilitando mensagens de debug. Útil para uso em scripts.
+
+```bash
+susa self lock --quiet
+# Mostra apenas mensagens essenciais
+```
+
+## Exemplos
+
+```bash
+# Regenera o lock file
+susa self lock
+
+# Regenera e sincroniza instalações
+susa self lock --sync
+
+# Sincroniza com saída detalhada
+susa self lock --sync --verbose
+
+# Sincroniza silenciosamente
+susa self lock --sync --quiet
+```
+
+### Exemplo de Saída com `--sync`
+
+### Exemplo de Saída com `--sync`
+
+**Com mudanças detectadas:**
+$ susa self lock --sync
+[INFO] Gerando arquivo susa.lock...
+[SUCCESS] Arquivo susa.lock gerado com sucesso!
+
+[INFO] Sincronizando instalações...
+[SUCCESS] Sincronizado: docker (29.1.4)
+[SUCCESS] Sincronizado: podman (5.7.1)
+[WARNING] Removido do lock: fake-app (não está mais instalado)
+
+[SUCCESS] 2 software(s) adicionado(s) ao lock file.
+[SUCCESS] 1 software(s) removido(s) do lock file.
+```
+
+**Sem alterações detectadas:**
+
+```bash
+$ susa self lock --sync
+[INFO] Gerando arquivo susa.lock...
+[SUCCESS] Arquivo susa.lock gerado com sucesso!
+
+[INFO] Sincronizando instalações...
+
+[INFO] Nenhuma alteração encontrada.
 ```
 
 ## Geração Automática
@@ -50,11 +135,17 @@ Susa CLI (versão 1.0.0)
 
 ## Quando Executar Manualmente
 
-Execute `susa self lock` manualmente apenas quando:
+Execute `susa self lock` manualmente quando:
 
 - Adicionar novos comandos diretamente no diretório `commands/`
 - Modificar a estrutura de categorias/subcategorias
 - O arquivo foi corrompido
+
+Execute `susa self lock --sync` quando:
+
+- Instalar/desinstalar software manualmente (fora do `susa setup`)
+- Quiser auditar o estado das instalações no sistema
+- Suspeitar de inconsistências entre o lock e o sistema
 
 ## Estrutura do Arquivo
 
@@ -89,7 +180,39 @@ commands:
       name: "backup-tools"
       source: "/home/user/.config/susa/plugins/backup-tools"
       dev: false
+
+# Seção de instalações (gerenciada automaticamente)
+installations:
+  - name: docker
+    installed: true
+    version: 29.1.4
+    installed_at: "2026-01-14T15:27:36Z"
+  - name: podman
+    installed: true
+    version: 5.7.1
+    installed_at: "2026-01-14T15:27:36Z"
+  - name: mise
+    installed: true
+    version: 2026.1.1
+    installed_at: "2026-01-14T15:27:36Z"
 ```
+
+### Seção `installations`
+
+A seção `installations` rastreia automaticamente o software instalado via comandos `susa setup`:
+
+- **`name`**: Nome do software (corresponde ao comando setup)
+- **`installed`**: Booleano indicando se está instalado
+- **`version`**: Versão instalada (detectada automaticamente)
+- **`installed_at`**: Timestamp ISO 8601 da instalação
+- **`updated_at`**: Timestamp da última atualização (quando aplicável)
+
+Esta seção é gerenciada automaticamente:
+
+- Atualizada ao executar `susa setup <software>`
+- Atualizada ao executar `susa setup <software> --update`
+- Atualizada ao executar `susa setup <software> --uninstall`
+- Sincronizada ao executar `susa self lock --sync`
 
 ## Impacto na Performance
 

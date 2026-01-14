@@ -8,6 +8,7 @@ nav:
   - Sudo: sudo.md
   - Strings: string.md
   - Dependências: dependencies.md
+  - Instaladores: installations.md
   - Kubernetes: kubernetes.md
   - CLI: cli.md
   - YAML: yaml.md

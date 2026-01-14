@@ -6,6 +6,7 @@ setup_command_env
 
 source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/internal/yaml.sh"
+source "$LIB_DIR/internal/installations.sh"
 
 # ============================================================
 # Help Function
@@ -15,6 +16,15 @@ show_help() {
     show_description
     echo ""
     show_usage --no-options
+    echo ""
+    echo -e "${LIGHT_GREEN}Opções:${NC}"
+    echo "  --sync            Sincroniza instalações: verifica aplicações instaladas"
+    echo "                    no sistema e atualiza o lock file:"
+    echo "                    • Adiciona novas instalações ao lock"
+    echo "                    • Remove instalações que foram desinstaladas"
+	echo "  -v, --verbose     Habilita saída detalhada para depuração"
+    echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
+    echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo ""
     echo -e "${LIGHT_GREEN}Descrição:${NC}"
     echo "  Este comando varre os diretórios 'commands/' e 'plugins/' para"
@@ -26,6 +36,11 @@ show_help() {
     echo "  • Após adicionar novos comandos manualmente em 'commands/'"
     echo "  • Após modificar a estrutura de categorias"
     echo "  • Se o arquivo susa.lock foi deletado ou corrompido"
+    echo "  • Use --sync após instalar/desinstalar aplicações manualmente fora do susa"
+    echo ""
+    echo -e "${LIGHT_GREEN}Exemplos:${NC}"
+    echo "  susa self lock              # Regenera o arquivo de lock"
+    echo "  susa self lock --sync       # Regenera e sincroniza instalações"
     echo ""
     echo -e "${LIGHT_GREEN}Nota:${NC}"
     echo "  O arquivo é atualizado automaticamente ao instalar, remover ou"
@@ -185,11 +200,22 @@ scan_all_structure() {
 generate_lock_file() {
     local lock_file="$CLI_DIR/susa.lock"
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local temp_installations="/tmp/susa_installations_backup_$$"
+
+    # Backup existing installations section if lock file exists
+    if [ -f "$lock_file" ] && yq eval '.installations' "$lock_file" &>/dev/null; then
+        local has_installations=$(yq eval '.installations | length' "$lock_file" 2>/dev/null)
+        if [ "$has_installations" != "0" ] && [ "$has_installations" != "null" ]; then
+            log_debug "Fazendo backup da seção de instalações..."
+            yq eval '.installations' "$lock_file" > "$temp_installations" 2>/dev/null
+        fi
+    fi
 
     # Change to CLI_DIR to avoid yq reading .version files from plugin directories
     local original_dir="$PWD"
     cd "$CLI_DIR" || {
         log_error "Não foi possível acessar o diretório $CLI_DIR"
+        rm -f "$temp_installations"
         return 1
     }
 
@@ -331,6 +357,16 @@ EOF
         fi
     fi
 
+    # Restore installations section if it was backed up
+    if [ -f "$temp_installations" ]; then
+        log_debug "Restaurando seção de instalações..."
+        echo "" >> "$lock_file"
+        echo "installations:" >> "$lock_file"
+        # Indent the installations content
+        sed 's/^/  /' "$temp_installations" >> "$lock_file"
+        rm -f "$temp_installations"
+    fi
+
     log_success "Arquivo susa.lock gerado com sucesso!"
     log_debug "Localização: $lock_file"
 
@@ -343,13 +379,48 @@ EOF
 # ============================================================
 
 main() {
-    # Check for help flag
-    if [ $# -gt 0 ] && ([ "$1" = "--help" ] || [ "$1" = "-h" ]); then
-        show_help
-        exit 0
-    fi
+    local should_sync=false
 
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+			-v|--verbose)
+                export DEBUG=1
+                log_debug "Modo verbose ativado"
+                shift
+                ;;
+            -q|--quiet)
+                export SILENT=1
+                shift
+                ;;
+            --sync)
+                should_sync=true
+                shift
+                ;;
+            *)
+                log_error "Opção desconhecida: $1"
+                echo "Use 'susa self lock --help' para ver as opções disponíveis"
+                exit 1
+                ;;
+        esac
+    done
+
+    # Generate lock file first
     generate_lock_file
+
+    # Sync installations if requested
+    if [ "$should_sync" = true ]; then
+        echo ""
+        log_info "Sincronizando instalações..."
+        sync_installations || {
+            log_error "Falha ao sincronizar instalações"
+            return 1
+        }
+    fi
 }
 
 main "$@"

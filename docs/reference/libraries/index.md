@@ -72,6 +72,12 @@ Gerenciamento de plugins externos. Clona, detecta versões e conta comandos de p
 
 Gerenciamento do arquivo `registry.yaml` de plugins. Adiciona, remove e lista plugins instalados com versionamento.
 
+### Internal Libraries
+
+#### [installations.sh](installations.md)
+
+Rastreamento de instalações de software no arquivo `susa.lock`. Registra versões, timestamps e sincroniza estado entre sistema e lock file.
+
 ## Dependências Entre Bibliotecas
 
 ```text
@@ -92,6 +98,12 @@ yaml.sh
 └── registry.sh
 
 dependencies.sh
+└── logger.sh
+    └── color.sh
+
+installations.sh (internal)
+├── dependencies.sh
+│   └── logger.sh
 └── logger.sh
     └── color.sh
 
@@ -120,6 +132,7 @@ source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/color.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/internal/args.sh"
+source "$LIB_DIR/internal/installations.sh"  # Para rastreamento
 
 # Help function
 show_help() {
@@ -144,7 +157,12 @@ case "$simple_os" in
         ;;
 esac
 
-log_success "Concluído!"
+# Registrar instalação
+if command -v software &>/dev/null; then
+    version=$(software --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    mark_installed "software" "$version"
+    log_success "Concluído!"
+fi
 ```
 
 ## Boas Práticas
