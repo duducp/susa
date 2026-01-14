@@ -1,6 +1,6 @@
 name: "List"
 description: "Lista todos os plugins instalados"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 group:
 os: ["linux", "mac"]

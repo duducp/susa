@@ -52,7 +52,7 @@ mkdir -p commands/setup/docker
 cat > commands/setup/docker/config.yaml << EOF
 name: "Docker"
 description: "Instala Docker Engine"
-script: "main.sh"
+entrypoint: "main.sh"
 EOF
 
 # Comando já está disponível!
@@ -66,7 +66,7 @@ Cada comando tem seu próprio `config.yaml`:
 ```yaml
 name: "Docker"          # Nome amigável
 description: "Instala Docker Engine"
-script: "main.sh"       # Script a executar
+entrypoint: "main.sh"       # Script a executar
 sudo: false             # Requer privilégios?
 os: ["linux", "mac"]    # SOs compatíveis
 ```
@@ -105,7 +105,7 @@ Procura em:
 
 | Condição | Tipo | Resultado |
 |----------|------|-----------|
-| Tem `config.yaml` + campo `script` + arquivo existe | **Comando** | Executável |
+| Tem `config.yaml` + campo `entrypoint` + arquivo existe | **Comando** | Executável |
 | Tem `config.yaml` sem script | **Categoria** | Navegável |
 | Sem `config.yaml` | **Ignorado** | - |
 
@@ -118,7 +118,7 @@ mkdir -p commands/deploy/production
 cat > commands/deploy/production/config.yaml << EOF
 name: "Production"
 description: "Deploy para produção"
-script: "main.sh"
+entrypoint: "main.sh"
 EOF
 
 echo '#!/bin/bash\necho "Deploying..."' > commands/deploy/production/main.sh
@@ -223,7 +223,7 @@ os: ["linux", "mac"]
 # commands/setup/apt/config.yaml
 name: "APT Tools"
 description: "Ferramentas APT (Ubuntu/Debian)"
-script: "main.sh"
+entrypoint: "main.sh"
 os: ["linux"]  # Só aparece no Linux
 ```
 
@@ -231,7 +231,7 @@ os: ["linux"]  # Só aparece no Linux
 # commands/setup/brew/config.yaml
 name: "Homebrew"
 description: "Gerenciador de pacotes"
-script: "main.sh"
+entrypoint: "main.sh"
 os: ["mac"]  # Só aparece no macOS
 ```
 
@@ -373,7 +373,7 @@ description: "Instalar e configurar ferramentas"
 # commands/categoria/comando/config.yaml
 name: "ASDF"
 description: "Instala ASDF Version Manager"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux", "mac"]
 ```

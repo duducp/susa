@@ -1,5 +1,5 @@
 name: "Mise"
 description: "Instala Mise (gerenciador de versoes polyglot)"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux", "mac"]

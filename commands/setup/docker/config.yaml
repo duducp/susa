@@ -1,5 +1,5 @@
 name: "Docker"
 description: "Instala Docker CLI e Engine (gerenciador de containers)"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: true
 os: ["linux", "mac"]

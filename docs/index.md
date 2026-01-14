@@ -58,7 +58,7 @@ Para exemplos detalhados e tutoriais práticos, veja o [Guia de Início Rápido]
 ```text
 cli/
 ├── core/                 # Core do CLI
-│   ├── susa             # Script principal
+│   ├── susa             # Entrypoint principal
 │   ├── cli.yaml         # Configuração global
 │   └── lib/             # Bibliotecas
 │       ├── yaml.sh      # Parser YAML (com yq)

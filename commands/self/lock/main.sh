@@ -56,9 +56,9 @@ scan_category_dir() {
 
         local item_name=$(basename "$item_dir")
 
-        # Check if it's a command (has script field in config.yaml)
+        # Check if it's a command (has entrypoint field in config.yaml)
         if [ -f "$item_dir/config.yaml" ]; then
-            local script_name=$(yq eval '.script' "$item_dir/config.yaml" 2>/dev/null)
+            local script_name=$(yq eval '.entrypoint' "$item_dir/config.yaml" 2>/dev/null)
 
             if [ -n "$script_name" ] && [ "$script_name" != "null" ] && [ -f "$item_dir/$script_name" ]; then
                 # It's a command
@@ -66,18 +66,18 @@ scan_category_dir() {
 
                 # Read additional metadata
                 local description=$(yq eval '.description' "$item_dir/config.yaml" 2>/dev/null)
-                local script=$(yq eval '.script' "$item_dir/config.yaml" 2>/dev/null)
+                local script=$(yq eval '.entrypoint' "$item_dir/config.yaml" 2>/dev/null)
                 local os=$(yq eval '.os' "$item_dir/config.yaml" 2>/dev/null)
                 local sudo=$(yq eval '.sudo' "$item_dir/config.yaml" 2>/dev/null)
                 local group=$(yq eval '.group' "$item_dir/config.yaml" 2>/dev/null)
 
-                # Always output script (use default if not specified)
+                # Always output entrypoint (use default if not specified)
                 if [ -z "$script" ] || [ "$script" = "null" ]; then
                     script="main.sh"
                 fi
 
                 [ "$description" != "null" ] && echo "META|description|${description}"
-                echo "META|script|${script}"
+                echo "META|entrypoint|${script}"
                 [ "$os" != "null" ] && echo "META|os|${os}"
                 [ "$sudo" != "null" ] && echo "META|sudo|${sudo}"
                 [ "$group" != "null" ] && echo "META|group|${group}"

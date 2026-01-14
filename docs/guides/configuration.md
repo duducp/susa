@@ -292,7 +292,7 @@ Ou durante instalação, o `install.sh` já faz isso automaticamente:
 susa/
 ├── core/
 │   ├── cli.yaml                 # ✅ Config global (obrigatório)
-│   ├── susa                    # Script principal
+│   ├── susa                    # Entrypoint principal
 │   └── lib/                    # Bibliotecas
 ├── config/
 │   └── settings.conf           # ⚠️ Opcional (não usado por padrão)

@@ -53,8 +53,8 @@ get_command_script_from_lock() {
 
     local lock_file="$CLI_DIR/susa.lock"
 
-    # Get script name from lock
-    local script_name=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\" and .plugin.name == \"$plugin_name\") | .script" "$lock_file" 2>/dev/null | head -1)
+    # Get entrypoint name from lock
+    local script_name=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\" and .plugin.name == \"$plugin_name\") | .entrypoint" "$lock_file" 2>/dev/null | head -1)
 
     if [ -z "$script_name" ] || [ "$script_name" = "null" ]; then
         script_name="main.sh"

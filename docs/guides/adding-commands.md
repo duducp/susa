@@ -14,7 +14,7 @@ commands/
     config.yaml           # Configuração da categoria
     <comando>/
       config.yaml         # Configuração do comando
-      main.sh             # Script principal executável
+      main.sh             # Entrypoint principal executável
 ```
 
 **Exemplo real:**
@@ -64,7 +64,7 @@ Crie `commands/<categoria>/<comando>/config.yaml`:
 ```yaml
 name: "Nome Amigável"
 description: "Descrição clara e objetiva do comando"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux", "mac"]
 ```
@@ -74,7 +74,7 @@ os: ["linux", "mac"]
 ```yaml
 name: "VS Code"
 description: "Instala Visual Studio Code"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux", "mac"]
 ```

@@ -9,7 +9,7 @@ O CLI agora suporta uma arquitetura descentralizada com suporte a plugins extern
 ```text
 cli/
 ├── core/                    # Core do CLI
-│   ├── susa                # Script principal
+│   ├── susa                # Entrypoint principal
 │   ├── cli.yaml            # Config global (nome, versão, categorias)
 │   └── lib/                # Bibliotecas
 │
@@ -41,7 +41,7 @@ Cada comando deve ter um arquivo `config.yaml` no seu diretório:
 ```yaml
 name: "Backup S3"           # Nome para exibição
 description: "Descrição"    # Descrição curta
-script: "main.sh"           # Script principal
+entrypoint: "main.sh"           # Entrypoint principal
 sudo: false                 # Requer sudo?
 os: ["linux", "mac"]        # Sistemas compatíveis
 group: "Backups"            # (Opcional) Grupo para organização
@@ -62,7 +62,7 @@ mkdir -p plugins/meu-plugin/categoria/comando
 ```yaml
 name: "Meu Comando"
 description: "Descrição do comando"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux"]
 ```

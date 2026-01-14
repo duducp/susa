@@ -201,7 +201,7 @@ EOF
 cat > commands/demo/hello/config.yaml << EOF
 name: "Hello World"
 description: "Comando de exemplo"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux", "mac"]
 EOF

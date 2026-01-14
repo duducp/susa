@@ -70,7 +70,7 @@ EOF
 cat > meu-plugin/deploy/staging/config.yaml << EOF
 name: "Staging"
 description: "Deploy para staging"
-script: "main.sh"
+entrypoint: "main.sh"
 EOF
 
 cat > meu-plugin/deploy/staging/main.sh << 'EOF'

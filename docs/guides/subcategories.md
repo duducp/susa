@@ -15,16 +15,16 @@ O CLI suporta uma estrutura hierárquica de categorias e subcategorias baseada e
 O sistema verifica:
 
 1. Se o diretório tem `config.yaml`
-2. Se o `config.yaml` tem o campo `script:` definido
+2. Se o `config.yaml` tem o campo `entrypoint:` definido
 3. Se o arquivo do script existe
 
 **Resultado:**
 
-- **Tem `script:` E arquivo existe** → É um **comando executável**
+- **Tem `entrypoint:` E arquivo existe** → É um **comando executável**
   - Sistema executa o script
   - Aparece na seção "Commands"
 
-- **Não tem `script:` OU arquivo não existe** → É uma **subcategoria navegável**
+- **Não tem `entrypoint:` OU arquivo não existe** → É uma **subcategoria navegável**
   - Sistema permite navegar (listar sub-itens)
   - Aparece na seção "Subcategories"
 
@@ -35,7 +35,7 @@ Tanto comandos quanto subcategorias têm `config.yaml`, mas com campos diferente
 | Tipo | Campos no config.yaml |
 | ---- | --------------------- |
 | **Comando** | `name`, `description`, `script` (obrigatório), `sudo`, `os` |
-| **Subcategoria** | `name`, `description` (sem campo `script`) |
+| **Subcategoria** | `name`, `description` (sem campo `entrypoint`) |
 
 > **ℹ️ Para detalhes completos sobre campos do config.yaml, veja [Configuração de Comandos](adding-commands.md#3-configurar-o-comando).**
 
@@ -127,14 +127,14 @@ Configuração completa de um comando executável.
 ```yaml
 name: "Pip"
 description: "Instala gerenciador de pacotes Python (pip)"
-script: "main.sh"        # ← Este campo indica que é executável
+entrypoint: "main.sh"        # ← Este campo indica que é executável
 sudo: false              # true = exibe indicador [sudo] na listagem
 os: ["linux", "mac"]
 ```
 
 **Localização:** `commands/{categoria}/.../{comando}/config.yaml`
 
-**Importante:** O arquivo definido em `script:` DEVE existir e ter permissão de execução.
+**Importante:** O arquivo definido em `entrypoint:` DEVE existir e ter permissão de execução.
 
 ## ✨ Campos de Configuração
 
@@ -144,12 +144,12 @@ os: ["linux", "mac"]
 
 **Para Comandos (Executáveis):**
 
-- Devem ter o campo `script:` apontando para um arquivo executável
-- Exemplo: `script: "main.sh"`
+- Devem ter o campo `entrypoint:` apontando para um arquivo executável
+- Exemplo: `entrypoint: "main.sh"`
 
 **Para Subcategorias (Navegáveis):**
 
-- NÃO devem ter o campo `script`
+- NÃO devem ter o campo `entrypoint`
 - Apenas `name` e `description`
 
 ### Lista de Categoria com Subcategorias
@@ -199,7 +199,7 @@ mkdir -p commands/setup/comando-novo
 
 ### 2. Comando em Nova Subcategoria
 
-A diferença principal: criar um `config.yaml` **sem** campo `script` para a subcategoria.
+A diferença principal: criar um `config.yaml` **sem** campo `entrypoint` para a subcategoria.
 
 ```bash
 # Criar estrutura
@@ -216,7 +216,7 @@ EOF
 cat > commands/install/nova-categoria/comando-xyz/config.yaml << EOF
 name: "Comando XYZ"
 description: "Descrição do comando XYZ"
-script: "main.sh"       # ← Indica que é executável
+entrypoint: "main.sh"       # ← Indica que é executável
 sudo: false
 EOF
 
@@ -253,7 +253,7 @@ EOF
 cat > commands/install/categoria/subcategoria/comando/config.yaml << EOF
 name: "Comando"
 description: "Comando no nível 3"
-script: "main.sh"       # ← Indica que é executável
+entrypoint: "main.sh"       # ← Indica que é executável
 sudo: false
 EOF
 
@@ -424,7 +424,7 @@ Commands:
 
 - **Diretórios:** Use kebab-case: `install-python`, `backup-tools`
 - **Nomes (config):** Use formato legível: `"Install Python"`, `"Backup Tools"`
-- **Scripts:** Sempre `main.sh` (ou o nome definido em `script:`)
+- **Scripts:** Sempre `main.sh` (ou o nome definido em `entrypoint:`)
 
 ### Organização
 
@@ -449,17 +449,17 @@ commands/tools/dev/lang/python/pkg/pip
 
 ### Comando não aparece na listagem
 
- 1:** Falta campo `script:` no `config.yaml`
+ 1:** Falta campo `entrypoint:` no `config.yaml`
 
 **Solução:** Adicionar o campo script
 
 ```yaml
-script: "main.sh"
+entrypoint: "main.sh"
 ```
 
 **Causa 2:** Arquivo do script não existe ou não tem o nome correto
 
-**Solução:** Verificar se o arquivo existe e corresponde ao nome em `script:`
+**Solução:** Verificar se o arquivo existe e corresponde ao nome em `entrypoint:`
 
 ```bash
 ls -la commands/categoria/comando/main.sh
@@ -471,7 +471,7 @@ ls -la commands/categoria/comando/main.sh
 
 ### Subcategoria aparece como comando (não consigo navegar)
 
-**Causa:** Config.yaml tem campo `script:` definido e o arquivo existe
+**Causa:** Config.yaml tem campo `entrypoint:` definido e o arquivo existe
 
 **Explicação:** O sistema identifica como comando executável pela presença do script.
 
@@ -485,7 +485,7 @@ chmod +x commands/path/to/command/main.sh
 
 **Causa 2:** Nome do script no config.yaml não corresponde ao arquivo
 
-**Solução:** Verificar se `script:` aponta para o arquivo correto
+**Solução:** Verificar se `entrypoint:` aponta para o arquivo correto
 
 **Causa 3:** Script não existe
 
@@ -506,7 +506,7 @@ description: "Descrição aqui"
 
 **Causa:** Falta `config.yaml` ou está sem campos obrigatórios
 
-**Solução:** Criar `config.yaml` com `name` e `description` (SEM campo `script`)
+**Solução:** Criar `config.yaml` com `name` e `description` (SEM campo `entrypoint`)
 
 ```yaml
 name: "Nome da Subcategoria"
@@ -533,7 +533,7 @@ EOF
 cat > commands/backup/local/full/config.yaml << EOF
 name: "Full Backup"
 description: "Backup completo local"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 EOF
 
@@ -570,7 +570,7 @@ EOF
 cat > plugins/dev-tools/deploy/staging/config.yaml << EOF
 name: "Staging"
 description: "Deploy para ambiente de staging"
-script: "main.sh"
+entrypoint: "main.sh"
 EOF
 
 cat > plugins/dev-tools/deploy/staging/main.sh << 'EOF'
@@ -589,7 +589,7 @@ EOF
 cat > plugins/dev-tools/deploy/aws/ec2/config.yaml << EOF
 name: "EC2"
 description: "Deploy para instâncias EC2"
-script: "main.sh"
+entrypoint: "main.sh"
 EOF
 
 cat > plugins/dev-tools/deploy/aws/ec2/main.sh << 'EOF'

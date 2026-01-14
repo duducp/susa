@@ -1,5 +1,5 @@
 name: "Info"
 description: "Apresenta informações sobre o Susa CLI"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: false
 os: ["linux", "mac"]

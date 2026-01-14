@@ -1,4 +1,4 @@
 name: lock
 description: Atualiza o arquivo susa.lock
-script: main.sh
+entrypoint: main.sh
 os: ["linux", "mac"]

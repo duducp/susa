@@ -344,8 +344,8 @@ execute_command() {
     # Validate command exists and is compatible
     local config_file=$(validate_command "$category" "$command" "$current_os")
 
-    # Get script name and build path
-    local script_name=$(get_command_info "$GLOBAL_CONFIG_FILE" "$category" "$command" "script")
+    # Get entrypoint name and build path
+    local script_name=$(get_command_info "$GLOBAL_CONFIG_FILE" "$category" "$command" "entrypoint")
 
     # Check if this is a plugin command (has source in lock)
     local plugin_source=""

@@ -1,6 +1,6 @@
 name: "Tilix Terminal"
 description: "Instala Tilix (terminal)"
-script: "main.sh"
+entrypoint: "main.sh"
 sudo: true
 group: terminal
 os: ["linux"]

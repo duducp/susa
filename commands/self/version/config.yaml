@@ -1,4 +1,4 @@
 name: "Version"
 description: "Mostra a versão do Susa CLI"
-script: "main.sh"
+entrypoint: "main.sh"
 os: ["linux", "mac"]
