@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -165,7 +164,7 @@ install_podman_linux() {
     local arch=$(uname -m)
     case "$arch" in
         x86_64) arch="amd64" ;;
-        aarch64|arm64) arch="arm64" ;;
+        aarch64 | arm64) arch="arm64" ;;
         *)
             log_error "Arquitetura não suportada: $arch"
             return 1
@@ -240,9 +239,9 @@ install_podman_linux() {
     # Configure PATH if needed
     local shell_config=$(detect_shell_config)
     if ! grep -q ".local/bin" "$shell_config" 2>/dev/null; then
-        echo "" >> "$shell_config"
-        echo "# Local binaries PATH" >> "$shell_config"
-        echo "export PATH=\"$(get_local_bin_dir):\$PATH\"" >> "$shell_config"
+        echo "" >>"$shell_config"
+        echo "# Local binaries PATH" >>"$shell_config"
+        echo "export PATH=\"$(get_local_bin_dir):\$PATH\"" >>"$shell_config"
         log_debug "PATH configurado em $shell_config"
     fi
 
@@ -293,9 +292,9 @@ install_podman_linux() {
 
 # Main installation function
 install_podman() {
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
     log_info "Iniciando instalação do Podman..."
 
@@ -485,16 +484,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;

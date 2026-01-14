@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source completion library
 source "$LIB_DIR/internal/completion.sh"
 source "$LIB_DIR/internal/args.sh"
@@ -43,7 +42,7 @@ main() {
     # Find symlink path
     log_debug "Procurando caminho do executável susa"
     SYMLINK_PATH=""
-    if command -v susa &> /dev/null; then
+    if command -v susa &>/dev/null; then
         SUSA_BIN=$(command -v susa)
         if [[ -L "$SUSA_BIN" ]]; then
             SYMLINK_PATH="$SUSA_BIN -> $(readlink -f "$SUSA_BIN")"
@@ -64,7 +63,7 @@ main() {
 
     # Parse completion status (format: status:details:file)
     # Use array to handle details containing colons
-    IFS=':' read -r COMPLETION_INSTALLED COMPLETION_DETAILS_REST <<< "$COMPLETION_STATUS_INFO"
+    IFS=':' read -r COMPLETION_INSTALLED COMPLETION_DETAILS_REST <<<"$COMPLETION_STATUS_INFO"
 
     # Split the rest to get details and file (details may contain colons)
     if [[ "$COMPLETION_DETAILS_REST" =~ ^(.*):(/.*)$ ]]; then
@@ -101,11 +100,11 @@ main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
-        -v|--verbose)
+        -v | --verbose)
             export DEBUG=1
             log_debug "Modo verbose ativado"
             shift

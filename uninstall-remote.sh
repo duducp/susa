@@ -42,10 +42,10 @@ detect_os() {
     elif [[ -f /etc/os-release ]]; then
         . /etc/os-release
         case "$ID" in
-            ubuntu|debian)
+            ubuntu | debian)
                 echo "debian"
                 ;;
-            fedora|rhel|centos|rocky|almalinux)
+            fedora | rhel | centos | rocky | almalinux)
                 echo "fedora"
                 ;;
             *)

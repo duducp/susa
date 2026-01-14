@@ -110,7 +110,7 @@ update_lock_file() {
     log_info "Atualizando arquivo susa.lock..."
     log_debug "Executando: $CORE_DIR/susa self lock"
 
-    if "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
+    if "$CORE_DIR/susa" self lock >/dev/null 2>&1; then
         log_debug "Lock file atualizado com sucesso"
     else
         log_warning "Não foi possível atualizar o susa.lock. Execute 'susa self lock' manualmente."
@@ -152,7 +152,7 @@ clone_plugin() {
 normalize_git_url() {
     local url="$1"
     local force_ssh="${2:-false}"
-    local provider="${3:-github}"  # Default to GitHub for backwards compatibility
+    local provider="${3:-github}" # Default to GitHub for backwards compatibility
 
     # If it's user/repo format, convert to full URL
     if [[ "$url" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then

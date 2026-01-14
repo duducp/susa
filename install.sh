@@ -88,7 +88,7 @@ configure_shell() {
     fi
 
     # Add PATH configuration
-    cat >> "$shell_config" << 'EOF'
+    cat >>"$shell_config" <<'EOF'
 
 # Path Bin
 export PATH="$HOME/.local/bin:$PATH"
@@ -110,7 +110,7 @@ if command -v bash &>/dev/null; then
         # Ensure .bash_profile sources .bashrc
         if [ -f "$HOME/.bash_profile" ]; then
             if ! grep -q "source.*bashrc" "$HOME/.bash_profile" 2>/dev/null; then
-                cat >> "$HOME/.bash_profile" << 'EOF'
+                cat >>"$HOME/.bash_profile" <<'EOF'
 
 # Source .bashrc if it exists
 if [ -f "$HOME/.bashrc" ]; then

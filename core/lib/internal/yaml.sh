@@ -45,7 +45,7 @@ get_categories_from_lock() {
 # Get category info from lock file
 get_category_info_from_lock() {
     local category="$1"
-    local field="$2"  # name, description, source
+    local field="$2" # name, description, source
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local lock_file="$cli_dir/susa.lock"
 
@@ -82,10 +82,10 @@ get_category_subcategories_from_lock() {
 
     # Find all commands that start with "category/"
     # Extract the next level subcategory name
-    local subcats=$(yq eval ".commands[].category" "$lock_file" 2>/dev/null | \
-        grep "^${category}/" | \
-        sed "s|^${category}/||" | \
-        cut -d'/' -f1 | \
+    local subcats=$(yq eval ".commands[].category" "$lock_file" 2>/dev/null |
+        grep "^${category}/" |
+        sed "s|^${category}/||" |
+        cut -d'/' -f1 |
         sort -u)
 
     echo "$subcats"
@@ -95,7 +95,7 @@ get_category_subcategories_from_lock() {
 get_command_info_from_lock() {
     local category="$1"
     local command="$2"
-    local field="$3"  # description, os, sudo, group
+    local field="$3" # description, os, sudo, group
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local lock_file="$cli_dir/susa.lock"
 
@@ -110,7 +110,7 @@ get_command_info_from_lock() {
 is_command_compatible_from_lock() {
     local category="$1"
     local command="$2"
-    local current_os="$3"  # linux or mac
+    local current_os="$3" # linux or mac
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local lock_file="$cli_dir/susa.lock"
 
@@ -160,7 +160,7 @@ is_command_compatible_from_lock() {
 # Function to get global YAML fields (name, description, version)
 get_yaml_field() {
     local yaml_file="$1"
-    local field="$2"  # name, description, version, commands_dir, plugins_dir
+    local field="$2" # name, description, version, commands_dir, plugins_dir
 
     if [ ! -f "$yaml_file" ]; then
         return 1
@@ -187,7 +187,7 @@ get_all_categories() {
 get_category_info() {
     local yaml_file="$1"
     local category="$2"
-    local field="$3"  # name or description
+    local field="$3" # name or description
 
     # Only read from lock file - no fallback
     if has_valid_lock_file; then
@@ -206,7 +206,7 @@ get_category_info() {
 get_category_commands() {
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local category="$1"
-    local current_os="${2:-}"  # Optional OS filter
+    local current_os="${2:-}" # Optional OS filter
 
     # Only read from lock file - no fallback
     if has_valid_lock_file; then
@@ -276,7 +276,7 @@ get_command_config_field() {
 # Finds the config file of a command based on directory path
 # WARNING: Used only for finding script path when executing commands
 find_command_config() {
-    local category="$1"       # Can be "install" or "install/python"
+    local category="$1" # Can be "install" or "install/python"
     local command_id="$2"
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
 
@@ -371,10 +371,10 @@ is_dev_plugin_command() {
 
 # Gets information from a specific command from lock file only
 get_command_info() {
-    local yaml_file="$1"  # Kept for compatibility, but not used
+    local yaml_file="$1" # Kept for compatibility, but not used
     local category="$2"
     local command_id="$3"
-    local field="$4"  # name, description, script, sudo, os, group
+    local field="$4" # name, description, script, sudo, os, group
 
     # Only read from lock file
     if has_valid_lock_file; then
@@ -404,10 +404,10 @@ get_command_info() {
 
 # Function to check if command is compatible with current OS from lock file only
 is_command_compatible() {
-    local yaml_file="$1"  # Kept for compatibility
+    local yaml_file="$1" # Kept for compatibility
     local category="$2"
     local command_id="$3"
-    local current_os="$4"  # linux or mac
+    local current_os="$4" # linux or mac
 
     # Use lock file function directly
     is_command_compatible_from_lock "$category" "$command_id" "$current_os"
@@ -415,7 +415,7 @@ is_command_compatible() {
 
 # Function to check if command requires sudo from lock file only
 requires_sudo() {
-    local yaml_file="$1"  # Kept for compatibility
+    local yaml_file="$1" # Kept for compatibility
     local category="$2"
     local command_id="$3"
 
@@ -432,7 +432,7 @@ requires_sudo() {
 
 # Function to get the group of a command from lock file only
 get_command_group() {
-    local yaml_file="$1"  # Kept for compatibility
+    local yaml_file="$1" # Kept for compatibility
     local category="$2"
     local command_id="$3"
 
@@ -450,7 +450,7 @@ get_command_group() {
 
 # Function to get unique list of groups in a category
 get_category_groups() {
-    local yaml_file="$1"  # Kept for compatibility
+    local yaml_file="$1" # Kept for compatibility
     local category="$2"
     local current_os="$3"
 

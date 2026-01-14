@@ -121,10 +121,10 @@ is_completion_loaded() {
 
     case "$shell_type" in
         bash)
-            type _susa_completion &> /dev/null 2>&1 && return 0
+            type _susa_completion &>/dev/null 2>&1 && return 0
             ;;
         zsh)
-            type _susa &> /dev/null 2>&1 && return 0
+            type _susa &>/dev/null 2>&1 && return 0
             ;;
         *)
             return 1

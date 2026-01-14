@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -103,8 +102,8 @@ detect_os_and_arch() {
     local arch=$(uname -m)
     case "$arch" in
         x86_64) arch="amd64" ;;
-        aarch64|arm64) arch="arm64" ;;
-        i386|i686)
+        aarch64 | arm64) arch="arm64" ;;
+        i386 | i686)
             if [ "$os_name" != "linux" ]; then
                 log_error "Arquitetura i386/i686 não suportada em $os_name"
                 return 1
@@ -165,11 +164,11 @@ add_asdf_to_shell() {
     local asdf_dir="$1"
     local shell_config="$2"
 
-    echo "" >> "$shell_config"
-    echo "# ASDF Version Manager" >> "$shell_config"
-    echo "export PATH=\"$(get_local_bin_dir):\$PATH\"" >> "$shell_config"
-    echo "export ASDF_DATA_DIR=\"$asdf_dir\"" >> "$shell_config"
-    echo "export PATH=\"\$ASDF_DATA_DIR/bin:\$ASDF_DATA_DIR/shims:\$PATH\"" >> "$shell_config"
+    echo "" >>"$shell_config"
+    echo "# ASDF Version Manager" >>"$shell_config"
+    echo "export PATH=\"$(get_local_bin_dir):\$PATH\"" >>"$shell_config"
+    echo "export ASDF_DATA_DIR=\"$asdf_dir\"" >>"$shell_config"
+    echo "export PATH=\"\$ASDF_DATA_DIR/bin:\$ASDF_DATA_DIR/shims:\$PATH\"" >>"$shell_config"
 }
 
 # Configure shell to use ASDF
@@ -302,9 +301,9 @@ install_asdf_release() {
 install_asdf() {
     local asdf_dir="${ASDF_INSTALL_DIR:-$HOME/.asdf}"
 
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
     log_info "Iniciando instalação do ASDF..."
 
@@ -482,16 +481,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;

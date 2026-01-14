@@ -14,6 +14,9 @@ check_sudo() {
 
 required_sudo() {
     if ! check_sudo; then
-        sudo -v || { log_error "Falha ao obter privilégios de sudo"; exit 1; }
+        sudo -v || {
+            log_error "Falha ao obter privilégios de sudo"
+            exit 1
+        }
     fi
 }

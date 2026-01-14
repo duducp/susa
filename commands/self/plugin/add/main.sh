@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
@@ -100,7 +99,7 @@ ensure_registry_exists() {
     fi
 
     log_debug "Creating registry.yaml file"
-    cat > "$registry_file" << 'EOF'
+    cat >"$registry_file" <<'EOF'
 # Plugin Registry
 # This file keeps track of all installed plugins
 
@@ -252,16 +251,16 @@ USE_SSH="false"
 PROVIDER="github"
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
-        -v|--verbose)
+        -v | --verbose)
             export DEBUG=1
             log_debug "Modo verbose ativado"
             shift
             ;;
-        -q|--quiet)
+        -q | --quiet)
             export SILENT=1
             shift
             ;;

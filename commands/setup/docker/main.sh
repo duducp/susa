@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -129,7 +128,7 @@ detect_os_and_arch() {
 
     case "$arch" in
         x86_64) arch="x86_64" ;;
-        aarch64|arm64) arch="aarch64" ;;
+        aarch64 | arm64) arch="aarch64" ;;
         armv7l) arch="armhf" ;;
         *)
             log_error "Arquitetura não suportada: $arch"
@@ -217,13 +216,13 @@ install_docker_linux() {
     fi
 
     case "$distro" in
-        ubuntu|debian|pop|linuxmint)
+        ubuntu | debian | pop | linuxmint)
             install_docker_debian
             ;;
-        fedora|rhel|centos|rocky|almalinux)
+        fedora | rhel | centos | rocky | almalinux)
             install_docker_rhel
             ;;
-        arch|manjaro)
+        arch | manjaro)
             install_docker_arch
             ;;
         *)
@@ -280,9 +279,9 @@ install_docker_debian() {
     # Set up repository
     log_info "Configurando repositório do Docker..."
     echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] ${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') \
-      $(lsb_release -cs) stable" | \
-      sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] ${DOCKER_DOWNLOAD_BASE_URL:-https://download.docker.com}/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') \
+      $(lsb_release -cs) stable" |
+        sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
 
     # Update package index again
     sudo apt-get update >/dev/null 2>&1
@@ -347,9 +346,9 @@ install_docker_arch() {
 
 # Main installation function
 install_docker() {
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
     log_info "Iniciando instalação do Docker..."
 
@@ -465,7 +464,7 @@ update_docker() {
             fi
 
             case "$distro" in
-                ubuntu|debian|pop|linuxmint)
+                ubuntu | debian | pop | linuxmint)
                     log_info "Atualizando Docker via apt..."
                     sudo apt-get update >/dev/null 2>&1
                     sudo apt-get install --only-upgrade -y \
@@ -475,7 +474,7 @@ update_docker() {
                         docker-buildx-plugin \
                         docker-compose-plugin >/dev/null 2>&1
                     ;;
-                fedora|rhel|centos|rocky|almalinux)
+                fedora | rhel | centos | rocky | almalinux)
                     log_info "Atualizando Docker via dnf..."
                     sudo dnf upgrade -y \
                         docker-ce \
@@ -484,7 +483,7 @@ update_docker() {
                         docker-buildx-plugin \
                         docker-compose-plugin >/dev/null 2>&1
                     ;;
-                arch|manjaro)
+                arch | manjaro)
                     log_info "Atualizando Docker via pacman..."
                     sudo pacman -Syu --noconfirm docker docker-compose >/dev/null 2>&1
                     ;;
@@ -566,7 +565,7 @@ uninstall_docker() {
             sudo systemctl disable docker >/dev/null 2>&1 || log_debug "Serviço não estava habilitado"
 
             case "$distro" in
-                ubuntu|debian|pop|linuxmint)
+                ubuntu | debian | pop | linuxmint)
                     log_info "Removendo Docker via apt..."
                     sudo apt-get purge -y \
                         docker-ce \
@@ -576,7 +575,7 @@ uninstall_docker() {
                         docker-compose-plugin >/dev/null 2>&1
                     sudo apt-get autoremove -y >/dev/null 2>&1
                     ;;
-                fedora|rhel|centos|rocky|almalinux)
+                fedora | rhel | centos | rocky | almalinux)
                     log_info "Removendo Docker via dnf..."
                     sudo dnf remove -y \
                         docker-ce \
@@ -585,7 +584,7 @@ uninstall_docker() {
                         docker-buildx-plugin \
                         docker-compose-plugin >/dev/null 2>&1
                     ;;
-                arch|manjaro)
+                arch | manjaro)
                     log_info "Removendo Docker via pacman..."
                     sudo pacman -Rns --noconfirm docker docker-compose >/dev/null 2>&1
                     ;;
@@ -633,16 +632,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;

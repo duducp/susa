@@ -141,22 +141,32 @@ Execute manualmente apenas se adicionar comandos diretamente no diretório `comm
 susa self completion --install
 ```
 
-## � Quality Assurance
+## ✅ Quality Assurance
 
-O projeto usa **ShellCheck** para garantir a qualidade dos scripts:
+O projeto usa **ShellCheck** para análise estática e **shfmt** para formatação de código:
 
 ```bash
-# Executar verificação de qualidade
+# Verificar qualidade do código
 make shellcheck
 
-# Ou usar alias
+# Verificar formatação
+make shfmt
+
+# Formatar automaticamente
+make format
+
+# Executar todas as verificações
 make lint
 
 # Executar todos os testes
 make test
 ```
 
-Para mais informações sobre o ShellCheck, veja [SHELLCHECK.md](.github/SHELLCHECK.md).
+**Ferramentas:**
+- 🔍 **ShellCheck**: Análise estática de código shell
+- 📝 **shfmt**: Formatação automática de scripts
+
+Para mais informações, veja [SHELLCHECK.md](.github/SHELLCHECK.md).
 
 [![CI Status](https://github.com/duducp/susa/actions/workflows/ci.yml/badge.svg)](https://github.com/duducp/susa/actions/workflows/ci.yml)
 

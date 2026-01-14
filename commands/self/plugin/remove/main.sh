@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
@@ -109,16 +108,16 @@ require_arguments "$@"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
-        -v|--verbose)
+        -v | --verbose)
             export DEBUG=1
             log_debug "Modo verbose ativado"
             shift
             ;;
-        -q|--quiet)
+        -q | --quiet)
             export SILENT=1
             shift
             ;;

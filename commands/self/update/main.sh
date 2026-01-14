@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source libraries
 source "$LIB_DIR/internal/args.sh"
 
@@ -70,8 +69,8 @@ get_latest_version() {
 
     # Try to obtain via GitHub API
     latest_version=$(curl -s --max-time 10 --connect-timeout 5 \
-        https://api.github.com/repos/duducp/susa/releases/latest 2>/dev/null \
-        | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+        https://api.github.com/repos/duducp/susa/releases/latest 2>/dev/null |
+        grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
 
     if [[ -n "$latest_version" ]]; then
         log_debug "Versão obtida via API: $latest_version"
@@ -83,8 +82,8 @@ get_latest_version() {
 
     # If it fails, try to get the version of cli.yaml from the remote repository
     latest_version=$(curl -s --max-time 10 --connect-timeout 5 \
-        "https://raw.githubusercontent.com/duducp/susa/${REPO_BRANCH}/cli.yaml" 2>/dev/null \
-        | grep 'version:' | head -1 | sed -E 's/.*version: *"?([^"]+)"?/\1/')
+        "https://raw.githubusercontent.com/duducp/susa/${REPO_BRANCH}/cli.yaml" 2>/dev/null |
+        grep 'version:' | head -1 | sed -E 's/.*version: *"?([^"]+)"?/\1/')
 
     if [[ -n "$latest_version" ]]; then
         log_debug "Versão obtida via cli.yaml: $latest_version"
@@ -182,7 +181,7 @@ perform_update() {
     # Update lock file after successful update
     log_info "Atualizando arquivo de cache..."
     log_debug "Executando: $CORE_DIR/susa self lock"
-    if "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
+    if "$CORE_DIR/susa" self lock >/dev/null 2>&1; then
         log_debug "Lock file atualizado com sucesso"
     else
         log_warning "Não foi possível atualizar o lock file. Execute 'susa self lock' manualmente."
@@ -214,7 +213,7 @@ main() {
     fi
 
     # Parse result (version|method)
-    IFS='|' read -r LATEST_VERSION METHOD <<< "$LATEST_VERSION_RESULT"
+    IFS='|' read -r LATEST_VERSION METHOD <<<"$LATEST_VERSION_RESULT"
 
     if [[ "$METHOD" == "api" ]]; then
         log_debug "Versão obtida via GitHub API: $LATEST_VERSION"
@@ -263,16 +262,16 @@ main() {
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
-        -v|--verbose)
+        -v | --verbose)
             export DEBUG=1
             log_debug "Modo verbose ativado"
             shift
             ;;
-        -q|--quiet)
+        -q | --quiet)
             export SILENT=1
             shift
             ;;

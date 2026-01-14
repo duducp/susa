@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -107,11 +106,11 @@ check_existing_installation() {
     local current_version=$(get_iterm_version)
     log_info "iTerm2 $current_version já está instalado."
 
-	# Mark as installed in lock file
-	mark_installed "iterm" "$current_version"
+    # Mark as installed in lock file
+    mark_installed "iterm" "$current_version"
 
     # Check for updates
-	log_debug "Obtendo última versão..."
+    log_debug "Obtendo última versão..."
     local latest_version=$(get_latest_iterm_version)
     if [ $? -eq 0 ] && [ -n "$latest_version" ]; then
         if [ "$current_version" != "$latest_version" ]; then
@@ -128,7 +127,7 @@ check_existing_installation() {
 
 # Install iTerm2 using Homebrew
 install_iterm() {
-	# Check if Homebrew is installed
+    # Check if Homebrew is installed
     if ! check_homebrew; then
         echo ""
         echo -e "${YELLOW}Para instalar o Homebrew, execute:${NC}"
@@ -136,9 +135,9 @@ install_iterm() {
         return 1
     fi
 
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
     log_info "Iniciando instalação do iTerm2..."
 
@@ -148,9 +147,9 @@ install_iterm() {
     brew update 2>&1 | while read -r line; do log_debug "brew: $line"; done || true
 
     # Install or reinstall iTerm2
-	log_info "Instalando iTerm2 via Homebrew..."
-	log_debug "Executando: brew install --cask iterm2"
-	brew install --cask iterm2 2>&1 | while read -r line; do log_debug "brew: $line"; done
+    log_info "Instalando iTerm2 via Homebrew..."
+    log_debug "Executando: brew install --cask iterm2"
+    brew install --cask iterm2 2>&1 | while read -r line; do log_debug "brew: $line"; done
 
     # Verify installation
     log_debug "Verificando instalação..."
@@ -303,11 +302,11 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --help|-h)
+            --help | -h)
                 show_help
                 exit 0
                 ;;
-            --uninstall|-u)
+            --uninstall | -u)
                 action="uninstall"
                 shift
                 ;;
@@ -315,12 +314,12 @@ main() {
                 action="update"
                 shift
                 ;;
-            --verbose|-v)
+            --verbose | -v)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            --quiet|-q)
+            --quiet | -q)
                 export SILENT=1
                 shift
                 ;;

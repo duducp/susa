@@ -1,4 +1,4 @@
-.PHONY: help install serve build deploy clean cli-install cli-uninstall test shellcheck lint
+.PHONY: help install serve build deploy clean cli-install cli-uninstall test shellcheck shfmt format lint
 
 # Cores para output
 GREEN := \033[0;32m
@@ -14,10 +14,10 @@ help:
 	@grep -E '^cli-[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BLUE)Quality Assurance Commands:$(NC)"
-	@grep -E '^(shellcheck|lint|test):.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^(shellcheck|shfmt|format|lint|test):.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(BLUE)Documentation Commands:$(NC)"
-	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -v '^cli-' | grep -v '^shellcheck' | grep -v '^lint' | grep -v '^test' | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -v '^cli-' | grep -v '^shellcheck' | grep -v '^shfmt' | grep -v '^format' | grep -v '^lint' | grep -v '^test' | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 
 install: ## Instala dependências para documentação
@@ -65,7 +65,7 @@ cli-uninstall: ## Remove o CLI do sistema
 # Quality Assurance
 shellcheck: ## Executa ShellCheck em todos os scripts
 	@echo "$(GREEN)🔍 Executando ShellCheck...$(NC)"
-	@command -v shellcheck >/dev/null 2>&1 || { echo "$(RED)❌ ShellCheck não está instalado. Instale com: sudo apt install shellcheck$(NC)"; exit 1; }
+	@command -v shellcheck >/dev/null 2>&1 || { echo "$(RED)❌ ShellCheck não está instalado. Instale com: sudo apt install shellcheck ou brew install shellcheck$(NC)"; exit 1; }
 	@echo ""
 	@errors=0; \
 	total=0; \
@@ -98,7 +98,70 @@ shellcheck: ## Executa ShellCheck em todos os scripts
 		exit 1; \
 	fi
 
-lint: shellcheck ## Alias para shellcheck
+shfmt: ## Verifica formatação de scripts com shfmt
+	@echo "$(GREEN)📝 Verificando formatação com shfmt...$(NC)"
+	@command -v shfmt >/dev/null 2>&1 || { echo "$(RED)❌ shfmt não está instalado. Instale com: sudo apt install shfmt ou brew install shfmt$(NC)"; exit 1; }
+	@echo ""
+	@errors=0; \
+	total=0; \
+	echo "$(BLUE)Verificando core/susa...$(NC)"; \
+	if ! shfmt -d -i 4 -ci core/susa; then \
+		errors=$$((errors + 1)); \
+	fi; \
+	total=$$((total + 1)); \
+	for lib in core/lib/*.sh core/lib/internal/*.sh; do \
+		if [ -f "$$lib" ]; then \
+			echo "$(BLUE)Verificando $$lib...$(NC)"; \
+			if ! shfmt -d -i 4 -ci "$$lib"; then \
+				errors=$$((errors + 1)); \
+			fi; \
+			total=$$((total + 1)); \
+		fi; \
+	done; \
+	for script in $$(find commands install*.sh uninstall*.sh -name "*.sh" -o -name "main.sh" | grep -v "/node_modules/"); do \
+		if [ -f "$$script" ]; then \
+			echo "$(BLUE)Verificando $$script...$(NC)"; \
+			if ! shfmt -d -i 4 -ci "$$script"; then \
+				errors=$$((errors + 1)); \
+			fi; \
+			total=$$((total + 1)); \
+		fi; \
+	done; \
+	echo ""; \
+	if [ $$errors -eq 0 ]; then \
+		echo "$(GREEN)✅ Todos os $$total scripts estão formatados corretamente!$(NC)"; \
+	else \
+		echo "$(RED)❌ $$errors de $$total arquivo(s) com problemas de formatação$(NC)"; \
+		echo "$(YELLOW)💡 Execute 'make format' para corrigir automaticamente$(NC)"; \
+		exit 1; \
+	fi
 
-test: shellcheck ## Executa todos os testes
+format: ## Formata automaticamente todos os scripts com shfmt
+	@echo "$(GREEN)✨ Formatando scripts com shfmt...$(NC)"
+	@command -v shfmt >/dev/null 2>&1 || { echo "$(RED)❌ shfmt não está instalado. Instale com: sudo apt install shfmt ou brew install shfmt$(NC)"; exit 1; }
+	@echo ""
+	@total=0; \
+	echo "$(BLUE)Formatando core/susa...$(NC)"; \
+	shfmt -w -i 4 -ci core/susa; \
+	total=$$((total + 1)); \
+	for lib in core/lib/*.sh core/lib/internal/*.sh; do \
+		if [ -f "$$lib" ]; then \
+			echo "$(BLUE)Formatando $$lib...$(NC)"; \
+			shfmt -w -i 4 -ci "$$lib"; \
+			total=$$((total + 1)); \
+		fi; \
+	done; \
+	for script in $$(find commands install*.sh uninstall*.sh -name "*.sh" -o -name "main.sh" | grep -v "/node_modules/"); do \
+		if [ -f "$$script" ]; then \
+			echo "$(BLUE)Formatando $$script...$(NC)"; \
+			shfmt -w -i 4 -ci "$$script"; \
+			total=$$((total + 1)); \
+		fi; \
+	done; \
+	echo ""; \
+	echo "$(GREEN)✅ $$total scripts formatados com sucesso!$(NC)"
+
+lint: shellcheck shfmt ## Executa todas as verificações de qualidade
+
+test: shellcheck shfmt ## Executa todos os testes
 	@echo "$(GREEN)✅ Todos os testes passaram!$(NC)"

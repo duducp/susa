@@ -23,7 +23,7 @@ registry_add_plugin() {
 
     # Create file if it doesn't exist
     if [ ! -f "$registry_file" ]; then
-        cat > "$registry_file" << EOF
+        cat >"$registry_file" <<EOF
 # Plugin Registry
 version: "1.0.0"
 
@@ -100,7 +100,7 @@ registry_list_plugins() {
 registry_get_plugin_info() {
     local registry_file="$1"
     local plugin_name="$2"
-    local field="$3"  # source, version, installed_at
+    local field="$3" # source, version, installed_at
 
     if [ ! -f "$registry_file" ]; then
         return 1

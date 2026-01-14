@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -71,7 +70,7 @@ detect_os_and_arch() {
 
     case "$arch" in
         x86_64) arch="x64" ;;
-        aarch64|arm64) arch="arm64" ;;
+        aarch64 | arm64) arch="arm64" ;;
         *)
             log_error "Arquitetura não suportada: $arch"
             return 1
@@ -176,9 +175,9 @@ install_toolbox_linux() {
     local version="$1"
     local os_arch="$2"
 
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
     log_info "Instalando JetBrains Toolbox $version no Linux..."
 
@@ -250,7 +249,7 @@ install_toolbox_linux() {
     log_debug "Link simbólico criado: $bin_dir/jetbrains-toolbox -> $toolbox_binary"
 
     # Save version
-    echo "$version" > "$install_dir/.version"
+    echo "$version" >"$install_dir/.version"
 
     # Clean up
     rm -rf "$temp_dir"
@@ -259,9 +258,9 @@ install_toolbox_linux() {
     local shell_config=$(detect_shell_config)
     local local_bin=$(get_local_bin_dir)
     if ! grep -q ".local/bin" "$shell_config" 2>/dev/null; then
-        echo "" >> "$shell_config"
-        echo "# Local binaries PATH" >> "$shell_config"
-        echo "export PATH=\"$local_bin:\$PATH\"" >> "$shell_config"
+        echo "" >>"$shell_config"
+        echo "# Local binaries PATH" >>"$shell_config"
+        echo "export PATH=\"$local_bin:\$PATH\"" >>"$shell_config"
         log_debug "PATH configurado em $shell_config"
     fi
 
@@ -272,7 +271,7 @@ install_toolbox_linux() {
     create_desktop_entry
 
     log_info "Iniciando JetBrains Toolbox..."
-    nohup "$bin_dir/jetbrains-toolbox" > /dev/null 2>&1 &
+    nohup "$bin_dir/jetbrains-toolbox" >/dev/null 2>&1 &
 
     return 0
 }
@@ -331,7 +330,7 @@ install_toolbox_macos() {
 
     # Save version
     mkdir -p "$install_dir"
-    echo "$version" > "$install_dir/.version"
+    echo "$version" >"$install_dir/.version"
 
     # Clean up
     rm -rf "$temp_dir"
@@ -358,7 +357,7 @@ create_desktop_entry() {
     fi
 
     local toolbox_bin=$(get_local_bin_dir)/jetbrains-toolbox
-    cat > "$desktop_file" << EOF
+    cat >"$desktop_file" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -471,7 +470,7 @@ update_toolbox() {
     # Stop Toolbox if running
     # Note about stopping Toolbox
     log_info "Nota: Feche o JetBrains Toolbox se estiver em execução antes de continuar."
-	sleep 5
+    sleep 5
 
     # Remove old installation
     log_debug "Removendo versão anterior..."
@@ -603,16 +602,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;

@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -130,9 +129,9 @@ configure_shell() {
 
     log_debug "Configurando $shell_config..."
 
-    echo "" >> "$shell_config"
-    echo "# Local binaries PATH" >> "$shell_config"
-	echo "export PATH=\"$(get_local_bin_dir):\$PATH\"" >> "$shell_config"
+    echo "" >>"$shell_config"
+    echo "# Local binaries PATH" >>"$shell_config"
+    echo "export PATH=\"$(get_local_bin_dir):\$PATH\"" >>"$shell_config"
 
     log_debug "Configuração adicionada ao shell"
 }
@@ -149,11 +148,11 @@ setup_uv_environment() {
 
 # Install UV
 install_uv() {
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
-	log_info "Iniciando instalação do UV..."
+    log_info "Iniciando instalação do UV..."
 
     local bin_dir=$(get_local_bin_dir)
     log_debug "Diretório de instalação: $bin_dir"
@@ -379,16 +378,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;

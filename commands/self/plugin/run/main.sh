@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source required libraries
 source "$LIB_DIR/internal/yaml.sh"
 source "$LIB_DIR/internal/registry.sh"
@@ -215,9 +214,9 @@ show_help() {
     echo "  cd ~/meu-plugin"
     echo "  susa self plugin run meu-plugin text comando"
     echo ""
-	echo "  # Passar argumentos do plugin que conflitam com opções do run"
+    echo "  # Passar argumentos do plugin que conflitam com opções do run"
     echo "  susa self plugin run my-plugin text hello -- --help --verbose"
-	echo ""
+    echo ""
     echo "  # Apenas preparar plugin dev (adicionar ao registry/lock)"
     echo "  cd ~/meu-plugin"
     echo "  susa self plugin run --prepare meu-plugin text comando"
@@ -324,7 +323,7 @@ run_plugin_command() {
     local plugin_name="$1"
     local category="$2"
     local command="$3"
-    local mode="${4:-execute}"  # execute, prepare, cleanup
+    local mode="${4:-execute}" # execute, prepare, cleanup
     shift 3
     # Skip mode parameter if present
     if [[ "$1" == "prepare" ]] || [[ "$1" == "cleanup" ]] || [[ "$1" == "execute" ]]; then
@@ -377,7 +376,7 @@ run_plugin_command() {
     fi
 
     # Parse check result
-    IFS=':' read -r found is_dev <<< "$check_result"
+    IFS=':' read -r found is_dev <<<"$check_result"
     if [ "$is_dev" = "true" ]; then
         is_dev_plugin=true
         log_debug "Plugin: DEV" >&2
@@ -425,7 +424,7 @@ run_plugin_command() {
         log_info "Executando plugin instalado: $plugin_name"
     fi
 
-	echo ""
+    echo ""
 
     # Step 6: Execute command
     log_debug "=== Executando comando ===" >&2
@@ -448,11 +447,11 @@ main() {
     # Parse options (only run command options, not plugin arguments)
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado" >&2
                 shift

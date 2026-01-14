@@ -1,0 +1,14 @@
+# shfmt configuration for Susa CLI project
+# Documentation: https://github.com/mvdan/sh
+
+# Indent: 4 spaces (aligns with project style)
+# -i 4
+
+# Case indent: indent case statements
+# -ci
+
+# Binary next line: binary operators at start of line
+# -bn
+
+# Simplify code
+# -s

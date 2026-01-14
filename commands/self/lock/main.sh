@@ -22,7 +22,7 @@ show_help() {
     echo "                    no sistema e atualiza o lock file:"
     echo "                    • Adiciona novas instalações ao lock"
     echo "                    • Remove instalações que foram desinstaladas"
-	echo "  -v, --verbose     Habilita saída detalhada para depuração"
+    echo "  -v, --verbose     Habilita saída detalhada para depuração"
     echo "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo "  -h, --help        Mostra esta mensagem de ajuda"
     echo ""
@@ -56,7 +56,7 @@ show_help() {
 scan_category_dir() {
     local base_dir="$1"
     local category_path="$2"
-    local source="$3"  # 'commands' or plugin name
+    local source="$3" # 'commands' or plugin name
     local full_path="$base_dir/$category_path"
 
     if [ ! -d "$full_path" ]; then
@@ -192,7 +192,7 @@ scan_all_structure() {
                 # Scan category structure - mark as dev
                 scan_category_dir "$plugin_source" "$cat_name" "$plugin_name###DEV"
             done
-        done <<< "$dev_plugins"
+        done <<<"$dev_plugins"
     fi
 }
 
@@ -207,7 +207,7 @@ generate_lock_file() {
         local has_installations=$(yq eval '.installations | length' "$lock_file" 2>/dev/null)
         if [ "$has_installations" != "0" ] && [ "$has_installations" != "null" ]; then
             log_debug "Fazendo backup da seção de instalações..."
-            yq eval '.installations' "$lock_file" > "$temp_installations" 2>/dev/null
+            yq eval '.installations' "$lock_file" >"$temp_installations" 2>/dev/null
         fi
     fi
 
@@ -224,7 +224,7 @@ generate_lock_file() {
     log_info "Gerando arquivo susa.lock..."
 
     # Create lock file header
-    cat > "$lock_file" << EOF
+    cat >"$lock_file" <<EOF
 # Susa Lock File
 # This file contains the discovered commands and categories structure
 # Generated at: $timestamp
@@ -247,15 +247,15 @@ EOF
             local cat_source="$field3"
 
             # Add category to lock file
-            echo "  - name: \"$cat_name\"" >> "$lock_file"
-            [ -n "$cat_desc" ] && echo "    description: \"$cat_desc\"" >> "$lock_file"
-            echo "    source: \"$cat_source\"" >> "$lock_file"
+            echo "  - name: \"$cat_name\"" >>"$lock_file"
+            [ -n "$cat_desc" ] && echo "    description: \"$cat_desc\"" >>"$lock_file"
+            echo "    source: \"$cat_source\"" >>"$lock_file"
         fi
-    done <<< "$scan_output"
+    done <<<"$scan_output"
 
     # Add commands section
-    echo "" >> "$lock_file"
-    echo "commands:" >> "$lock_file"
+    echo "" >>"$lock_file"
+    echo "commands:" >>"$lock_file"
 
     # Second pass: process commands with buffering
     local buffer=""
@@ -265,30 +265,30 @@ EOF
         if [ "$type" = "COMMAND" ]; then
             # If we have a buffer, write it out with plugin info if needed
             if [ -n "$buffer" ]; then
-                echo "$buffer" >> "$lock_file"
+                echo "$buffer" >>"$lock_file"
                 if [ "$current_source" != "commands" ]; then
                     # Add dev flag if it's a dev plugin
                     if [ "$is_dev_plugin" = true ]; then
-                        echo "    dev: true" >> "$lock_file"
+                        echo "    dev: true" >>"$lock_file"
                     fi
-                    echo "    plugin:" >> "$lock_file"
-                    echo "      name: \"$current_source\"" >> "$lock_file"
+                    echo "    plugin:" >>"$lock_file"
+                    echo "      name: \"$current_source\"" >>"$lock_file"
 
-					# Add source path for all plugins
-					local registry_file="$CLI_DIR/plugins/registry.yaml"
-					local plugin_source=""
+                    # Add source path for all plugins
+                    local registry_file="$CLI_DIR/plugins/registry.yaml"
+                    local plugin_source=""
 
-					if [ "$is_dev_plugin" = true ]; then
-						# For dev plugins, get source from registry
-						plugin_source=$(yq eval ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source" "$registry_file" 2>/dev/null | head -1)
-					else
-						# For installed plugins, use plugins directory
-						plugin_source="$CLI_DIR/plugins/$current_source"
-					fi
+                    if [ "$is_dev_plugin" = true ]; then
+                        # For dev plugins, get source from registry
+                        plugin_source=$(yq eval ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source" "$registry_file" 2>/dev/null | head -1)
+                    else
+                        # For installed plugins, use plugins directory
+                        plugin_source="$CLI_DIR/plugins/$current_source"
+                    fi
 
-					if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
-						echo "      source: \"$plugin_source\"" >> "$lock_file"
-					fi
+                    if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
+                        echo "      source: \"$plugin_source\"" >>"$lock_file"
+                    fi
                 fi
             fi
 
@@ -326,44 +326,44 @@ EOF
                 fi
             fi
         fi
-    done <<< "$scan_output"
+    done <<<"$scan_output"
 
     # Write last buffered command
     if [ -n "$buffer" ]; then
-        echo "$buffer" >> "$lock_file"
+        echo "$buffer" >>"$lock_file"
         if [ "$current_source" != "commands" ]; then
             # Add dev flag if it's a dev plugin
             if [ "$is_dev_plugin" = true ]; then
-                echo "    dev: true" >> "$lock_file"
+                echo "    dev: true" >>"$lock_file"
             fi
-            echo "    plugin:" >> "$lock_file"
-            echo "      name: \"$current_source\"" >> "$lock_file"
+            echo "    plugin:" >>"$lock_file"
+            echo "      name: \"$current_source\"" >>"$lock_file"
 
-			# Add source path for all plugins
-			local registry_file="$CLI_DIR/plugins/registry.yaml"
-			local plugin_source=""
+            # Add source path for all plugins
+            local registry_file="$CLI_DIR/plugins/registry.yaml"
+            local plugin_source=""
 
-			if [ "$is_dev_plugin" = true ]; then
-				# For dev plugins, get source from registry
-				plugin_source=$(yq eval ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source" "$registry_file" 2>/dev/null | head -1)
-			else
-				# For installed plugins, use plugins directory
-				plugin_source="$CLI_DIR/plugins/$current_source"
-			fi
+            if [ "$is_dev_plugin" = true ]; then
+                # For dev plugins, get source from registry
+                plugin_source=$(yq eval ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source" "$registry_file" 2>/dev/null | head -1)
+            else
+                # For installed plugins, use plugins directory
+                plugin_source="$CLI_DIR/plugins/$current_source"
+            fi
 
-			if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
-				echo "      source: \"$plugin_source\"" >> "$lock_file"
-			fi
+            if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
+                echo "      source: \"$plugin_source\"" >>"$lock_file"
+            fi
         fi
     fi
 
     # Restore installations section if it was backed up
     if [ -f "$temp_installations" ]; then
         log_debug "Restaurando seção de instalações..."
-        echo "" >> "$lock_file"
-        echo "installations:" >> "$lock_file"
+        echo "" >>"$lock_file"
+        echo "installations:" >>"$lock_file"
         # Indent the installations content
-        sed 's/^/  /' "$temp_installations" >> "$lock_file"
+        sed 's/^/  /' "$temp_installations" >>"$lock_file"
         rm -f "$temp_installations"
     fi
 
@@ -384,16 +384,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-			-v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;

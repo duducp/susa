@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -139,9 +138,9 @@ check_existing_installation() {
 
 # Install Tilix using system package manager
 install_tilix() {
-	if ! check_existing_installation; then
-		exit 0
-	fi
+    if ! check_existing_installation; then
+        exit 0
+    fi
 
     # Check if Tilix is already installed
     if command -v tilix &>/dev/null; then
@@ -446,11 +445,11 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --help|-h)
+            --help | -h)
                 show_help
                 exit 0
                 ;;
-            --uninstall|-u)
+            --uninstall | -u)
                 action="uninstall"
                 shift
                 ;;
@@ -458,12 +457,12 @@ main() {
                 action="update"
                 shift
                 ;;
-            --verbose|-v)
+            --verbose | -v)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            --quiet|-q)
+            --quiet | -q)
                 export SILENT=1
                 shift
                 ;;
@@ -484,7 +483,7 @@ main() {
     log_debug "Sistema operacional: Linux $(uname -r)"
 
     # Execute action
-	log_debug "Ação selecionada: $action"
+    log_debug "Ação selecionada: $action"
 
     case "$action" in
         install)

@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source installations library
 source "$LIB_DIR/internal/installations.sh"
 
@@ -130,10 +129,10 @@ configure_shell() {
 
     log_debug "Configurando $shell_config..."
 
-    echo "" >> "$shell_config"
-    echo "# Poetry (Python dependency manager)" >> "$shell_config"
-    echo "export POETRY_HOME=\"$poetry_home\"" >> "$shell_config"
-    echo "export PATH=\"\$POETRY_HOME/bin:\$PATH\"" >> "$shell_config"
+    echo "" >>"$shell_config"
+    echo "# Poetry (Python dependency manager)" >>"$shell_config"
+    echo "export POETRY_HOME=\"$poetry_home\"" >>"$shell_config"
+    echo "export PATH=\"\$POETRY_HOME/bin:\$PATH\"" >>"$shell_config"
 
     log_debug "Configuração adicionada ao shell"
 }
@@ -402,16 +401,16 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
-            -v|--verbose)
+            -v | --verbose)
                 export DEBUG=1
                 log_debug "Modo verbose ativado"
                 shift
                 ;;
-            -q|--quiet)
+            -q | --quiet)
                 export SILENT=1
                 shift
                 ;;
@@ -435,7 +434,7 @@ main() {
     log_debug "Ação selecionada: $action"
 
     case "$action" in
-    	install)
+        install)
             if ! check_existing_installation; then
                 exit 0
             fi

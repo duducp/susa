@@ -72,7 +72,7 @@ validate_or_create_lock_file() {
     log_info "Gerando arquivo de cache para otimizar o desempenho..."
 
     # Call the lock command bypassing the check to prevent infinite loop
-    if ! SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
+    if ! SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock >/dev/null 2>&1; then
         log_error "Erro ao gerar arquivo de cache"
         exit 1
     fi
@@ -84,7 +84,7 @@ validate_or_create_lock_file() {
 # Display CLI logo with version
 show_logo() {
     local version=$(show_number_version)
-    cat << LOGO
+    cat <<LOGO
    _____
   / ____|
  | (___  _   _ ___  __ _
@@ -234,7 +234,7 @@ list_grouped_commands() {
                 print_command_line "$category" "$cmd" "$cmd_desc"
             fi
         done
-    done <<< "$groups"
+    done <<<"$groups"
 
     [ "$has_compatible_commands" = "true" ] && return 0 || return 1
 }
@@ -417,11 +417,11 @@ main() {
 
     # Global options
     case "$1" in
-        -h|--help|help)
+        -h | --help | help)
             show_help
             exit 0
             ;;
-        -V|--version|version)
+        -V | --version | version)
             show_version
             exit 0
             ;;

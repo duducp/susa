@@ -13,7 +13,7 @@ IFS=$'\n\t'
 parse_help_arg() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;
@@ -41,7 +41,7 @@ require_arguments() {
 parse_simple_help_only() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
+            -h | --help)
                 show_help
                 exit 0
                 ;;

@@ -31,7 +31,6 @@ detect_shell_type() {
     esac
 }
 
-
 # Detect shell configuration file
 detect_shell_config() {
     # Detect which shell configuration file to use

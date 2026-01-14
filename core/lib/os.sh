@@ -6,22 +6,22 @@ IFS=$'\n\t'
 
 # OS_TYPE will be one of: "debian", "macos", "fedora", or "unknown"
 if [[ "$(uname)" == "Darwin" ]]; then
-  OS_TYPE="macos"
+    OS_TYPE="macos"
 elif [[ -f /etc/os-release ]]; then
-  . /etc/os-release
-  case "$ID" in
-    ubuntu|debian)
-      OS_TYPE="debian"
-      ;;
-    fedora|rhel|centos|rocky|almalinux)
-      OS_TYPE="fedora"
-      ;;
-    *)
-      OS_TYPE="unknown"
-      ;;
-  esac
+    . /etc/os-release
+    case "$ID" in
+        ubuntu | debian)
+            OS_TYPE="debian"
+            ;;
+        fedora | rhel | centos | rocky | almalinux)
+            OS_TYPE="fedora"
+            ;;
+        *)
+            OS_TYPE="unknown"
+            ;;
+    esac
 else
-  OS_TYPE="unknown"
+    OS_TYPE="unknown"
 fi
 
 # Function to get the simplified name of the OS (linux or mac)

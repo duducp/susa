@@ -2,7 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
 # Source libs
 source "$LIB_DIR/color.sh"
 source "$LIB_DIR/logger.sh"
@@ -65,8 +64,8 @@ main() {
 
     # Iterate through plugins in registry
     log_debug "Iterando pelos plugins"
-    for ((i=0; i<plugin_count; i++)); do
-        log_debug "Processando plugin $((i+1))/$plugin_count"
+    for ((i = 0; i < plugin_count; i++)); do
+        log_debug "Processando plugin $((i + 1))/$plugin_count"
 
         local plugin_name=$(yq eval ".plugins[$i].name" "$REGISTRY_FILE" 2>/dev/null)
         log_debug "Plugin name: $plugin_name"
@@ -132,16 +131,16 @@ main() {
 # Parse arguments first, before running main
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h|--help)
+        -h | --help)
             show_help
             exit 0
             ;;
-        -v|--verbose)
+        -v | --verbose)
             export DEBUG=1
             log_debug "Modo verbose ativado"
             shift
             ;;
-        -q|--quiet)
+        -q | --quiet)
             export SILENT=1
             shift
             ;;

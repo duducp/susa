@@ -216,7 +216,7 @@ check_software_installed() {
         iterm)
             [ "$(uname)" = "Darwin" ] && [ -d "/Applications/iTerm.app" ]
             ;;
-        toolbox|jetbrains-toolbox)
+        toolbox | jetbrains-toolbox)
             command -v jetbrains-toolbox &>/dev/null || [ -f "$HOME/.local/bin/jetbrains-toolbox" ]
             ;;
         *)
@@ -267,7 +267,7 @@ get_software_version() {
                 tilix --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
             fi
             ;;
-        toolbox|jetbrains-toolbox)
+        toolbox | jetbrains-toolbox)
             if command -v jetbrains-toolbox &>/dev/null; then
                 jetbrains-toolbox --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
             elif [ -f "$HOME/.local/bin/jetbrains-toolbox" ]; then
@@ -327,14 +327,14 @@ sync_installations() {
                 log_success "Sincronizado: $software_name ($version)"
 
                 # Track synced count in temp file
-                echo "1" >> "$temp_add_file"
+                echo "1" >>"$temp_add_file"
             else
                 log_debug "$software_name já está no lock file"
             fi
         else
             log_debug "$software_name não está instalado"
         fi
-    done <<< "$commands_output"
+    done <<<"$commands_output"
 
     # Second pass: Check for removed installations (lock → system)
     log_debug "Verificando instalações removidas..."
@@ -355,19 +355,19 @@ sync_installations() {
                 log_warning "Removido do lock: $software_name (não está mais instalado)"
 
                 # Track removed count in temp file
-                echo "1" >> "$temp_remove_file"
+                echo "1" >>"$temp_remove_file"
             fi
-        done <<< "$installed_in_lock"
+        done <<<"$installed_in_lock"
     fi
 
     # Count changes from temp files
     if [ -f "$temp_add_file" ]; then
-        synced_count=$(wc -l < "$temp_add_file")
+        synced_count=$(wc -l <"$temp_add_file")
         rm -f "$temp_add_file"
     fi
 
     if [ -f "$temp_remove_file" ]; then
-        removed_count=$(wc -l < "$temp_remove_file")
+        removed_count=$(wc -l <"$temp_remove_file")
         rm -f "$temp_remove_file"
     fi
 
