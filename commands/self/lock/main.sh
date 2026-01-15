@@ -7,6 +7,7 @@ IFS=$'\n\t'
 source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/internal/yaml.sh"
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/internal/plugin.sh"
 
 # ============================================================
 # Help Function
@@ -252,6 +253,41 @@ EOF
             echo "    source: \"$cat_source\"" >> "$lock_file"
         fi
     done <<< "$scan_output"
+
+    # Add plugins section with metadata
+    echo "" >> "$lock_file"
+    echo "plugins:" >> "$lock_file"
+
+    # Get unique plugins from scan output and add their metadata
+    local plugins_found=$(echo "$scan_output" | grep "^COMMAND" | awk -F'|' '{print $4}' | sed 's/###DEV$//' | sort -u)
+
+    while IFS= read -r plugin_source; do
+        [ -z "$plugin_source" ] || [ "$plugin_source" = "commands" ] && continue
+
+        local is_dev=false
+        local plugin_dir=""
+
+        # Check if it's a dev plugin
+        if echo "$scan_output" | grep -q "${plugin_source}###DEV"; then
+            is_dev=true
+            plugin_dir=$(yq eval ".plugins[] | select(.name == \"$plugin_source\" and .dev == true) | .source" "$CLI_DIR/plugins/registry.yaml" 2> /dev/null | head -1)
+        else
+            plugin_dir="$CLI_DIR/plugins/$plugin_source"
+        fi
+
+        if [ -d "$plugin_dir" ]; then
+            # Get plugin metadata
+            local plugin_version=$(detect_plugin_version "$plugin_dir")
+            local plugin_cmd_count=$(count_plugin_commands "$plugin_dir")
+            local plugin_categories=$(get_plugin_categories "$plugin_dir")
+
+            echo "  - name: \"$plugin_source\"" >> "$lock_file"
+            echo "    version: \"$plugin_version\"" >> "$lock_file"
+            echo "    commands: $plugin_cmd_count" >> "$lock_file"
+            [ -n "$plugin_categories" ] && echo "    categories: \"$plugin_categories\"" >> "$lock_file"
+            [ "$is_dev" = true ] && echo "    dev: true" >> "$lock_file"
+        fi
+    done <<< "$plugins_found"
 
     # Add commands section
     echo "" >> "$lock_file"

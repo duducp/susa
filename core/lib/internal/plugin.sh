@@ -98,7 +98,7 @@ count_plugin_commands() {
 # Gets plugin categories (first-level directories excluding .git)
 get_plugin_categories() {
     local plugin_dir="$1"
-    find "$plugin_dir" -mindepth 1 -maxdepth 1 -type d ! -name ".git" -exec basename {} \; 2> /dev/null | sort | paste -sd "," -
+    find "$plugin_dir" -mindepth 1 -maxdepth 1 -type d ! -name ".git" ! -name ".*" -exec basename {} \; 2> /dev/null | sort | paste -sd "," -
 }
 
 # Updates the lock file (creates if doesn't exist)

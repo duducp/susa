@@ -6,6 +6,7 @@ IFS=$'\n\t'
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
 source "$LIB_DIR/internal/args.sh"
+source "$LIB_DIR/internal/lock.sh"
 
 # Help function
 show_help() {
@@ -159,13 +160,11 @@ main() {
     local BACKUP_DIR="${PLUGINS_DIR}/.backup_${PLUGIN_NAME}_$(date +%s)"
     log_debug "Diretório de backup: $BACKUP_DIR"
 
-    log_info "Criando backup..."
     log_debug "Movendo $PLUGINS_DIR/$PLUGIN_NAME para $BACKUP_DIR"
     mv "$PLUGINS_DIR/$PLUGIN_NAME" "$BACKUP_DIR"
-    log_debug "Backup criado"
 
     # Clones the latest version
-    log_info "Baixando versão mais recente de $SOURCE_URL..."
+    log_debug "Baixando versão mais recente de $SOURCE_URL..."
     log_debug "Clonando para: $PLUGINS_DIR/$PLUGIN_NAME"
     if clone_plugin "$SOURCE_URL" "$PLUGINS_DIR/$PLUGIN_NAME"; then
         log_debug "Clone concluído com sucesso"
@@ -195,21 +194,33 @@ main() {
         rm -rf "$BACKUP_DIR"
         log_debug "Backup removido"
 
-        log_output ""
-        log_success "Plugin '$PLUGIN_NAME' atualizado com sucesso!"
-        log_output ""
-        log_output "Detalhes da atualização:"
-        log_output "  ${GRAY}Nova versão: $NEW_VERSION${NC}"
-        log_output "  ${GRAY}Comandos: $cmd_count${NC}"
-        if [ -n "$categories" ]; then
-            log_output "  ${GRAY}Categorias: $categories${NC}"
-        fi
-        log_output ""
-
         # Update lock file if it exists
         log_debug "Atualizando lock file"
         update_lock_file
-        log_debug "=== Atualização concluída ==="
+        log_debug "Lock file atualizado, obtendo informações do lock"
+
+        # Get information from lock file
+        local lock_version=$(get_plugin_info_from_lock "$PLUGIN_NAME" "version")
+        local lock_commands=$(get_plugin_info_from_lock "$PLUGIN_NAME" "commands")
+        local lock_categories=$(get_plugin_info_from_lock "$PLUGIN_NAME" "categories")
+
+        # Use lock info if available, fallback to detected values
+        local display_version="${lock_version:-$NEW_VERSION}"
+        local display_commands="${lock_commands:-$cmd_count}"
+        local display_categories="${lock_categories:-$categories}"
+
+        log_debug "Versão do lock: $display_version"
+        log_debug "Comandos do lock: $display_commands"
+        log_debug "Categorias do lock: $display_categories"
+
+        log_success "Plugin '$PLUGIN_NAME' atualizado com sucesso!"
+        log_output ""
+        log_output "Detalhes da atualização:"
+        log_output "  ${GRAY}Nova versão: $display_version${NC}"
+        log_output "  ${GRAY}Comandos: $display_commands${NC}"
+        if [ -n "$display_categories" ]; then
+            log_output "  ${GRAY}Categorias: $display_categories${NC}"
+        fi
 
         log_output ""
         log_info "💡 Os comandos atualizados já estão disponíveis!"

@@ -188,7 +188,6 @@ while [[ $# -gt 0 ]]; do
             # Argument is the name of the plugin
             PLUGIN_ARG="$1"
             shift
-            break
             ;;
     esac
 done

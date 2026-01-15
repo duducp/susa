@@ -421,7 +421,7 @@ main() {
     mkdir -p "$PLUGINS_DIR"
 
     # Clone the repository
-    log_info "Clonando de $plugin_url..."
+    log_debug "Clonando de $plugin_url..."
     log_debug "Destino: $PLUGINS_DIR/$plugin_name"
     if ! clone_plugin "$plugin_url" "$PLUGINS_DIR/$plugin_name"; then
         log_error "Falha ao clonar o repositório"

@@ -2,3 +2,11 @@ name: "Update"
 description: "Atualiza o Susa CLI para a versão mais recente"
 entrypoint: "main.sh"
 os: ["linux", "mac"]
+envs:
+  # Configurações do repositório
+  CLI_REPO_URL: "https://github.com/duducp/susa.git"
+  CLI_REPO_BRANCH: "main"
+
+  # Timeouts para API GitHub (em segundos)
+  CLI_API_MAX_TIME: "10"
+  CLI_API_CONNECT_TIMEOUT: "5"

@@ -6,8 +6,8 @@ IFS=$'\n\t'
 source "$LIB_DIR/internal/args.sh"
 
 # Settings
-REPO_URL="${CLI_REPO_URL:-https://github.com/duducp/susa.git}"
-REPO_BRANCH="${CLI_REPO_BRANCH:-main}"
+REPO_URL="$CLI_REPO_URL"
+REPO_BRANCH="$CLI_REPO_BRANCH"
 TEMP_DIR=$(mktemp -d)
 
 # Cleanup function to remove temp directory on exit
