@@ -19,10 +19,11 @@ show_help() {
     log_output "  Suporta GitHub, GitLab e Bitbucket."
     log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  -y, --yes         Pula confirmação e atualiza automaticamente"
     log_output "  -v, --verbose     Modo verbose (debug)"
     log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  --ssh         Força uso de SSH (recomendado para repos privados)"
-    log_output "  -h, --help    Mostra esta mensagem de ajuda"
+    log_output "  --ssh             Força uso de SSH (recomendado para repos privados)"
+    log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin update backup-tools           # Atualiza o plugin"
@@ -37,11 +38,13 @@ show_help() {
 main() {
     local PLUGIN_NAME="$1"
     local USE_SSH="${2:-false}"
+    local auto_confirm="${3:-false}"
     local REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
 
     log_debug "=== Iniciando atualização de plugin ==="
     log_debug "Plugin: $PLUGIN_NAME"
     log_debug "Use SSH: $USE_SSH"
+    log_debug "Auto-confirm: $auto_confirm"
     log_debug "Registry file: $REGISTRY_FILE"
 
     # Check if plugin exists in registry (could be dev plugin)
@@ -138,15 +141,19 @@ main() {
     log_output ""
 
     # Confirm update
-    read -p "Deseja continuar? (y/N): " -n 1 -r
-    echo ""
+    if [ "$auto_confirm" = false ]; then
+        read -p "Deseja continuar? (y/N): " -n 1 -r
+        echo ""
 
-    if [[ ! $REPLY =~ ^[YySs]$ ]]; then
-        log_info "Operação cancelada"
-        log_debug "Usuário cancelou a atualização"
-        exit 0
+        if [[ ! $REPLY =~ ^[YySs]$ ]]; then
+            log_info "Operação cancelada"
+            log_debug "Usuário cancelou a atualização"
+            exit 0
+        fi
+        log_debug "Usuário confirmou a atualização"
+    else
+        log_debug "Confirmação automática ativada (-y)"
     fi
-    log_debug "Usuário confirmou a atualização"
 
     # Create backup of current plugin
     local BACKUP_DIR="${PLUGINS_DIR}/.backup_${PLUGIN_NAME}_$(date +%s)"
@@ -224,11 +231,17 @@ main() {
 require_arguments "$@"
 
 USE_SSH="false"
+auto_confirm=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
             show_help
             exit 0
+            ;;
+        -y | --yes)
+            auto_confirm=true
+            log_debug "Auto-confirm ativado"
+            shift
             ;;
         -v | --verbose)
             export DEBUG=1
@@ -255,4 +268,4 @@ done
 validate_required_arg "${PLUGIN_ARG:-}" "Nome do plugin" "<plugin-name> [opções]"
 
 # Execute main function
-main "$PLUGIN_ARG" "$USE_SSH"
+main "$PLUGIN_ARG" "$USE_SSH" "$auto_confirm"

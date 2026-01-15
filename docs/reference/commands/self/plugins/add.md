@@ -78,6 +78,8 @@ susa self plugin add ~/projetos/meu-plugin
 
 | Opção | O que faz |
 |-------|-----------|
+| `-v, --verbose` | Modo verbose (exibe logs de debug) |
+| `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `--gitlab` | Usa GitLab (para formato user/repo) |
 | `--bitbucket` | Usa Bitbucket (para formato user/repo) |
 | `--ssh` | Força uso de SSH (recomendado para repos privados) |

@@ -81,7 +81,18 @@ susa self plugin run meu-plugin text hello -- --verbose --dry-run --output file.
 
 ## Opções
 
-### `-h, --help`
+| Opção | O que faz |
+|-------|-----------|
+| `-v, --verbose` | Modo verbose (exibe logs de debug do comando run) |
+| `--prepare` | Adiciona plugin ao registry sem executar |
+| `--cleanup` | Remove plugin do registry após execução manual |
+| `-h, --help` | Mostra ajuda |
+
+**Nota:** O separador `--` deve ser usado quando opções conflitarem (ex: passar `-v` ao plugin).
+
+### Detalhamento das Opções
+
+#### `-h, --help`
 
 Exibe ajuda do comando run.
 
@@ -89,7 +100,7 @@ Exibe ajuda do comando run.
 susa self plugin run --help
 ```
 
-### `-v, --verbose`
+#### `-v, --verbose`
 
 Ativa modo verbose para debug do comando run (não do plugin).
 

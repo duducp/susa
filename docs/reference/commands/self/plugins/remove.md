@@ -11,7 +11,14 @@ susa self plugin remove <nome-do-plugin>
 ## Exemplo
 
 ```bash
+# Remove com confirmação
 susa self plugin remove backup-tools
+
+# Remove sem confirmação (útil para scripts)
+susa self plugin remove backup-tools -y
+
+# Remove modo silencioso sem confirmação
+susa self plugin remove backup-tools -y -q
 ```
 
 ## O que acontece?
@@ -73,9 +80,23 @@ Deseja continuar? (s/N): s
 
 **Nota:** Os arquivos do plugin dev permanecem no diretório local.
 
-## Confirmação obrigatória
+## Confirmação
 
-O comando **sempre** solicita confirmação antes de remover o plugin. Para cancelar, pressione `N` ou `Enter`.
+Por padrão, o comando **sempre** solicita confirmação antes de remover o plugin.
+
+Para cancelar, pressione `N` ou `Enter`.
+
+### Pular confirmação
+
+Para automação ou scripts, use a opção `-y` ou `--yes`:
+
+```bash
+# Remove sem pedir confirmação
+susa self plugin remove meu-plugin -y
+
+# Útil em scripts de automação
+susa self plugin remove meu-plugin --yes -q
+```
 
 ## Se o plugin não existir
 
@@ -89,6 +110,9 @@ Use susa self plugin list para ver plugins instalados
 
 | Opção | O que faz |
 |-------|-----------|
+| `-y, --yes` | Pula confirmação e remove automaticamente |
+| `-v, --verbose` | Ativa logs de debug |
+| `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `-h, --help` | Mostra ajuda |
 
 ## Diferenças entre Plugin Git e Dev

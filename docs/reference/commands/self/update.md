@@ -36,6 +36,9 @@ Durante a atualização, **não são perdidos**:
 
 | Opção | O que faz |
 |-------|-----------|
+| `-y, --yes` | Pula confirmação e atualiza automaticamente |
+| `-v, --verbose` | Ativa logs de debug |
+| `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `-h, --help` | Mostra ajuda |
 
 ## Variáveis de ambiente
@@ -49,11 +52,17 @@ Durante a atualização, **não são perdidos**:
 ## Exemplo com variáveis
 
 ```bash
+# Atualizar sem confirmação (útil para scripts)
+susa self update -y
+
 # Usar branch de desenvolvimento
 CLI_REPO_BRANCH=dev susa self update
 
 # Repositório customizado
 CLI_REPO_URL=https://github.com/usuario/fork.git susa self update
+
+# Atualização silenciosa sem confirmação
+susa self update -y -q
 ```
 
 ## Veja também

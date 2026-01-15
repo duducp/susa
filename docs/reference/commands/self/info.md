@@ -39,6 +39,7 @@ susa self info
 
 | Opção | O que faz |
 |-------|-----------|
+| `-v, --verbose` | Modo verbose (exibe logs de debug) |
 | `-h, --help` | Mostra ajuda |
 
 ## Veja também

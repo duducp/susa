@@ -18,9 +18,10 @@ show_help() {
     log_output "  todos os seus comandos e registro no sistema."
     log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  -y, --yes         Pula confirmação e remove automaticamente"
     log_output "  -v, --verbose     Modo verbose (debug)"
     log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  -h, --help    Mostra esta mensagem de ajuda"
+    log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin remove backup-tools    # Remove o plugin backup-tools"
@@ -31,8 +32,10 @@ show_help() {
 # Main function
 main() {
     local PLUGIN_NAME="$1"
+    local auto_confirm="${2:-false}"
 
     log_debug "=== Iniciando remoção de plugin ==="
+    log_debug "Auto-confirm: $auto_confirm"
     log_debug "Plugin: $PLUGIN_NAME"
     log_debug "Diretório de plugins: $PLUGINS_DIR"
 
@@ -90,15 +93,19 @@ main() {
     log_debug "Total de comandos: $cmd_count"
     log_output ""
 
-    read -p "Deseja continuar? (y/N): " -n 1 -r
-    echo ""
+    if [ "$auto_confirm" = false ]; then
+        read -p "Deseja continuar? (y/N): " -n 1 -r
+        echo ""
 
-    if [[ ! $REPLY =~ ^[YySs]$ ]]; then
-        log_info "Operação cancelada"
-        log_debug "Usuário cancelou a remoção"
-        exit 0
+        if [[ ! $REPLY =~ ^[YySs]$ ]]; then
+            log_info "Operação cancelada"
+            log_debug "Usuário cancelou a remoção"
+            exit 0
+        fi
+        log_debug "Usuário confirmou a remoção"
+    else
+        log_debug "Confirmação automática ativada (-y)"
     fi
-    log_debug "Usuário confirmou a remoção"
 
     # Remove o plugin
     log_info "Removendo plugin '$PLUGIN_NAME'..."
@@ -156,11 +163,17 @@ main() {
 # Parse arguments first, before running main
 require_arguments "$@"
 
+auto_confirm=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
             show_help
             exit 0
+            ;;
+        -y | --yes)
+            auto_confirm=true
+            log_debug "Auto-confirm ativado"
+            shift
             ;;
         -v | --verbose)
             export DEBUG=1
@@ -184,4 +197,4 @@ done
 validate_required_arg "${PLUGIN_ARG:-}" "Nome do plugin" "<plugin-name>"
 
 # Execute main function
-main "$PLUGIN_ARG"
+main "$PLUGIN_ARG" "$auto_confirm"

@@ -29,6 +29,7 @@ show_help() {
     log_output "  Verifica se há atualizações e, se disponível, baixa e instala a nova versão."
     log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  -y, --yes         Pula confirmação e atualiza automaticamente"
     log_output "  -v, --verbose     Modo verbose (debug)"
     log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
     log_output "  -h, --help        Exibe esta mensagem de ajuda"
@@ -192,9 +193,11 @@ perform_update() {
 
 # Main function
 main() {
+    local auto_confirm=${1:-false}
     log_info "Verificando atualizações..."
     log_debug "CLI_DIR: $CLI_DIR"
     log_debug "GLOBAL_CONFIG_FILE: $GLOBAL_CONFIG_FILE"
+    log_debug "Auto-confirm: $auto_confirm"
 
     # Get current version
     CURRENT_VERSION=$(get_current_version)
@@ -231,14 +234,18 @@ main() {
         log_output ""
 
         # Ask if you want to update
-        if [ -t 0 ]; then
-            read -p "Deseja atualizar agora? (s/N): " -n 1 -r
-            log_output ""
+        if [ "$auto_confirm" = false ]; then
+            if [ -t 0 ]; then
+                read -p "Deseja atualizar agora? (s/N): " -n 1 -r
+                log_output ""
 
-            if [[ ! $REPLY =~ ^[SsYy]$ ]]; then
-                log_info "Atualização cancelada pelo usuário"
-                exit 0
+                if [[ ! $REPLY =~ ^[SsYy]$ ]]; then
+                    log_info "Atualização cancelada pelo usuário"
+                    exit 0
+                fi
             fi
+        else
+            log_debug "Confirmação automática ativada (-y)"
         fi
 
         log_output ""
@@ -260,11 +267,17 @@ main() {
 }
 
 # Parse arguments
+auto_confirm=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
             show_help
             exit 0
+            ;;
+        -y | --yes)
+            auto_confirm=true
+            log_debug "Auto-confirm ativado"
+            shift
             ;;
         -v | --verbose)
             export DEBUG=1
@@ -285,4 +298,4 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Execute main function
-main
+main "$auto_confirm"

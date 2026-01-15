@@ -67,6 +67,8 @@ Exemplos:
 
 | Opção | O que faz |
 |-------|-----------|
+| `-v, --verbose` | Modo verbose (exibe logs de debug) |
+| `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `-h, --help` | Mostra ajuda |
 
 ## Veja também

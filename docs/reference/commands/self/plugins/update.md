@@ -16,8 +16,14 @@ susa self plugin update <nome-do-plugin> [opções]
 # Plugin público
 susa self plugin update backup-tools
 
+# Atualizar sem confirmação (modo automático)
+susa self plugin update backup-tools -y
+
 # Plugin privado (força SSH)
 susa self plugin update private-plugin --ssh
+
+# Combinar opções: auto-confirmar + SSH
+susa self plugin update private-plugin -y --ssh
 ```
 
 ## Como funciona?
@@ -108,15 +114,27 @@ vim tools/hello/main.sh
 susa tools hello
 ```
 
-## Confirmação obrigatória
+## Confirmação
 
-O comando sempre pede confirmação antes de atualizar. Para cancelar, pressione `N` ou `Enter`.
+Por padrão, o comando pede confirmação antes de atualizar. Para cancelar, pressione `N` ou `Enter`.
+
+Para **pular a confirmação** e atualizar automaticamente, use `-y` ou `--yes`:
+
+```bash
+# Atualiza automaticamente sem pedir confirmação
+susa self plugin update backup-tools -y
+```
+
+Útil para scripts e automações.
 
 ## Opções
 
 | Opção | O que faz |
 |-------|-----------|
+| `-y, --yes` | Pula confirmação e atualiza automaticamente |
 | `--ssh` | Força uso de SSH (recomendado para repos privados) |
+| `-v, --verbose` | Modo verbose (exibe logs de debug) |
+| `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `-h, --help` | Mostra ajuda |
 
 ## Repositórios Privados
