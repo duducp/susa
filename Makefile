@@ -88,6 +88,8 @@ format: ## Formata automaticamente todos os scripts com shfmt
 
 lint: shellcheck shfmt ## Executa todas as verificações de qualidade
 
+lint-fix: shellcheck format ## Executa todas as correções automáticas de qualidade
+
 test: ## Executa todos os testes
 	@echo "$(GREEN)✅ Todos os testes passaram!$(NC)"
 

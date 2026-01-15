@@ -203,11 +203,55 @@ done
 
 ## Funções - Variáveis de Ambiente
 
-### `load_command_envs()`
+### `load_env_files()`
 
 > **✨ Novo na versão 1.0+**
 
-Carrega e exporta variáveis de ambiente definidas na seção `envs` do config.yaml de um comando.
+Carrega e exporta variáveis de ambiente de arquivos .env.
+
+**Parâmetros:**
+
+- `$1` - Diretório base para resolver caminhos relativos
+- `$@` - Lista de caminhos de arquivos .env (relativos ou absolutos)
+
+**Comportamento:**
+
+- Carrega variáveis de múltiplos arquivos .env na ordem especificada
+- Suporta caminhos relativos (resolvidos a partir do base_dir) e absolutos
+- Ignora arquivos inexistentes silenciosamente
+- Suporta comentários (`#`) e linhas vazias
+- Suporta aspas simples e duplas
+- Expande variáveis como `$HOME`, `$USER`, etc.
+- Respeita variáveis já definidas (não sobrescreve sistema ou config)
+
+**Formato do arquivo .env:**
+
+```bash
+# Comentários são suportados
+DATABASE_URL="postgresql://localhost/mydb"
+API_KEY="your-key"
+
+# Expansão de variáveis
+CONFIG_DIR="$HOME/.config/app"
+
+# Aspas simples ou duplas
+APP_NAME="My Application"
+VERSION='1.0.0'
+```
+
+**Uso:**
+
+```bash
+# Carregar múltiplos arquivos .env
+load_env_files "$config_dir" ".env" ".env.local"
+
+# Com caminhos absolutos
+load_env_files "/" "/etc/myapp/.env" "$HOME/.env"
+```
+
+### `load_command_envs()`
+
+Carrega e exporta variáveis de ambiente de arquivos .env e da seção `envs` do config.yaml de um comando.
 
 **Parâmetros:**
 
@@ -215,11 +259,18 @@ Carrega e exporta variáveis de ambiente definidas na seção `envs` do config.y
 
 **Comportamento:**
 
-- Lê a seção `envs:` do config.yaml
-- Exporta cada variável como variável de ambiente
-- Expande variáveis como `$HOME`, `$USER`, etc.
-- Ignora se a seção `envs` não existir
-- Chamado automaticamente pelo framework antes de executar o comando
+1. Carrega arquivos .env (se especificados em `env_files:`)
+2. Carrega seção `envs:` do config.yaml
+3. Exporta cada variável como variável de ambiente
+4. Expande variáveis como `$HOME`, `$USER`, etc.
+5. Respeita variáveis já definidas (não sobrescreve sistema)
+6. Chamado automaticamente pelo framework antes de executar o comando
+
+**Funciona em:**
+
+- ✅ Comandos built-in (em `commands/`)
+- ✅ Comandos de plugins (em `plugins/`)
+- ✅ Subcategorias e comandos aninhados
 
 **Uso:**
 
@@ -232,7 +283,7 @@ local timeout="${MY_TIMEOUT:-30}"
 local url="${MY_API_URL:-https://default.com}"
 ```
 
-**Exemplo de config.yaml:**
+**Exemplo de config.yaml (com .env files):**
 
 ```yaml
 name: "My Command"
@@ -240,11 +291,27 @@ description: "Meu comando"
 entrypoint: "main.sh"
 sudo: false
 os: ["linux"]
+
+# Arquivos .env (opcional)
+env_files:
+  - ".env"              # Configurações base
+  - ".env.local"        # Configurações locais
+
+# Variáveis diretas (maior prioridade que .env)
 envs:
   MY_API_URL: "https://api.example.com"
   MY_TIMEOUT: "30"
   MY_INSTALL_DIR: "$HOME/.myapp"
   MY_MAX_RETRIES: "3"
+```
+
+**Exemplo de arquivo .env:**
+
+```bash
+# .env
+DATABASE_URL="postgresql://localhost/mydb"
+REDIS_URL="redis://localhost:6379"
+DEBUG_MODE="false"
 ```
 
 **Exemplo de uso no script:**
@@ -272,24 +339,55 @@ install_app "$@"
 
 - ✅ Expansão automática de variáveis (`$HOME` → `/home/user`)
 - ✅ Isolamento entre comandos (não vazam)
-- ✅ Respeita variáveis de sistema (precedência: Sistema > Config)
+- ✅ Respeita ordem de precedência (Sistema > Config envs > Global > .env)
 - ✅ Suporta qualquer variável de ambiente válida
 - ✅ Funciona em comandos built-in e plugins
+- ✅ Suporta múltiplos arquivos .env
+- ✅ Caminhos relativos ao diretório do config.yaml
+- ✅ Arquivos .env inexistentes são ignorados silenciosamente
 
-**Precedência:**
+**Ordem de Precedência (maior → menor):**
 
-1. **Variáveis de Sistema** (mais alta) - `export VAR=value` ou `VAR=value comando`
+1. **Variáveis de Sistema** (maior prioridade)
+   - `export VAR=value` ou `VAR=value comando`
 2. **Variáveis do Config** - `config.yaml` → `envs:`
-3. **Valores Padrão** (mais baixa) - `${VAR:-default}` no script
+3. **Variáveis Globais** - `config/settings.conf`
+4. **Arquivos .env** (menor prioridade entre fontes configuráveis)
+   - Na ordem especificada em `env_files:`
+   - Último arquivo tem prioridade sobre anteriores
+5. **Valores Padrão** (mais baixa)
+   - `${VAR:-default}` no script
 
-**Exemplo de precedência:**
+**Exemplo de precedência completa:**
+
+```yaml
+# config.yaml
+env_files:
+  - ".env"
+  - ".env.local"
+envs:
+  TIMEOUT: "60"
+```
 
 ```bash
-# config.yaml tem TIMEOUT: "30"
-# Script usa: timeout="${TIMEOUT:-10}"
+# .env
+TIMEOUT="40"
+API_URL="https://api.example.com"
 
-./core/susa comando                  # → 30 (do config)
-TIMEOUT=60 ./core/susa comando       # → 60 (do sistema, override)
+# .env.local
+DATABASE_URL="postgresql://localhost/mydb"
+
+# config/settings.conf
+TIMEOUT="30"
+
+# Script
+timeout="${TIMEOUT:-10}"
+api_url="${API_URL:-https://default.com}"
+
+# Resultados:
+./core/susa comando                  # → TIMEOUT=60 (do config.yaml envs)
+                                     # → API_URL=https://api.example.com (do .env)
+TIMEOUT=90 ./core/susa comando       # → TIMEOUT=90 (do sistema - maior prioridade)
 ```
 
 **Notas:**

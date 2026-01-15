@@ -480,6 +480,56 @@ get_category_groups() {
 # Environment Variables Functions
 # ============================================================
 
+# Load environment variables from .env files
+# Arguments:
+#   $1 - Base directory to resolve relative paths
+#   $@ - List of .env file paths (can be relative or absolute)
+load_env_files() {
+    local base_dir="$1"
+    shift
+
+    # Iterate through all .env file paths provided
+    for env_file in "$@"; do
+        # Resolve relative paths
+        if [[ ! "$env_file" =~ ^/ ]]; then
+            env_file="$base_dir/$env_file"
+        fi
+
+        # Skip if file doesn't exist
+        if [ ! -f "$env_file" ]; then
+            continue
+        fi
+
+        # Read and export variables from .env file
+        while IFS= read -r line || [ -n "$line" ]; do
+            # Skip empty lines and comments
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+            # Extract key=value pairs
+            if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+                local key="${BASH_REMATCH[1]}"
+                local value="${BASH_REMATCH[2]}"
+
+                # Remove leading/trailing whitespace and quotes
+                value="${value#"${value%%[![:space:]]*}"}" # Leading spaces
+                value="${value%"${value##*[![:space:]]}"}" # Trailing spaces
+
+                # Remove surrounding quotes if present
+                if [[ "$value" =~ ^[\'\"](.*)[\'\"]$ ]]; then
+                    value="${BASH_REMATCH[1]}"
+                fi
+
+                # Only set if not already defined (respects system env vars and config envs)
+                if [ -z "${!key:-}" ]; then
+                    # Expand variables like $HOME in the value
+                    value=$(eval echo "$value")
+                    export "$key=$value"
+                fi
+            fi
+        done <"$env_file"
+    done
+}
+
 # Load environment variables from command config.yaml
 load_command_envs() {
     local config_file="$1"
@@ -488,20 +538,33 @@ load_command_envs() {
         return 0
     fi
 
-    # Check if envs section exists
-    if ! yq eval '.envs' "$config_file" 2>/dev/null | grep -q .; then
-        return 0
+    # Get base directory for resolving relative .env file paths
+    local config_dir="$(dirname "$config_file")"
+
+    # Load environment variables from .env files first (lowest priority)
+    if yq eval '.env_files' "$config_file" 2>/dev/null | grep -q .; then
+        local env_files=()
+        while IFS= read -r env_file; do
+            [ -n "$env_file" ] && env_files+=("$env_file")
+        done < <(yq eval '.env_files[]' "$config_file" 2>/dev/null)
+
+        if [ ${#env_files[@]} -gt 0 ]; then
+            load_env_files "$config_dir" "${env_files[@]}"
+        fi
     fi
 
-    # Get all env keys and values, export them
-    while IFS='=' read -r key value; do
-        if [ -n "$key" ] && [ -n "$value" ]; then
-            # Only set if not already defined (respects system env vars)
-            if [ -z "${!key:-}" ]; then
-                # Expand variables like $HOME in the value
-                value=$(eval echo "$value")
-                export "$key=$value"
+    # Load environment variables from envs section (higher priority than .env files)
+    if yq eval '.envs' "$config_file" 2>/dev/null | grep -q .; then
+        # Get all env keys and values, export them
+        while IFS='=' read -r key value; do
+            if [ -n "$key" ] && [ -n "$value" ]; then
+                # Only set if not already defined (respects system env vars)
+                if [ -z "${!key:-}" ]; then
+                    # Expand variables like $HOME in the value
+                    value=$(eval echo "$value")
+                    export "$key=$value"
+                fi
             fi
-        fi
-    done < <(yq eval '.envs | to_entries | .[] | .key + "=" + .value' "$config_file" 2>/dev/null)
+        done < <(yq eval '.envs | to_entries | .[] | .key + "=" + .value' "$config_file" 2>/dev/null)
+    fi
 }

@@ -5,6 +5,12 @@
 # Configurações locais
 config/.env
 .env
+.env.local
+.env.*.local
+.env.secrets
+**/.env.local
+**/.env.*.local
+**/.env.secrets
 
 # Susa CLI
 susa.lock

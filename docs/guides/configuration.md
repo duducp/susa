@@ -190,42 +190,119 @@ source "$script_path" "$@"
 
 ### Precedência de Variáveis
 
+> **⚠️ IMPORTANTE:** Esta é a ordem oficial de precedência de variáveis de ambiente no Susa CLI.
+
 Quando uma mesma variável é definida em múltiplos lugares:
 
 ```text
-1. Variáveis de Sistema (maior precedência)
-   └─ export VAR=value
-   └─ VAR=value susa comando
-
-2. Envs do Comando
-   └─ config.yaml → envs:
-
-3. Variáveis Globais
-   └─ config/settings.conf
-
-4. Valores Padrão no Script (menor precedência)
-   └─ ${VAR:-default}
+┌─────────────────────────────────────────────────────────────┐
+│ 1. Variáveis de Sistema (MAIOR PRECEDÊNCIA)                 │
+│    ├─ export VAR=value                                      │
+│    └─ VAR=value susa comando                                │
+│    • Sempre tem prioridade máxima                           │
+│    • Sobrescreve qualquer outra fonte                       │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 2. Envs do Comando                                          │
+│    └─ config.yaml → envs:                                   │
+│    • Variáveis definidas no config.yaml do comando          │
+│    • Funciona em comandos built-in e plugins                │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 3. Variáveis Globais                                        │
+│    └─ config/settings.conf                                  │
+│    • Compartilhadas entre todos os comandos                 │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 4. Arquivos .env                                            │
+│    └─ config.yaml → env_files:                              │
+│    • Carregados na ordem especificada                       │
+│    • Último arquivo tem prioridade sobre anteriores         │
+│    • Funciona em comandos built-in e plugins                │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 5. Valores Padrão no Script (MENOR PRECEDÊNCIA)             │
+│    └─ ${VAR:-default}                                       │
+│    • Usado apenas se nenhuma fonte definiu a variável       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Exemplo prático:**
+**Exemplo prático completo:**
 
 ```yaml
-# config/settings.conf
-TIMEOUT="20"
-
 # commands/setup/docker/config.yaml
+env_files:
+  - ".env"
+  - ".env.local"
 envs:
   TIMEOUT: "60"
+```
 
+```bash
+# commands/setup/docker/.env
+TIMEOUT="40"
+API_URL="https://api.example.com"
+```
+
+```bash
+# commands/setup/docker/.env.local
+DATABASE_URL="postgresql://localhost/mydb"
+```
+
+```bash
+# config/settings.conf
+TIMEOUT="30"
+```
+
+```bash
 # commands/setup/docker/main.sh
 timeout="${TIMEOUT:-10}"
+api_url="${API_URL:-https://default.com}"
+database="${DATABASE_URL:-sqlite:///local.db}"
 ```
 
 **Resultados:**
 
 ```bash
-./susa setup docker                    # → 60 (do comando)
-TIMEOUT=90 ./susa setup docker        # → 90 (do sistema, override)
+# Sem override
+./susa setup docker
+# → TIMEOUT=60 (do config.yaml envs - prioridade 2)
+# → API_URL=https://api.example.com (do .env - prioridade 4)
+# → DATABASE_URL=postgresql://localhost/mydb (do .env.local - prioridade 4)
+
+# Com override via sistema
+TIMEOUT=90 ./susa setup docker
+# → TIMEOUT=90 (do sistema - prioridade 1, maior)
+# → API_URL e DATABASE_URL continuam vindo dos arquivos .env
+```
+
+**Funcionamento para Plugins:**
+
+A mesma lógica de precedência se aplica a plugins:
+
+```yaml
+# plugins/meu-plugin/deploy/staging/config.yaml
+env_files:
+  - ".env"
+  - ".env.staging"
+envs:
+  DEPLOY_URL: "https://staging.example.com"
+```
+
+```bash
+# plugins/meu-plugin/deploy/staging/.env
+DATABASE_URL="postgresql://localhost/mydb"
+```
+
+```bash
+# Uso
+./susa deploy staging
+# → Carrega .env e .env.staging do plugin
+# → Mesma ordem de precedência
 ```
 
 ---
@@ -435,6 +512,10 @@ Valida e localiza config.yaml
         ↓
 [yaml.sh] load_command_envs(config.yaml)
         ↓
+Carrega arquivos .env (se especificados)
+        ↓
+Carrega seção envs do config.yaml
+        ↓
 Exporta todas as envs (com expansão)
         ↓
 Executa main.sh
@@ -444,10 +525,128 @@ Script usa ${VAR:-default}
 Fim da execução (envs descartadas)
 ```
 
+### Suporte a Arquivos .env
+
+Além de definir variáveis diretamente no `config.yaml`, você pode carregá-las de arquivos `.env`.
+
+#### Configuração
+
+```yaml
+# commands/deploy/app/config.yaml
+name: "Deploy App"
+description: "Deploy da aplicação"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux"]
+
+# Arquivos .env a serem carregados (na ordem especificada)
+env_files:
+  - ".env"              # Configurações base
+  - ".env.local"        # Configurações locais
+  - ".env.production"   # Configurações de produção
+
+# Variáveis diretas (maior prioridade que .env)
+envs:
+  DEPLOY_TIMEOUT: "300"
+  DEPLOY_TARGET: "production"
+```
+
+#### Formato dos Arquivos .env
+
+```bash
+# .env
+# Comentários são suportados
+DATABASE_URL="postgresql://localhost/mydb"
+API_KEY="your-api-key-here"
+DEBUG_MODE="false"
+
+# Suporta expansão de variáveis
+CONFIG_DIR="$HOME/.config/app"
+LOG_FILE="$PWD/logs/app.log"
+
+# Valores entre aspas (simples ou duplas)
+APP_NAME="My Application"
+VERSION='1.0.0'
+
+# Linhas vazias são ignoradas
+
+REDIS_URL="redis://localhost:6379"
+```
+
+#### Características
+
+- ✅ Caminhos relativos ao diretório do `config.yaml`
+- ✅ Caminhos absolutos também suportados
+- ✅ Múltiplos arquivos .env podem ser especificados
+- ✅ Carregados na ordem definida em `env_files`
+- ✅ Suporta comentários (`#`) e linhas vazias
+- ✅ Suporta aspas simples e duplas
+- ✅ Expansão de variáveis (`$HOME`, `$USER`, etc.)
+- ✅ Arquivos inexistentes são ignorados silenciosamente
+
+#### Precedência com Arquivos .env
+
+```text
+1. Variáveis de Sistema    → export VAR=value ou VAR=value comando
+2. Envs do Comando         → config.yaml → envs:
+3. Variáveis Globais       → config/settings.conf
+4. Arquivos .env           → config.yaml → env_files: (ordem especificada)
+5. Valores Padrão          → ${VAR:-default}
+```
+
+**Exemplo:**
+
+```yaml
+# config.yaml
+env_files:
+  - ".env"
+  - ".env.local"
+envs:
+  TIMEOUT: "60"
+```
+
+```bash
+# .env
+TIMEOUT="40"
+API_URL="https://api.example.com"
+```
+
+```bash
+# .env.local
+DATABASE_URL="postgresql://localhost/mydb"
+```
+
+**Resultado:**
+
+- `TIMEOUT` = 60 (do `config.yaml` envs, maior prioridade que .env)
+- `API_URL` = https://api.example.com (do `.env`)
+- `DATABASE_URL` = postgresql://localhost/mydb (do `.env.local`)
+
+#### Exemplo com Múltiplos Ambientes
+
+```yaml
+# config.yaml
+name: "Deploy"
+entrypoint: "main.sh"
+
+env_files:
+  - ".env"                              # Base
+  - ".env.${DEPLOY_ENV:-development}"   # Específico do ambiente
+```
+
+```bash
+# Uso
+$ susa deploy app                    # Usa .env.development
+$ DEPLOY_ENV=staging susa deploy app # Usa .env.staging
+$ DEPLOY_ENV=production susa deploy app # Usa .env.production
+```
+
 ### Vantagens
 
 ✅ **Configurações Centralizadas**: Todos os parâmetros em um único lugar
-✅ **Fácil Customização**: Basta editar o YAML, sem tocar no código
+✅ **Fácil Customização**: Basta editar o YAML ou .env, sem tocar no código
+✅ **Separação de Secrets**: Use .env.secrets no .gitignore
+✅ **Múltiplos Ambientes**: Fácil gerenciar dev, staging, production
 ✅ **Valores de Fallback**: Scripts continuam funcionando sem as envs
 ✅ **Expansão Automática**: Variáveis como `$HOME` são expandidas
 ✅ **Isolamento**: Comandos não interferem uns nos outros

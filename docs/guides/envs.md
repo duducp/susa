@@ -51,6 +51,63 @@ install_dir="${DOCKER_INSTALL_DIR:-$HOME/.docker}"
 - ✅ Sobrescrita por variáveis de sistema
 - ✅ Funciona em comandos built-in e plugins
 
+### 1.1 Variáveis de Arquivos .env
+
+Além de definir variáveis diretamente no `config.yaml`, você pode carregá-las de arquivos `.env`.
+
+**Definição:**
+
+```yaml
+# commands/deploy/app/config.yaml
+name: "Deploy App"
+description: "Deploy da aplicação"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux"]
+
+# Arquivos .env a serem carregados (na ordem especificada)
+env_files:
+  - ".env"
+  - ".env.local"
+  - ".env.production"
+
+# Variáveis diretas (maior prioridade que arquivos .env)
+envs:
+  DEPLOY_TIMEOUT: "300"
+  DEPLOY_TARGET: "production"
+```
+
+**Exemplo de arquivo .env:**
+
+```bash
+# .env
+DATABASE_URL="postgresql://localhost/mydb"
+API_KEY="your-api-key-here"
+DEBUG_MODE="false"
+
+# Suporta expansão de variáveis
+CONFIG_DIR="$HOME/.config/app"
+LOG_FILE="$PWD/logs/app.log"
+
+# Comentários são ignorados
+# Linhas vazias também são ignoradas
+
+# Valores entre aspas
+APP_NAME="My Application"
+VERSION='1.0.0'
+```
+
+**Características dos arquivos .env:**
+
+- ✅ Caminhos relativos ao diretório do `config.yaml`
+- ✅ Caminhos absolutos também suportados
+- ✅ Múltiplos arquivos .env podem ser especificados
+- ✅ Carregados na ordem definida em `env_files`
+- ✅ Suporta comentários (`#`) e linhas vazias
+- ✅ Suporta aspas simples e duplas
+- ✅ Expansão de variáveis (`$HOME`, `$USER`, etc.)
+- ✅ Arquivos inexistentes são ignorados silenciosamente
+
 ### 2. Variáveis Globais (Compartilhadas)
 
 Definidas em `config/settings.conf`, disponíveis para todos os comandos.
@@ -96,15 +153,30 @@ Ordem de precedência (maior → menor):
 1. Variáveis de Sistema    → export VAR=value ou VAR=value comando
 2. Envs do Comando         → config.yaml → envs:
 3. Variáveis Globais       → config/settings.conf
-4. Valores Padrão          → ${VAR:-default}
+4. Arquivos .env           → config.yaml → env_files: (na ordem especificada)
+5. Valores Padrão          → ${VAR:-default}
 ```
 
 **Exemplo prático:**
 
 ```yaml
 # config.yaml
+env_files:
+  - ".env"
+  - ".env.local"
 envs:
   TIMEOUT: "60"
+```
+
+```bash
+# .env
+TIMEOUT="40"
+API_URL="https://api.example.com"
+```
+
+```bash
+# .env.local
+TIMEOUT="50"
 ```
 
 ```bash
@@ -115,11 +187,21 @@ TIMEOUT="30"
 ```bash
 # No script
 timeout="${TIMEOUT:-10}"
+api_url="${API_URL:-https://default.com}"
 
 # Resultados:
-./susa comando                    # → 60 (do comando)
-TIMEOUT=90 ./susa comando        # → 90 (do sistema)
+./susa comando                    # → TIMEOUT=60 (do config.yaml envs)
+                                  # → API_URL=https://api.example.com (do .env)
+TIMEOUT=90 ./susa comando        # → TIMEOUT=90 (do sistema - maior prioridade)
 ```
+
+**Ordem de carregamento detalhada:**
+
+1. Sistema verifica variáveis de ambiente do sistema primeiro
+2. Carrega `config/settings.conf` (variáveis globais)
+3. Carrega arquivos .env na ordem especificada em `env_files`
+4. Carrega variáveis da seção `envs` do `config.yaml`
+5. Variáveis já definidas não são sobrescritas (princípio da precedência)
 
 ## 📝 Sintaxe YAML
 
@@ -385,7 +467,243 @@ $ DEBUG=true susa setup myapp
 
 ## 🔌 Envs em Plugins
 
-Plugins suportam variáveis de ambiente da **mesma forma** que comandos built-in.
+Plugins suportam variáveis de ambiente da **mesma forma** que comandos built-in, incluindo suporte a arquivos .env.
+
+**Exemplo de plugin com envs e arquivos .env:**
+
+```yaml
+# plugins/deploy-tools/deploy/staging/config.yaml
+name: "Deploy Staging"
+description: "Deploy para ambiente de staging"
+entrypoint: "main.sh"
+
+# Arquivos .env específicos do staging
+env_files:
+  - ".env"
+  - ".env.staging"
+
+# Variáveis específicas (maior prioridade)
+envs:
+  STAGING_API_URL: "https://api.staging.example.com"
+  STAGING_TIMEOUT: "60"
+  STAGING_SSH_KEY: "$HOME/.ssh/staging_key"
+```
+
+```bash
+# plugins/deploy-tools/deploy/staging/.env
+DATABASE_URL="postgresql://staging-db.example.com/mydb"
+REDIS_URL="redis://staging-redis.example.com:6379"
+AWS_REGION="us-east-1"
+```
+
+```bash
+# plugins/deploy-tools/deploy/staging/.env.staging
+DEPLOY_TARGET="/var/www/staging"
+BACKUP_ENABLED="true"
+```
+
+```bash
+# plugins/deploy-tools/deploy/staging/main.sh
+#!/bin/bash
+
+api_url="${STAGING_API_URL:-https://default-staging.com}"
+timeout="${STAGING_TIMEOUT:-30}"
+database_url="${DATABASE_URL:-}"
+deploy_target="${DEPLOY_TARGET:-/tmp/staging}"
+
+log_info "Deploying to: $api_url"
+log_info "Database: $database_url"
+log_info "Target: $deploy_target"
+```
+
+## 📝 Exemplos Completos com Arquivos .env
+
+### Exemplo 1: Aplicação com Múltiplos Ambientes
+
+**Estrutura:**
+
+```text
+commands/
+  deploy/
+    config.yaml
+    app/
+      config.yaml
+      main.sh
+      .env
+      .env.development
+      .env.staging
+      .env.production
+```
+
+**config.yaml:**
+
+```yaml
+name: "Deploy App"
+description: "Deploy da aplicação"
+entrypoint: "main.sh"
+sudo: false
+os: ["linux", "mac"]
+
+# Carrega arquivos .env baseado no ambiente
+env_files:
+  - ".env"                    # Configurações base
+  - ".env.${DEPLOY_ENV:-development}"  # Específicas do ambiente
+
+# Configurações diretas (maior prioridade)
+envs:
+  DEPLOY_TIMEOUT: "300"
+  DEPLOY_MAX_RETRIES: "3"
+```
+
+**.env (base):**
+
+```bash
+# Configurações comuns a todos os ambientes
+APP_NAME="My Application"
+LOG_LEVEL="info"
+MAX_CONNECTIONS="100"
+```
+
+**.env.development:**
+
+```bash
+# Desenvolvimento
+API_URL="http://localhost:3000"
+DATABASE_URL="postgresql://localhost/myapp_dev"
+DEBUG_MODE="true"
+```
+
+**.env.staging:**
+
+```bash
+# Staging
+API_URL="https://api.staging.example.com"
+DATABASE_URL="postgresql://staging-db.example.com/myapp"
+DEBUG_MODE="false"
+```
+
+**.env.production:**
+
+```bash
+# Produção
+API_URL="https://api.example.com"
+DATABASE_URL="postgresql://prod-db.example.com/myapp"
+DEBUG_MODE="false"
+ENABLE_MONITORING="true"
+```
+
+**Uso:**
+
+```bash
+# Deploy desenvolvimento (usa .env.development)
+$ susa deploy app
+
+# Deploy staging
+$ DEPLOY_ENV=staging susa deploy app
+
+# Deploy produção
+$ DEPLOY_ENV=production susa deploy app
+```
+
+### Exemplo 2: Separação de Secrets
+
+**Estrutura:**
+
+```text
+commands/
+  api/
+    config.yaml
+    main.sh
+    .env
+    .env.secrets  # Não commitado (no .gitignore)
+```
+
+**config.yaml:**
+
+```yaml
+name: "API Client"
+description: "Cliente da API"
+entrypoint: "main.sh"
+
+env_files:
+  - ".env"           # Configurações públicas
+  - ".env.secrets"   # Secrets (não commitado)
+```
+
+**.env:**
+
+```bash
+# Configurações públicas (commitado)
+API_BASE_URL="https://api.example.com"
+API_VERSION="v1"
+TIMEOUT="30"
+RETRY_COUNT="3"
+```
+
+**.env.secrets:**
+
+```bash
+# Secrets (NÃO commitado - adicionar ao .gitignore)
+API_KEY="sk-1234567890abcdef"
+API_SECRET="secret-value-here"
+DATABASE_PASSWORD="super-secret-password"
+```
+
+**.gitignore:**
+
+```
+.env.secrets
+.env.local
+.env.*.local
+```
+
+**Segurança:**
+
+```bash
+# Template para novos desenvolvedores
+# .env.secrets.example (commitado)
+API_KEY="your-api-key-here"
+API_SECRET="your-api-secret-here"
+DATABASE_PASSWORD="your-database-password"
+```
+
+### Exemplo 3: Configuração por Projeto
+
+**Estrutura:**
+
+```text
+commands/
+  setup/
+    project/
+      config.yaml
+      main.sh
+```
+
+**config.yaml:**
+
+```yaml
+name: "Setup Project"
+description: "Configura projeto"
+entrypoint: "main.sh"
+
+# Carrega .env do diretório atual (onde o comando é executado)
+env_files:
+  - "$PWD/.env"
+  - "$PWD/.env.local"
+```
+
+**Uso:**
+
+```bash
+# No diretório do projeto
+$ cd ~/projects/myapp
+$ cat .env
+DATABASE_URL="postgresql://localhost/myapp"
+API_PORT="3000"
+
+$ susa setup project
+# → Carrega .env do projeto atual
+```
 
 **Exemplo de plugin com envs:**
 
