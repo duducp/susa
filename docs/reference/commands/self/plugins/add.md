@@ -55,6 +55,23 @@ susa self plugin add .
 susa self plugin add ~/projetos/meu-plugin
 ```
 
+### Detecção automática do diretório atual
+
+Se você estiver dentro do diretório de um plugin e não passar nenhum argumento, o comando **automaticamente** detecta e adiciona o plugin do diretório atual:
+
+```bash
+# Dentro do diretório do plugin
+cd ~/projetos/meu-plugin
+susa self plugin add
+# Equivalente a: susa self plugin add .
+
+# Funciona com flags
+susa self plugin add -v
+susa self plugin add --verbose
+```
+
+Isso é especialmente útil durante o desenvolvimento de plugins.
+
 ## O que acontece?
 
 ### Instalação via Git (URL ou user/repo)

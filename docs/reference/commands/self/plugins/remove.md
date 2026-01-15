@@ -21,6 +21,23 @@ susa self plugin remove backup-tools -y
 susa self plugin remove backup-tools -y -q
 ```
 
+### Detecção automática do diretório atual
+
+Se você estiver dentro do diretório de um **plugin em modo desenvolvimento** e não passar o nome do plugin, o comando **automaticamente** detecta qual plugin remover:
+
+```bash
+# Dentro do diretório do plugin dev
+cd ~/projetos/meu-plugin
+susa self plugin remove
+# Detecta automaticamente 'meu-plugin'
+
+# Funciona com flags
+susa self plugin remove -y
+susa self plugin remove --verbose
+```
+
+**Importante:** Esta detecção automática funciona apenas para plugins em modo desenvolvimento (instalados com caminho local).
+
 ## O que acontece?
 
 ### Plugins Git

@@ -26,6 +26,23 @@ susa self plugin update private-plugin --ssh
 susa self plugin update private-plugin -y --ssh
 ```
 
+### Detecção automática do diretório atual
+
+Se você estiver dentro do diretório de um **plugin em modo desenvolvimento** e não passar o nome do plugin, o comando **automaticamente** detecta qual plugin atualizar:
+
+```bash
+# Dentro do diretório do plugin dev
+cd ~/projetos/meu-plugin
+susa self plugin update
+# Detecta automaticamente 'meu-plugin'
+
+# Funciona com flags
+susa self plugin update -y
+susa self plugin update --verbose
+```
+
+**Nota:** Para plugins dev, "atualizar" significa regenerar o arquivo susa.lock para refletir mudanças nas categorias/comandos.
+
 ## Como funciona?
 
 1. Verifica se o plugin existe

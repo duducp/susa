@@ -29,6 +29,7 @@ show_help() {
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin update backup-tools           # Atualiza o plugin"
     log_output "  susa self plugin update private-plugin --ssh   # Força SSH"
+    log_output "  susa self plugin update 						 # Atualiza o plugin do diretório atual (dev plugin)"
     log_output "  susa self plugin update --help                 # Exibe esta ajuda"
     log_output ""
     log_output "${GRAY}Nota: O provedor Git é detectado automaticamente da URL registrada.${NC}"
@@ -42,34 +43,6 @@ main() {
     local auto_confirm="${3:-false}"
     local REGISTRY_FILE="$PLUGINS_DIR/registry.json"
 
-    # Check if plugin exists in registry (could be dev plugin)
-    if [ -f "$REGISTRY_FILE" ]; then
-        local plugin_count=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .name // empty" "$REGISTRY_FILE" 2> /dev/null | wc -l)
-        if [ "$plugin_count" -gt 0 ]; then
-            local dev_flag=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .dev // false" "$REGISTRY_FILE" 2> /dev/null | head -1)
-            if [ "$dev_flag" = "true" ]; then
-                log_error "Plugin '$PLUGIN_NAME' está em modo desenvolvimento"
-                log_output ""
-                log_output "${YELLOW}Plugins em modo desenvolvimento não podem ser atualizados.${NC}"
-                log_output "As alterações no código já refletem imediatamente!"
-                log_output ""
-                local source_path=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
-                if [ -n "$source_path" ]; then
-                    log_output "${GRAY}Local do plugin: $source_path${NC}"
-                fi
-                exit 1
-            fi
-        fi
-    fi
-
-    # Check if the plugin exists in plugins directory
-    if [ ! -d "$PLUGINS_DIR/$PLUGIN_NAME" ]; then
-        log_error "Plugin '$PLUGIN_NAME' não encontrado"
-        log_output ""
-        log_output "Use ${LIGHT_CYAN}susa self plugin list${NC} para ver plugins instalados"
-        exit 1
-    fi
-
     # Check if registry exists
     if [ ! -f "$REGISTRY_FILE" ]; then
         log_error "Registry não encontrado. Não é possível determinar a origem do plugin."
@@ -78,12 +51,45 @@ main() {
         exit 1
     fi
 
+    # Check if plugin exists in registry (could be dev plugin)
+    local plugin_count=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .name // empty" "$REGISTRY_FILE" 2> /dev/null | wc -l)
+    if [ "$plugin_count" -gt 0 ]; then
+        local dev_flag=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .dev // false" "$REGISTRY_FILE" 2> /dev/null | head -1)
+        if [ "$dev_flag" = "true" ]; then
+            log_info "Plugin ${BOLD}$PLUGIN_NAME${NC} está em modo desenvolvimento."
+
+            local source_path=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
+            if [ -n "$source_path" ]; then
+                log_output "  As alterações no código já refletem imediatamente!"
+                log_output "  Local do plugin: ${GRAY}$source_path${NC}"
+            fi
+
+            # Update lock file to reflect any changes
+            log_info "Atualizando lock para identificar novas categorias..."
+            if "$CLI_DIR/core/susa" self lock > /dev/null 2>&1; then
+                log_success "Arquivo lock atualizado com sucesso!"
+            else
+                log_warning "Não foi possível atualizar o lock."
+            fi
+
+            exit 1
+        fi
+    fi
+
+    # Check if the plugin exists in plugins directory
+    if [ ! -d "$PLUGINS_DIR/$PLUGIN_NAME" ]; then
+        log_error "Plugin ${BOLD}$PLUGIN_NAME${NC} não encontrado."
+        log_output ""
+        log_output "Use ${LIGHT_CYAN}susa self plugin list${NC} para ver plugins instalados."
+        exit 1
+    fi
+
     # Gets the registry source URL
     local SOURCE_URL=$(registry_get_plugin_info "$REGISTRY_FILE" "$PLUGIN_NAME" "source")
     log_debug "Source URL: $SOURCE_URL"
 
     if [ -z "$SOURCE_URL" ] || [ "$SOURCE_URL" = "local" ]; then
-        log_error "Plugin '$PLUGIN_NAME' não tem origem registrada ou é local"
+        log_error "Plugin ${BOLD}$PLUGIN_NAME${NC} não tem origem registrada ou é local"
         log_output ""
         log_output "Apenas plugins instalados via Git podem ser atualizados"
         exit 1
@@ -173,7 +179,7 @@ main() {
         local display_commands="${lock_commands:-$cmd_count}"
         local display_categories="${lock_categories:-$categories}"
 
-        log_success "Plugin '$PLUGIN_NAME' atualizado com sucesso!"
+        log_success "Plugin ${BOLD}$PLUGIN_NAME${NC} atualizado com sucesso!"
         log_output ""
         log_output "Detalhes da atualização:"
         log_output "  ${GRAY}Nova versão: $display_version${NC}"
@@ -196,10 +202,10 @@ main() {
 }
 
 # Parse arguments first, before running main
-require_arguments "$@"
-
 USE_SSH="false"
 auto_confirm=false
+PLUGIN_ARG=""
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
@@ -230,8 +236,31 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required argument
-validate_required_arg "${PLUGIN_ARG:-}" "Nome do plugin" "<plugin-name> [opções]"
+# If no plugin argument provided, try to detect from current directory
+if [ -z "$PLUGIN_ARG" ]; then
+    CURRENT_DIR="$(pwd)"
+    REGISTRY_FILE="$PLUGINS_DIR/registry.json"
+
+    # Try to find plugin name from registry by matching current directory
+    if [ -f "$REGISTRY_FILE" ]; then
+        DETECTED_PLUGIN=$(jq -r ".plugins[] | select(.dev == true and .source == \"$CURRENT_DIR\") | .name // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
+
+        if [ -n "$DETECTED_PLUGIN" ]; then
+            log_debug "Plugin detectado no diretório atual: $DETECTED_PLUGIN"
+            PLUGIN_ARG="$DETECTED_PLUGIN"
+        else
+            log_error "Nenhum plugin especificado e diretório atual não é um plugin em modo desenvolvimento"
+            log_output ""
+            show_usage "<plugin-name> [opções]"
+            exit 1
+        fi
+    else
+        log_error "Nenhum plugin especificado"
+        log_output ""
+        show_usage "<plugin-name> [opções]"
+        exit 1
+    fi
+fi
 
 # Execute main function
 main "$PLUGIN_ARG" "$USE_SSH" "$auto_confirm"

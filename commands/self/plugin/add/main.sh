@@ -30,6 +30,7 @@ show_help() {
     log_output "  susa self plugin add ~/projects/meu-plugin"
     log_output "  susa self plugin add ./meu-plugin"
     log_output "  susa self plugin add ."
+    log_output "  susa self plugin add"
     log_output ""
     log_output "  # GitLab"
     log_output "  susa self plugin add user/susa-plugin-name --gitlab"
@@ -168,7 +169,7 @@ install_local_plugin() {
     fi
 
     # Show success message
-    log_success "Plugin '$plugin_name' instalado em modo desenvolvimento!"
+    log_success "Plugin ${BOLD}$plugin_name${NC} instalado em modo desenvolvimento!"
     log_output ""
     log_output "Detalhes do plugin:"
     log_output "  ${GRAY}Caminho: $validated_path${NC}"
@@ -222,7 +223,7 @@ check_plugin_already_installed() {
         return 1
     fi
 
-    log_warning "Plugin '$plugin_name' já está instalado"
+    log_warning "Plugin ${BOLD}$plugin_name${NC} já está instalado"
 
     log_output ""
     log_output "Detalhes do plugin:"
@@ -252,17 +253,10 @@ check_plugin_already_installed() {
     fi
 
     log_output ""
-
-    if [ "$is_dev" = true ]; then
-        log_output "${LIGHT_YELLOW}Opções disponíveis:${NC}"
-        log_output "  • Remover plugin:   ${LIGHT_CYAN}susa self plugin remove $plugin_name${NC}"
-        log_output "  • Listar plugins:   ${LIGHT_CYAN}susa self plugin list${NC}"
-    else
-        log_output "${LIGHT_YELLOW}Opções disponíveis:${NC}"
-        log_output "  • Atualizar plugin:  ${LIGHT_CYAN}susa self plugin update $plugin_name${NC}"
-        log_output "  • Remover plugin:  ${LIGHT_CYAN}susa self plugin remove $plugin_name${NC}"
-        log_output "  • Listar plugins:   ${LIGHT_CYAN}susa self plugin list${NC}"
-    fi
+    log_output "${LIGHT_YELLOW}Opções disponíveis:${NC}"
+    log_output "  • Atualizar plugin:  ${LIGHT_CYAN}susa self plugin update $plugin_name${NC}"
+    log_output "  • Remover plugin:  ${LIGHT_CYAN}susa self plugin remove $plugin_name${NC}"
+    log_output "  • Listar plugins:   ${LIGHT_CYAN}susa self plugin list${NC}"
 
     return 0
 }
@@ -310,7 +304,7 @@ show_installation_success() {
     local cmd_count="$4"
 
     log_output ""
-    log_success "Plugin '$plugin_name' instalado com sucesso!"
+    log_success "Plugin ${BOLD}$plugin_name${NC} instalado com sucesso!"
     log_output ""
     log_output "Detalhes do plugin:"
     log_output "  ${GRAY}Origem: $plugin_url${NC}"
@@ -451,6 +445,8 @@ main() {
 # Parse arguments first, before running main
 USE_SSH="false"
 PROVIDER="github"
+PLUGIN_ARG=""
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
@@ -485,8 +481,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required argument
-validate_required_arg "${PLUGIN_ARG:-}" "URL ou nome do plugin" "<git-url|user/repo> [opções]"
+# If no plugin argument provided, use current directory
+if [ -z "$PLUGIN_ARG" ]; then
+    log_debug "Nenhum argumento fornecido, usando diretório atual"
+    PLUGIN_ARG="."
+fi
 
 # Execute main function
 main "$PLUGIN_ARG" "$USE_SSH" "$PROVIDER"

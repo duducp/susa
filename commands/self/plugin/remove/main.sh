@@ -25,6 +25,7 @@ show_help() {
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin remove backup-tools    # Remove o plugin backup-tools"
+    log_output "  susa self plugin remove				  # Remove o plugin do diretório atual (dev plugin)"
     log_output "  susa self plugin remove --help          # Exibe esta ajuda"
     log_output ""
 }
@@ -54,7 +55,7 @@ main() {
     # Check if the plugin exists in plugins directory or registry
     if [ "$is_dev_plugin" = false ]; then
         if [ ! -d "$PLUGINS_DIR/$PLUGIN_NAME" ]; then
-            log_error "Plugin '$PLUGIN_NAME' não encontrado"
+            log_error "Plugin ${BOLD}$PLUGIN_NAME${NC} não encontrado"
             log_output ""
             log_output "Use ${LIGHT_CYAN}susa self plugin list${NC} para ver plugins instalados"
             exit 1
@@ -62,7 +63,7 @@ main() {
     fi
 
     # Confirm removal
-    log_warning "Você está prestes a remover o plugin '$PLUGIN_NAME'"
+    log_warning "Você está prestes a remover o plugin ${BOLD}$PLUGIN_NAME${NC}"
     if [ "$is_dev_plugin" = true ]; then
         log_output ""
         log_output "  ${GRAY}Modo: desenvolvimento${NC}"
@@ -119,7 +120,7 @@ main() {
     fi
 
     if [ "$removal_success" = true ]; then
-        log_success "Plugin '$PLUGIN_NAME' removido com sucesso!"
+        log_success "Plugin ${BOLD}$PLUGIN_NAME${NC} removido com sucesso!"
 
         # Update lock file
         update_lock_file
@@ -132,9 +133,9 @@ main() {
 }
 
 # Parse arguments first, before running main
-require_arguments "$@"
-
 auto_confirm=false
+PLUGIN_ARG=""
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
@@ -161,8 +162,31 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required argument
-validate_required_arg "${PLUGIN_ARG:-}" "Nome do plugin" "<plugin-name>"
+# If no plugin argument provided, try to detect from current directory
+if [ -z "$PLUGIN_ARG" ]; then
+    CURRENT_DIR="$(pwd)"
+    REGISTRY_FILE="$PLUGINS_DIR/registry.json"
+
+    # Try to find plugin name from registry by matching current directory
+    if [ -f "$REGISTRY_FILE" ]; then
+        DETECTED_PLUGIN=$(jq -r ".plugins[] | select(.dev == true and .source == \"$CURRENT_DIR\") | .name // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
+
+        if [ -n "$DETECTED_PLUGIN" ]; then
+            log_debug "Plugin detectado no diretório atual: $DETECTED_PLUGIN"
+            PLUGIN_ARG="$DETECTED_PLUGIN"
+        else
+            log_error "Nenhum plugin especificado e diretório atual não é um plugin em modo desenvolvimento"
+            log_output ""
+            show_usage "<plugin-name>"
+            exit 1
+        fi
+    else
+        log_error "Nenhum plugin especificado"
+        log_output ""
+        show_usage "<plugin-name>"
+        exit 1
+    fi
+fi
 
 # Execute main function
 main "$PLUGIN_ARG" "$auto_confirm"
