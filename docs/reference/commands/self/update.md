@@ -37,6 +37,7 @@ Durante a atualização, **não são perdidos**:
 | Opção | O que faz |
 |-------|-----------|
 | `-y, --yes` | Pula confirmação e atualiza automaticamente |
+| `-f, --force` | Força atualização mesmo se já estiver na versão mais recente |
 | `-v, --verbose` | Ativa logs de debug |
 | `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `-h, --help` | Mostra ajuda |
@@ -54,6 +55,12 @@ Durante a atualização, **não são perdidos**:
 ```bash
 # Atualizar sem confirmação (útil para scripts)
 susa self update -y
+
+# Forçar reinstalação da versão atual
+susa self update --force
+
+# Forçar reinstalação sem confirmação
+susa self update -f -y
 
 # Usar branch de desenvolvimento
 CLI_REPO_BRANCH=dev susa self update

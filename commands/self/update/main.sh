@@ -5,16 +5,15 @@ IFS=$'\n\t'
 # Source libraries
 source "$LIB_DIR/internal/args.sh"
 
-# Settings
-REPO_URL="$CLI_REPO_URL"
-REPO_BRANCH="$CLI_REPO_BRANCH"
 TEMP_DIR=$(mktemp -d)
+TEMP_VERSION_FILE="/tmp/susa_update_check_$$_${RANDOM}"
 
 # Cleanup function to remove temp directory on exit
 cleanup() {
     if [ -d "$TEMP_DIR" ]; then
         rm -rf "$TEMP_DIR"
     fi
+    rm -f "$TEMP_VERSION_FILE" "/tmp/susa_update_$$_"* 2> /dev/null || true
 }
 trap cleanup EXIT # Execute cleanup on script exit
 
@@ -30,6 +29,7 @@ show_help() {
     log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -y, --yes         Pula confirmação e atualiza automaticamente"
+    log_output "  -f, --force       Força atualização mesmo se já estiver na versão mais recente"
     log_output "  -v, --verbose     Modo verbose (debug)"
     log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
     log_output "  -h, --help        Exibe esta mensagem de ajuda"
@@ -42,12 +42,13 @@ show_help() {
     log_output "  • Remove arquivos temporários automaticamente"
     log_output ""
     log_output "${LIGHT_GREEN}Variáveis de ambiente:${NC}"
-    log_output "  CLI_REPO_URL      URL do repositório (padrão: github.com/duducp/susa)"
-    log_output "  CLI_REPO_BRANCH   Branch a usar (padrão: main)"
+    log_output "  CLI_CLI_REPO_URL      URL do repositório (padrão: github.com/duducp/susa)"
+    log_output "  CLI_CLI_REPO_BRANCH   Branch a usar (padrão: main)"
     log_output "  DEBUG             Ativa logs de debug (true, 1, on)"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self update              # Verifica e atualiza se houver nova versão"
+    log_output "  susa self update --force      # Força reinstalação da versão atual"
     log_output "  DEBUG=true susa self update   # Atualiza com logs de debug"
     log_output "  susa self update --help       # Exibe esta ajuda"
     log_output ""
@@ -55,44 +56,45 @@ show_help() {
 
 # Function to get the current version
 get_current_version() {
-    log_debug "Obtendo versão atual do config"
     local version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
-    log_debug "Versão atual: $version"
     echo "$version"
 }
 
 # Function to get the latest version from the repository
 get_latest_version() {
-    local latest_version
-    local method=""
-
-    log_debug "Tentando obter versão via GitHub API"
+    local latest_version=""
+    local temp_file="/tmp/susa_update_$$_${RANDOM}"
 
     # Try to obtain via GitHub API
-    latest_version=$(curl -s --max-time 10 --connect-timeout 5 \
-        https://api.github.com/repos/duducp/susa/releases/latest 2> /dev/null |
-        grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
-
-    if [[ -n "$latest_version" ]]; then
-        log_debug "Versão obtida via API: $latest_version"
-        echo "$latest_version|api"
-        return 0
+    if curl -sSL --max-time 5 --connect-timeout 3 "$CLI_GITHUB_API_URL" -o "$temp_file" 2> /dev/null; then
+        if [[ -f "$temp_file" ]] && [[ -s "$temp_file" ]]; then
+            latest_version=$(grep '"tag_name":' "$temp_file" 2> /dev/null | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/' || echo "")
+            if [[ -n "$latest_version" ]]; then
+                log_debug "Versão obtida via GitHub API: $latest_version" >&2
+                rm -f "$temp_file"
+                echo "$latest_version|api"
+                return 0
+            fi
+        fi
     fi
-
-    log_debug "API falhou, tentando via arquivo cli.yaml remoto"
+    rm -f "$temp_file"
 
     # If it fails, try to get the version of cli.yaml from the remote repository
-    latest_version=$(curl -s --max-time 10 --connect-timeout 5 \
-        "https://raw.githubusercontent.com/duducp/susa/${REPO_BRANCH}/cli.yaml" 2> /dev/null |
-        grep 'version:' | head -1 | sed -E 's/.*version: *"?([^"]+)"?/\1/')
-
-    if [[ -n "$latest_version" ]]; then
-        log_debug "Versão obtida via cli.yaml: $latest_version"
-        echo "$latest_version|raw"
-        return 0
+    log_debug "GitHub API falhou, tentando via raw content..." >&2
+    if curl -sSL --max-time 5 --connect-timeout 3 "${CLI_GITHUB_RAW_URL}/${CLI_REPO_BRANCH}/core/cli.yaml" -o "$temp_file" 2> /dev/null; then
+        if [[ -f "$temp_file" ]] && [[ -s "$temp_file" ]]; then
+            latest_version=$(grep 'version:' "$temp_file" 2> /dev/null | head -1 | sed -E 's/.*version: *"?([^"]+)"?/\1/' || echo "")
+            if [[ -n "$latest_version" ]]; then
+                log_debug "Versão obtida via raw content: $latest_version" >&2
+                rm -f "$temp_file"
+                echo "$latest_version|raw"
+                return 0
+            fi
+        fi
     fi
+    rm -f "$temp_file"
 
-    log_debug "Não foi possível obter versão remota"
+    log_debug "Falha ao obter versão remota por todos os métodos" >&2
     return 1
 }
 
@@ -101,8 +103,6 @@ version_greater_than() {
     local version1=$1
     local version2=$2
 
-    log_debug "Comparando versões: $version1 vs $version2"
-
     # Remove prefix 'v' if exists
     version1=${version1#v}
     version2=${version2#v}
@@ -110,78 +110,54 @@ version_greater_than() {
     # Uses sort -V for version comparison
     local higher=$(echo -e "$version1\n$version2" | sort -V | tail -n1)
 
-    log_debug "Versão maior: $higher"
-
     [[ "$version2" == "$higher" && "$version1" != "$version2" ]]
 }
 
 # Main update function
 perform_update() {
     log_info "Iniciando atualização do Susa CLI..."
-    log_debug "Diretório temporário: $TEMP_DIR"
-    log_debug "CLI_DIR: $CLI_DIR"
+    log_debug "Clonando de: $CLI_REPO_URL (branch: $CLI_REPO_BRANCH)"
 
     # Clones the repository
     cd "$TEMP_DIR"
     log_info "Baixando versão mais recente do repositório..."
-    log_debug "Clonando de: $REPO_URL (branch: $REPO_BRANCH)"
 
     # Captura a saída de erro do git clone, mas oculta do usuário
     local error_output
-    error_output=$(git clone --depth 1 --branch "$REPO_BRANCH" "$REPO_URL" susa-update 2>&1)
+    error_output=$(git clone --depth 1 --branch "$CLI_REPO_BRANCH" "$CLI_REPO_URL" susa-update 2>&1)
     local exit_code=$?
 
     if [ $exit_code -ne 0 ]; then
         log_error "Falha ao baixar atualização do repositório"
-        log_debug "URL: $REPO_URL"
-        log_debug "Branch: $REPO_BRANCH"
-        log_debug "Detalhes do erro:"
-        log_debug "$error_output"
+        log_debug "Erro: $error_output"
         log_info "Verifique sua conexão com a internet e tente novamente"
         return 1
     fi
 
-    log_debug "Clone concluído, entrando no diretório susa-update"
     cd susa-update
 
     # Check if cli.yaml exists
-    log_debug "Verificando arquivo cli.yaml"
     if [ ! -f "cli.yaml" ]; then
         log_error "Arquivo de configuração não encontrado na versão baixada"
         return 1
     fi
 
-    log_debug "Arquivo cli.yaml encontrado"
-
     # Preserve critical files before updating
     log_info "Preservando configurações de plugins..."
-    log_debug "Verificando existência de registry.yaml"
     local backup_registry=""
     if [ -f "$CLI_DIR/plugins/registry.yaml" ]; then
         backup_registry="$TEMP_DIR/registry.yaml.backup"
         cp "$CLI_DIR/plugins/registry.yaml" "$backup_registry"
-        log_debug "Backup do registry de plugins criado em: $backup_registry"
-    else
-        log_debug "Nenhum registry de plugins para preservar"
+        log_debug "Registry de plugins preservado"
     fi
 
     # Copy new files (except .git)
     log_info "Instalando arquivos atualizados..."
-    log_debug "Destino: $CLI_DIR"
-
-    # Remove .git directory before copying
-    log_debug "Removendo diretório .git"
     rm -rf .git
-    log_debug "Diretório .git removido"
-
-    # Copy all files to the CLI directory
-    log_debug "Copiando arquivos para $CLI_DIR"
     cp -rf ./* "$CLI_DIR/"
-    log_debug "Arquivos copiados com sucesso"
 
     # Restores plugin registry if there was a backup
     if [ -n "$backup_registry" ] && [ -f "$backup_registry" ]; then
-        log_debug "Restaurando registry de plugins"
         cp "$backup_registry" "$CLI_DIR/plugins/registry.yaml"
         log_debug "Registry de plugins restaurado"
     fi
@@ -190,11 +166,10 @@ perform_update() {
 
     # Update lock file after successful update
     log_info "Atualizando arquivo de cache..."
-    log_debug "Executando: $CORE_DIR/susa self lock"
     if "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
-        log_debug "Lock file atualizado com sucesso"
+        log_debug "Cache atualizado"
     else
-        log_warning "Não foi possível atualizar o lock file. Execute 'susa self lock' manualmente."
+        log_warning "Não foi possível atualizar o cache. Execute 'susa self lock' manualmente."
     fi
 
     return 0
@@ -203,43 +178,61 @@ perform_update() {
 # Main function
 main() {
     local auto_confirm=${1:-false}
+    local force_update=${2:-false}
     log_info "Verificando atualizações..."
-    log_debug "CLI_DIR: $CLI_DIR"
-    log_debug "GLOBAL_CONFIG_FILE: $GLOBAL_CONFIG_FILE"
-    log_debug "Auto-confirm: $auto_confirm"
 
     # Get current version
     CURRENT_VERSION=$(get_current_version)
-    log_debug "Versão atual obtida do arquivo: $CURRENT_VERSION"
     log_info "Versão atual: $CURRENT_VERSION"
 
     # Get latest version
-    log_debug "Tentando obter versão mais recente via GitHub..."
     LATEST_VERSION_RESULT=$(get_latest_version)
 
     if [[ -z "$LATEST_VERSION_RESULT" ]]; then
-        log_debug "Falha ao obter versão mais recente por todos os métodos"
-        log_error "Não foi possível obter informações sobre a versão mais recente"
-        log_info "Verifique sua conexão com a internet e tente novamente"
-        exit 1
+        log_warning "Não foi possível verificar a versão mais recente"
+        log_info "Será feito download da branch '$CLI_REPO_BRANCH' sem comparação de versões"
+        log_output ""
+
+        # Ask if you want to continue without version check
+        if [ "$auto_confirm" = false ]; then
+            if [ -t 0 ]; then
+                read -p "Deseja continuar com a atualização? (s/N): " -n 1 -r
+                log_output ""
+
+                if [[ ! $REPLY =~ ^[SsYy]$ ]]; then
+                    log_info "Atualização cancelada pelo usuário"
+                    exit 0
+                fi
+            fi
+        fi
+
+        log_output ""
+
+        # Run update without version comparison
+        if perform_update; then
+            log_output ""
+            log_success "✓ Susa CLI atualizado com sucesso!"
+            log_output ""
+            log_info "Execute 'susa self version' para confirmar a versão"
+        else
+            log_error "Falha ao atualizar o Susa CLI"
+            exit 1
+        fi
+        exit 0
     fi
 
     # Parse result (version|method)
     IFS='|' read -r LATEST_VERSION METHOD <<< "$LATEST_VERSION_RESULT"
-
-    if [[ "$METHOD" == "api" ]]; then
-        log_debug "Versão obtida via GitHub API: $LATEST_VERSION"
-    elif [[ "$METHOD" == "raw" ]]; then
-        log_debug "API do GitHub falhou, versão obtida via raw content: $LATEST_VERSION"
-    fi
-
     log_info "Última versão disponível: $LATEST_VERSION"
 
     # Compare versions
-    log_debug "Comparando versões: $CURRENT_VERSION vs $LATEST_VERSION"
-    if version_greater_than "$CURRENT_VERSION" "$LATEST_VERSION"; then
+    if version_greater_than "$CURRENT_VERSION" "$LATEST_VERSION" || [ "$force_update" = true ]; then
         log_output ""
-        log_success "Nova atualização disponível! ($CURRENT_VERSION → $LATEST_VERSION)"
+        if [ "$force_update" = true ] && [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
+            log_info "Forçando reinstalação da versão atual ($CURRENT_VERSION)"
+        else
+            log_success "Nova atualização disponível! ($CURRENT_VERSION → $LATEST_VERSION)"
+        fi
         log_output ""
 
         # Ask if you want to update
@@ -253,8 +246,6 @@ main() {
                     exit 0
                 fi
             fi
-        else
-            log_debug "Confirmação automática ativada (-y)"
         fi
 
         log_output ""
@@ -277,6 +268,7 @@ main() {
 
 # Parse arguments
 auto_confirm=false
+force_update=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h | --help)
@@ -285,12 +277,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         -y | --yes)
             auto_confirm=true
-            log_debug "Auto-confirm ativado"
+            shift
+            ;;
+        -f | --force)
+            force_update=true
             shift
             ;;
         -v | --verbose)
             export DEBUG=1
-            log_debug "Modo verbose ativado"
             shift
             ;;
         -q | --quiet)
@@ -307,4 +301,4 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Execute main function
-main "$auto_confirm"
+main "$auto_confirm" "$force_update"
