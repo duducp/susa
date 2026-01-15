@@ -137,7 +137,7 @@ perform_update() {
     cd susa-update
 
     # Check if cli.yaml exists
-    if [ ! -f "cli.yaml" ]; then
+    if [ ! -f "core/cli.yaml" ]; then
         log_error "Arquivo de configuração não encontrado na versão baixada"
         return 1
     fi
@@ -196,7 +196,7 @@ main() {
         # Ask if you want to continue without version check
         if [ "$auto_confirm" = false ]; then
             if [ -t 0 ]; then
-                read -p "Deseja continuar com a atualização? (s/N): " -n 1 -r
+                read -p "Deseja continuar com a atualização? (y/N): " -n 1 -r
                 log_output ""
 
                 if [[ ! $REPLY =~ ^[SsYy]$ ]]; then
