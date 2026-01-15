@@ -4,9 +4,14 @@ Esta seção documenta todas as bibliotecas disponíveis em `lib/` e suas funç�
 
 ## Visão Geral
 
-O Susa CLI fornece um conjunto robusto de bibliotecas reutilizáveis que facilitam o desenvolvimento de comandos. As bibliotecas estão organizadas por funcionalidade e podem ser importadas conforme necessário.
+O Susa CLI fornece um conjunto robusto de bibliotecas reutilizáveis que facilitam o desenvolvimento de comandos. As bibliotecas estão organizadas em duas categorias:
 
-## Bibliotecas Disponíveis
+- **Bibliotecas Públicas** (`core/lib/*.sh`): Disponíveis para uso em comandos de usuário
+- **Bibliotecas Internas** (`core/lib/internal/*.sh`): Usadas apenas pelo core do sistema
+
+## Bibliotecas Públicas
+
+Estas bibliotecas podem ser importadas e usadas livremente em comandos personalizados e plugins.
 
 ### Interface e Output
 
@@ -40,7 +45,7 @@ Manipulação de strings e arrays. Inclui funções para conversão de case, lim
 
 #### [dependencies.sh](dependencies.md)
 
-Gerenciamento automático de dependências externas. Auto-instala ferramentas como `curl`, `jq`, `yq` e `fzf` quando necessário.
+Gerenciamento automático de dependências externas. Auto-instala ferramentas como `curl`, `jq` e `fzf` quando necessário.
 
 #### [kubernetes.sh](kubernetes.md)
 
@@ -50,7 +55,15 @@ Funções auxiliares para trabalhar com Kubernetes. Valida instalação do `kube
 
 #### [cli.sh](cli.md)
 
-Funções específicas do framework CLI. Configura ambiente de comandos, exibe versão, uso e descrições formatadas.
+Funções específicas do framework CLI. Fornece `show_usage()`, `show_description()` e `build_command_path()` para padronização de comandos.
+
+## Bibliotecas Internas
+
+Estas bibliotecas são usadas internamente pelo core do Susa CLI. Não devem ser importadas diretamente em comandos de usuário.
+
+#### [json.sh](json.md)
+
+Parser JSON interno usando jq. Funções auxiliares para leitura e manipulação de arquivos JSON. Usado internamente por config.sh, lock.sh e registry.sh.
 
 #### [args.sh](args.md)
 
@@ -60,19 +73,21 @@ Parsing consistente de argumentos de linha de comando. Valida argumentos obrigat
 
 Gerenciamento de autocompletar (tab completion) para Bash e Zsh. Verifica instalação, status e carregamento de scripts de completion.
 
-#### [yaml.sh](yaml.md)
+#### [config.sh](config.md)
 
-Parser YAML completo para configurações. Descobre categorias, comandos e lê metadados dos arquivos `config.yaml`.
+Parser JSON completo para configurações. Descobre categorias, comandos e lê metadados dos arquivos `config.json`. Inclui funções de versão do CLI.
+
+#### [git.sh](git.md)
+
+Operações Git para gerenciamento de plugins. Valida acesso a repositórios, clona e atualiza plugins, detecta provedores Git (GitHub, GitLab, Bitbucket).
 
 #### [plugin.sh](plugin.md)
 
-Gerenciamento de plugins externos. Clona, detecta versões e conta comandos de plugins Git.
+Gerenciamento de metadados de plugins externos. Detecta versões, conta comandos e normaliza URLs de plugins Git.
 
 #### [registry.sh](registry.md)
 
-Gerenciamento do arquivo `registry.yaml` de plugins. Adiciona, remove e lista plugins instalados com versionamento.
-
-### Internal Libraries
+Gerenciamento do arquivo `registry.json` de plugins. Adiciona, remove e lista plugins instalados com versionamento.
 
 #### [installations.sh](installations.md)
 
@@ -81,37 +96,67 @@ Rastreamento de instalações de software no arquivo `susa.lock`. Registra vers�
 ## Dependências Entre Bibliotecas
 
 ```text
+BIBLIOTECAS PÚBLICAS:
+
 cli.sh
 ├── color.sh
-├── args.sh
-└── yaml.sh
+└── internal/config.sh
 
-args.sh
-└── logger.sh
-    └── color.sh
-
-completion.sh
-└── shell.sh
-
-yaml.sh
-├── dependencies.sh
-└── registry.sh
+logger.sh
+└── color.sh
 
 dependencies.sh
 └── logger.sh
     └── color.sh
 
-installations.sh (internal)
-├── dependencies.sh
-│   └── logger.sh
-└── logger.sh
-    └── color.sh
+shell.sh
+(sem dependências)
+
+string.sh
+(sem dependências)
+
+os.sh
+(sem dependências)
 
 sudo.sh
 └── color.sh
 
 kubernetes.sh
 └── color.sh
+
+BIBLIOTECAS INTERNAS:
+
+internal/config.sh
+├── internal/registry.sh
+└── internal/json.sh
+
+internal/args.sh
+└── logger.sh
+    └── color.sh
+
+internal/completion.sh
+└── shell.sh
+
+internal/plugin.sh
+├── internal/git.sh
+└── internal/registry.sh
+
+internal/git.sh
+└── logger.sh
+
+internal/registry.sh
+└── internal/json.sh
+
+internal/lock.sh
+└── internal/json.sh
+
+internal/installations.sh
+├── internal/json.sh
+├── logger.sh
+└── os.sh
+
+internal/json.sh
+(sem dependências - requer jq)
 ```
 
 **Nota:** Sempre faça `source` das dependências antes de usar uma biblioteca.
@@ -173,7 +218,7 @@ fi
 5. **Valide dependências cedo** com `ensure_*_installed` antes de usar ferramentas externas
 6. **Use cores para destacar** informações importantes e melhorar UX
 7. **Teste compatibilidade de SO** com `is_command_compatible()` antes de executar
-8. **Use yq para YAML** ao invés de awk/grep para parsing confiável
+8. **Use jq para JSON** ao invés de awk/grep para parsing confiável
 9. **Sempre termine cores com `${NC}`** para evitar poluição de estilo no terminal
 
 ## Recursos Adicionais

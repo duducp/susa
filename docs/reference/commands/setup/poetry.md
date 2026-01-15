@@ -430,7 +430,7 @@ git commit -m "Add nova-biblioteca"
 
 ### CI/CD
 
-```yaml
+```json
 # .github/workflows/test.yml
 name: Tests
 

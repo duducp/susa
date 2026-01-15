@@ -1,0 +1,11 @@
+{
+  "name": "Remove",
+  "description": "Remove um plugin instalado",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": null,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

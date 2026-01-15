@@ -1,6 +1,6 @@
 # registry.sh
 
-Gerenciamento do arquivo `registry.yaml` de plugins.
+Gerenciamento do arquivo `registry.json` de plugins.
 
 ## Funções
 
@@ -10,7 +10,7 @@ Adiciona um plugin ao registry.
 
 **Parâmetros:**
 
-- `$1` - Caminho do arquivo registry.yaml
+- `$1` - Caminho do arquivo registry.json
 - `$2` - Nome do plugin
 - `$3` - URL do repositório
 - `$4` - Versão (opcional, padrão: "1.0.0")
@@ -24,7 +24,7 @@ Adiciona um plugin ao registry.
 - `1` - Plugin já existe
 
 ```bash
-registry_file="/opt/susa/plugins/registry.yaml"
+registry_file="/opt/susa/plugins/registry.json"
 
 # Adição simples
 registry_add_plugin "$registry_file" "myplugin" "https://github.com/user/plugin.git" "1.2.0"
@@ -65,7 +65,7 @@ Obtém informação específica de um plugin.
 
 **Parâmetros:**
 
-- `$1` - Caminho do arquivo registry.yaml
+- `$1` - Caminho do arquivo registry.json
 - `$2` - Nome do plugin
 - `$3` - Campo (source, version, installed_at)
 
@@ -82,7 +82,7 @@ echo "Plugin myplugin: $version ($source)"
 #!/bin/bash
 source "$LIB_DIR/internal/registry.sh"
 
-registry_file="$CLI_DIR/plugins/registry.yaml"
+registry_file="$CLI_DIR/plugins/registry.json"
 
 # Adiciona plugin
 registry_add_plugin "$registry_file" "awesome" "https://github.com/user/awesome.git" "2.0.0"

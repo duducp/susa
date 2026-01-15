@@ -103,6 +103,53 @@ Verifica se uma string começa com um prefixo específico.
 **Uso:**
 
 ```bash
+if string_starts_with "hello world" "hello"; then
+    echo "Começa com 'hello'"
+fi
+```
+
+## Funções de Conversão
+
+### `strtobool()`
+
+Converte string para boolean (retorno de função shell).
+
+**Parâmetros:**
+
+- `$1` - String a converter
+
+**Valores aceitos:**
+
+- **True:** "true", "1", "on", "yes" (case-insensitive)
+- **False:** "false", "0", "off", "no" (case-insensitive)
+
+**Retorno:**
+
+- `0` - True
+- `1` - False
+
+**Uso:**
+
+```bash
+if strtobool "yes"; then
+    echo "Valor é verdadeiro"
+fi
+
+if strtobool "${ENABLE_FEATURE:-false}"; then
+    log_info "Feature habilitada"
+fi
+
+# Checagem de variáveis de ambiente
+if strtobool "${DEBUG:-false}"; then
+    log_debug "Modo debug ativo"
+fi
+```
+
+- `1` (false) - String não começa com o prefixo
+
+**Uso:**
+
+```bash
 if string_starts_with "https://example.com" "https://"; then
     echo "URL usa HTTPS"
 fi
@@ -189,4 +236,4 @@ echo "Ambiente: $env_upper"  # Ambiente: PRODUCTION
 1. Use `string_trim()` para normalizar entrada de usuário
 2. Use `string_contains()` e `string_starts_with()` para validação
 3. Combine com validação de entrada antes de processar
-4. Útil para processar campos de config.yaml
+4. Útil para processar campos de config.json

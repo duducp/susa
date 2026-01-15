@@ -16,17 +16,17 @@ Plugins são **pacotes externos** que adicionam:
 ```text
 meu-plugin/
 ├── categoria1/
-│   ├── config.yaml
+│   ├── config.json
 │   ├── comando1/
-│   │   ├── config.yaml
+│   │   ├── config.json
 │   │   └── main.sh
 │   └── subcategoria/
-│       ├── config.yaml
+│       ├── config.json
 │       └── comando2/
-│           ├── config.yaml
+│           ├── config.json
 │           └── main.sh
 └── categoria2/
-    ├── config.yaml
+    ├── config.json
     └── ...
 ```
 
@@ -62,13 +62,13 @@ Plugins instalados localmente (modo dev) refletem alterações automaticamente -
 mkdir -p meu-plugin/deploy/{staging,production}
 
 # Categoria
-cat > meu-plugin/deploy/config.yaml << EOF
+cat > meu-plugin/deploy/config.json << EOF
 name: "Deploy"
 description: "Ferramentas de deployment"
 EOF
 
 # Comando
-cat > meu-plugin/deploy/staging/config.yaml << EOF
+cat > meu-plugin/deploy/staging/config.json << EOF
 name: "Staging"
 description: "Deploy para staging"
 entrypoint: "main.sh"
@@ -127,14 +127,14 @@ Plugins suportam a mesma estrutura hierárquica que comandos built-in:
 ```text
 meu-plugin/
   deploy/
-    config.yaml
+    config.json
     staging/
-      config.yaml
+      config.json
       main.sh
     aws/                 # Subcategoria
-      config.yaml
+      config.json
       ec2/               # Comando em subcategoria
-        config.yaml
+        config.json
         main.sh
 ```
 
@@ -173,7 +173,7 @@ Commands:
 3. **Naming** - Use nomes descritivos e sem espaços
 4. **Testes** - Teste localmente antes de publicar
 5. **Compatibilidade** - Use campo `os:` se específico de plataforma
-6. **Variáveis de Ambiente** - Use `envs:` no config.yaml para configurações
+6. **Variáveis de Ambiente** - Use `envs:` no config.json para configurações
    - Sempre forneça fallback no script: `${VAR:-default}`
    - Use prefixos únicos: `MYPLUGIN_*`
    - Documente no README quais envs estão disponíveis

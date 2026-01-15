@@ -11,7 +11,7 @@ Framework modular em Shell Script para criar CLIs extensíveis com descoberta au
 - 🎯 **Subcategorias Multi-nível** - Hierarquia ilimitada de comandos
 - 🌍 **Variáveis de Ambiente** - Configurações isoladas por comando
 - 🖥️ **Multi-plataforma** - Linux e macOS
-- 📚 **Bibliotecas Reutilizáveis** - Logger, detecção de SO, parser YAML e mais
+- 📚 **Bibliotecas Reutilizáveis** - Logger, detecção de SO, parser JSON e mais
 - ⚡ **Autocompletar** - Tab completion para bash e zsh
 
 ## 🚀 Instalação
@@ -50,17 +50,17 @@ susa --version          # Versão
 susa/
 ├── core/                   # Core do CLI
 │   ├── susa               # Executável principal
-│   ├── cli.yaml           # Configuração global
+│   ├── cli.json           # Configuração global
 │   └── lib/               # Bibliotecas compartilhadas
 ├── commands/              # Comandos nativos
 │   ├── setup/            # Categoria de comandos
-│   │   ├── config.yaml
+│   │   ├── config.json
 │   │   └── docker/       # Comando individual
-│   │       ├── config.yaml
+│   │       ├── config.json
 │   │       └── main.sh
 │   └── self/             # Comandos internos (plugin, completion)
 ├── plugins/              # Plugins externos (Git)
-│   └── registry.yaml
+│   └── registry.json
 └── docs/                 # Documentação MkDocs
 ```
 
@@ -76,18 +76,21 @@ mkdir -p commands/setup/myapp
 
 **2. Configurar comando com envs:**
 
-```yaml
-# commands/setup/myapp/config.yaml
-name: "My App"
-description: "Instala My App"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
-envs:
-  MYAPP_VERSION: "1.0.0"
-  MYAPP_INSTALL_DIR: "$HOME/.myapp"
-  MYAPP_DOWNLOAD_URL: "https://example.com/myapp"
-  MYAPP_TIMEOUT: "300"
+```json
+// commands/setup/myapp/config.json
+{
+  "name": "My App",
+  "description": "Instala My App",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"],
+  "envs": {
+    "MYAPP_VERSION": "1.0.0",
+    "MYAPP_INSTALL_DIR": "$HOME/.myapp",
+    "MYAPP_DOWNLOAD_URL": "https://example.com/myapp",
+    "MYAPP_TIMEOUT": "300"
+  }
+}
 ```
 
 **3. Criar script usando as envs:**
@@ -209,7 +212,6 @@ Os hooks irão executar:
 
 - ✅ ShellCheck (verificação de qualidade do código)
 - ✅ shfmt (verificação de formatação)
-- ✅ yamllint (validação de arquivos YAML)
 - ✅ Verificações gerais (espaços em branco, fim de arquivo, etc.)
 - ❌ Bloquear commit se houver erros
 

@@ -99,7 +99,7 @@ susa self plugin add ~/projetos/meu-plugin
 susa-plugin-name/
 ├── commands/
 │   └── categoria/
-│       ├── config.yaml
+│       ├── config.json
 │       └── main.sh
 ```
 
@@ -152,9 +152,9 @@ Plugins locais devem ter a estrutura correta:
 ```text
 meu-plugin/
   categoria/
-    config.yaml
+    config.json
     comando/
-      config.yaml
+      config.json
       main.sh
 ```
 
@@ -166,9 +166,9 @@ Se a estrutura for inválida:
 Estrutura esperada:
   plugin/
     categoria/
-      config.yaml
+      config.json
       comando/
-        config.yaml
+        config.json
         main.sh
 ```
 
@@ -190,12 +190,12 @@ susa backup restaurar
 ```bash
 # Criar estrutura do plugin
 mkdir -p ~/dev/my-plugin/tools/hello
-cat > ~/dev/my-plugin/tools/config.yaml << 'EOF'
+cat > ~/dev/my-plugin/tools/config.json << 'EOF'
 name: "tools"
 description: "Ferramentas úteis"
 EOF
 
-cat > ~/dev/my-plugin/tools/hello/config.yaml << 'EOF'
+cat > ~/dev/my-plugin/tools/hello/config.json << 'EOF'
 name: "hello"
 description: "Diz olá"
 entrypoint: "main.sh"

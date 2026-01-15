@@ -44,7 +44,7 @@ susa self plugin list
 
 O sistema utiliza **discovery automático**, onde novos comandos são reconhecidos automaticamente ao serem adicionados na estrutura de diretórios. Cada comando pode ter:
 
-- ✅ **Configuração YAML** - Define metadados, descrição e opções
+- ✅ **Configuração JSON** - Define metadados, descrição e opções
 - ✅ **Script de Execução** - Implementa a lógica do comando
 - ✅ **Subcategorias** - Organização hierárquica ilimitada
 

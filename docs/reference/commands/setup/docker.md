@@ -17,7 +17,7 @@ Docker é a plataforma líder mundial em containers, permitindo que desenvolvedo
 ### Docker vs Podman
 
 | Característica | Docker | Podman |
-|---|---|---|
+| --- | --- | --- |
 | Arquitetura | Cliente-servidor (daemon) | Daemon-less |
 | Permissões | Requer grupo docker | Rootless nativo |
 | Compatibilidade | Padrão da indústria | Compatível com Docker |
@@ -33,7 +33,7 @@ susa setup docker [opções]
 ### Opções
 
 | Opção | Descrição |
-|---|---|
+| --- | --- |
 | `-h, --help` | Mostra mensagem de ajuda |
 | `--uninstall` | Desinstala o Docker |
 | `--update` | Atualiza para a versão mais recente |
@@ -351,6 +351,7 @@ code --install-extension ms-azuretools.vscode-docker
 ```
 
 Recursos:
+
 - Visualizar containers e imagens
 - Build e run com um clique
 - Logs em tempo real
@@ -359,6 +360,7 @@ Recursos:
 ### JetBrains IDEs
 
 Suporte nativo ao Docker em:
+
 - IntelliJ IDEA
 - PyCharm
 - WebStorm

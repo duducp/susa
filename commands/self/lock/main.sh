@@ -5,7 +5,8 @@ IFS=$'\n\t'
 # Setup command environment
 
 source "$LIB_DIR/logger.sh"
-source "$LIB_DIR/internal/yaml.sh"
+source "$LIB_DIR/internal/config.sh"
+source "$LIB_DIR/internal/json.sh"
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/internal/plugin.sh"
 
@@ -72,37 +73,37 @@ scan_category_dir() {
 
         local item_name=$(basename "$item_dir")
 
-        # Check if it's a command (has entrypoint field in config.yaml)
-        if [ -f "$item_dir/config.yaml" ]; then
-            local script_name=$(yq eval '.entrypoint' "$item_dir/config.yaml" 2> /dev/null)
+        # Check if it's a command (has entrypoint field in config.json)
+        if [ -f "$item_dir/config.json" ]; then
+            local script_name=$(jq -r '.entrypoint // empty' "$item_dir/config.json" 2> /dev/null)
 
-            if [ -n "$script_name" ] && [ "$script_name" != "null" ] && [ -f "$item_dir/$script_name" ]; then
+            if [ -n "$script_name" ] && [ -f "$item_dir/$script_name" ]; then
                 # It's a command
                 echo "COMMAND|$category_path|$item_name|$source"
 
                 # Read additional metadata
-                local description=$(yq eval '.description' "$item_dir/config.yaml" 2> /dev/null)
-                local script=$(yq eval '.entrypoint' "$item_dir/config.yaml" 2> /dev/null)
-                local os=$(yq eval '.os' "$item_dir/config.yaml" 2> /dev/null)
-                local sudo=$(yq eval '.sudo' "$item_dir/config.yaml" 2> /dev/null)
-                local group=$(yq eval '.group' "$item_dir/config.yaml" 2> /dev/null)
+                local description=$(jq -r '.description // empty' "$item_dir/config.json" 2> /dev/null)
+                local script=$(jq -r '.entrypoint // empty' "$item_dir/config.json" 2> /dev/null)
+                local os=$(jq -c '.os // empty' "$item_dir/config.json" 2> /dev/null)
+                local sudo=$(jq -r '.sudo // empty' "$item_dir/config.json" 2> /dev/null)
+                local group=$(jq -r '.group // empty' "$item_dir/config.json" 2> /dev/null)
 
                 # Always output entrypoint (use default if not specified)
-                if [ -z "$script" ] || [ "$script" = "null" ]; then
+                if [ -z "$script" ]; then
                     script="main.sh"
                 fi
 
-                [ "$description" != "null" ] && echo "META|description|${description}"
+                [ -n "$description" ] && echo "META|description|${description}"
                 echo "META|entrypoint|${script}"
-                [ "$os" != "null" ] && echo "META|os|${os}"
-                [ "$sudo" != "null" ] && echo "META|sudo|${sudo}"
-                [ "$group" != "null" ] && echo "META|group|${group}"
+                [ -n "$os" ] && echo "META|os|${os}"
+                [ -n "$sudo" ] && echo "META|sudo|${sudo}"
+                [ -n "$group" ] && echo "META|group|${group}"
             else
                 # It's a subcategory - scan recursively
                 scan_category_dir "$base_dir" "$category_path/$item_name" "$source"
             fi
         else
-            # No config.yaml means it's a subcategory
+            # No config.json means it's a subcategory
             scan_category_dir "$base_dir" "$category_path/$item_name" "$source"
         fi
     done
@@ -121,8 +122,8 @@ scan_all_structure() {
             local cat_name=$(basename "$cat_dir")
 
             # Read category info
-            if [ -f "$cat_dir/config.yaml" ]; then
-                local cat_desc=$(yq eval '.description' "$cat_dir/config.yaml" 2> /dev/null)
+            if [ -f "$cat_dir/config.json" ]; then
+                local cat_desc=$(jq -r '.description // empty' "$cat_dir/config.json" 2> /dev/null)
                 echo "CATEGORY|$cat_name|$cat_desc|commands"
             else
                 echo "CATEGORY|$cat_name||commands"
@@ -140,7 +141,7 @@ scan_all_structure() {
             local plugin_name=$(basename "$plugin_dir")
 
             # Ignore special files
-            [ "$plugin_name" = "registry.yaml" ] && continue
+            [ "$plugin_name" = "registry.json" ] && continue
             [ "$plugin_name" = "README.md" ] && continue
             [ "$plugin_name" = ".gitkeep" ] && continue
 
@@ -150,8 +151,8 @@ scan_all_structure() {
                 local cat_name=$(basename "$cat_dir")
 
                 # Read category info
-                if [ -f "$cat_dir/config.yaml" ]; then
-                    local cat_desc=$(yq eval '.description' "$cat_dir/config.yaml" 2> /dev/null)
+                if [ -f "$cat_dir/config.json" ]; then
+                    local cat_desc=$(jq -r '.description // empty' "$cat_dir/config.json" 2> /dev/null)
                     echo "CATEGORY|$cat_name|$cat_desc|$plugin_name"
                 else
                     echo "CATEGORY|$cat_name||$plugin_name"
@@ -164,10 +165,10 @@ scan_all_structure() {
     fi
 
     # Scan dev plugins from registry (plugins with local paths as source)
-    local registry_file="$cli_dir/plugins/registry.yaml"
+    local registry_file="$cli_dir/plugins/registry.json"
     if [ -f "$registry_file" ]; then
         # Get dev plugins (source is a local path and dev=true)
-        local dev_plugins=$(yq eval '.plugins[] | select(.dev == true) | .name + "|" + .source' "$registry_file" 2> /dev/null)
+        local dev_plugins=$(jq -r '.plugins[] | select(.dev == true) | .name + "|" + .source // empty' "$registry_file" 2> /dev/null)
 
         while IFS='|' read -r plugin_name plugin_source; do
             [ -z "$plugin_name" ] && continue
@@ -183,8 +184,8 @@ scan_all_structure() {
                 [ "$cat_name" = "README.md" ] && continue
 
                 # Read category info
-                if [ -f "$cat_dir/config.yaml" ]; then
-                    local cat_desc=$(yq eval '.description' "$cat_dir/config.yaml" 2> /dev/null)
+                if [ -f "$cat_dir/config.json" ]; then
+                    local cat_desc=$(jq -r '.description // empty' "$cat_dir/config.json" 2> /dev/null)
                     echo "CATEGORY|$cat_name|$cat_desc|$plugin_name"
                 else
                     echo "CATEGORY|$cat_name||$plugin_name"
@@ -204,11 +205,11 @@ generate_lock_file() {
     local temp_installations="/tmp/susa_installations_backup_$$"
 
     # Backup existing installations section if lock file exists
-    if [ -f "$lock_file" ] && yq eval '.installations' "$lock_file" &> /dev/null; then
-        local has_installations=$(yq eval '.installations | length' "$lock_file" 2> /dev/null)
-        if [ "$has_installations" != "0" ] && [ "$has_installations" != "null" ]; then
+    if [ -f "$lock_file" ] && json_is_valid "$lock_file" 2> /dev/null; then
+        local has_installations=$(json_array_length "$lock_file" ".installations" 2> /dev/null)
+        if [ -n "$has_installations" ] && [ "$has_installations" != "0" ] && [ "$has_installations" != "" ]; then
             log_debug "Fazendo backup da seção de instalações..."
-            yq eval '.installations' "$lock_file" > "$temp_installations" 2> /dev/null
+            jq '.installations' "$lock_file" > "$temp_installations" 2> /dev/null
         fi
     fi
 
@@ -220,25 +221,31 @@ generate_lock_file() {
         return 1
     }
 
-    local version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
+    local version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
+    [ -z "$version" ] && version="1.0.0"
 
     log_info "Gerando arquivo susa.lock..."
 
-    # Create lock file header
-    cat > "$lock_file" << EOF
-# Susa Lock File
-# This file contains the discovered commands and categories structure
-# Generated at: $timestamp
-# Do not edit manually - run 'susa self lock' to regenerate
-
-version: "$version"
-generated_at: "$timestamp"
-
-categories:
-EOF
-
     # Scan and process structure
     local scan_output=$(scan_all_structure)
+
+    # Initialize JSON structure
+    local json_data='{}'
+    json_data=$(echo "$json_data" | jq \
+        --arg comment "Susa Lock File - This file contains the discovered commands and categories structure" \
+        --arg generated "Do not edit manually - run 'susa self lock' to regenerate" \
+        --arg version "$version" \
+        --arg timestamp "$timestamp" \
+        '. + {
+            "_comment": $comment,
+            "_generated_at": $timestamp,
+            "_note": $generated,
+            "version": $version,
+            "generated_at": $timestamp,
+            "categories": [],
+            "plugins": [],
+            "commands": []
+        }')
 
     # First pass: process categories
     while IFS='|' read -r type field1 field2 field3 field4; do
@@ -247,16 +254,21 @@ EOF
             local cat_desc="$field2"
             local cat_source="$field3"
 
-            # Add category to lock file
-            echo "  - name: \"$cat_name\"" >> "$lock_file"
-            [ -n "$cat_desc" ] && echo "    description: \"$cat_desc\"" >> "$lock_file"
-            echo "    source: \"$cat_source\"" >> "$lock_file"
+            # Add category to JSON - build inline to avoid parsing issues
+            if [ -n "$cat_desc" ]; then
+                json_data=$(echo "$json_data" | jq \
+                    --arg name "$cat_name" \
+                    --arg source "$cat_source" \
+                    --arg desc "$cat_desc" \
+                    '.categories += [{name: $name, description: $desc, source: $source}]')
+            else
+                json_data=$(echo "$json_data" | jq \
+                    --arg name "$cat_name" \
+                    --arg source "$cat_source" \
+                    '.categories += [{name: $name, source: $source}]')
+            fi
         fi
     done <<< "$scan_output"
-
-    # Add plugins section with metadata
-    echo "" >> "$lock_file"
-    echo "plugins:" >> "$lock_file"
 
     # Get unique plugins from scan output and add their metadata
     local plugins_found=$(echo "$scan_output" | grep "^COMMAND" | awk -F'|' '{print $4}' | sed 's/###DEV$//' | sort -u)
@@ -270,7 +282,7 @@ EOF
         # Check if it's a dev plugin
         if echo "$scan_output" | grep -q "${plugin_source}###DEV"; then
             is_dev=true
-            plugin_dir=$(yq eval ".plugins[] | select(.name == \"$plugin_source\" and .dev == true) | .source" "$CLI_DIR/plugins/registry.yaml" 2> /dev/null | head -1)
+            plugin_dir=$(jq -r ".plugins[] | select(.name == \"$plugin_source\" and .dev == true) | .source // empty" "$CLI_DIR/plugins/registry.json" 2> /dev/null | head -1)
         else
             plugin_dir="$CLI_DIR/plugins/$plugin_source"
         fi
@@ -281,51 +293,82 @@ EOF
             local plugin_cmd_count=$(count_plugin_commands "$plugin_dir")
             local plugin_categories=$(get_plugin_categories "$plugin_dir")
 
-            echo "  - name: \"$plugin_source\"" >> "$lock_file"
-            echo "    version: \"$plugin_version\"" >> "$lock_file"
-            echo "    commands: $plugin_cmd_count" >> "$lock_file"
-            [ -n "$plugin_categories" ] && echo "    categories: \"$plugin_categories\"" >> "$lock_file"
-            [ "$is_dev" = true ] && echo "    dev: true" >> "$lock_file"
+            # Ensure cmd_count is a valid number
+            if [ -z "$plugin_cmd_count" ] || ! [[ "$plugin_cmd_count" =~ ^[0-9]+$ ]]; then
+                plugin_cmd_count=0
+            fi
+
+            # Build plugin object inline to avoid parsing issues
+            if [ -n "$plugin_categories" ] && [ "$is_dev" = true ]; then
+                json_data=$(echo "$json_data" | jq \
+                    --arg name "$plugin_source" \
+                    --arg version "$plugin_version" \
+                    --argjson commands "$plugin_cmd_count" \
+                    --arg cats "$plugin_categories" \
+                    '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, dev: true}]')
+            elif [ -n "$plugin_categories" ]; then
+                json_data=$(echo "$json_data" | jq \
+                    --arg name "$plugin_source" \
+                    --arg version "$plugin_version" \
+                    --argjson commands "$plugin_cmd_count" \
+                    --arg cats "$plugin_categories" \
+                    '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats}]')
+            elif [ "$is_dev" = true ]; then
+                json_data=$(echo "$json_data" | jq \
+                    --arg name "$plugin_source" \
+                    --arg version "$plugin_version" \
+                    --argjson commands "$plugin_cmd_count" \
+                    '.plugins += [{name: $name, version: $version, commands: $commands, dev: true}]')
+            else
+                json_data=$(echo "$json_data" | jq \
+                    --arg name "$plugin_source" \
+                    --arg version "$plugin_version" \
+                    --argjson commands "$plugin_cmd_count" \
+                    '.plugins += [{name: $name, version: $version, commands: $commands}]')
+            fi
         fi
     done <<< "$plugins_found"
 
-    # Add commands section
-    echo "" >> "$lock_file"
-    echo "commands:" >> "$lock_file"
-
-    # Second pass: process commands with buffering
+    # Second pass: process commands
     local buffer=""
     local current_source=""
     local is_dev_plugin=false
+    local cmd_obj=""
+
     while IFS='|' read -r type field1 field2 field3 field4; do
         if [ "$type" = "COMMAND" ]; then
-            # If we have a buffer, write it out with plugin info if needed
-            if [ -n "$buffer" ]; then
-                echo "$buffer" >> "$lock_file"
+            # If we have a buffered command, add it to JSON
+            if [ -n "$cmd_obj" ]; then
+                # Add plugin info if not from commands
                 if [ "$current_source" != "commands" ]; then
-                    # Add dev flag if it's a dev plugin
-                    if [ "$is_dev_plugin" = true ]; then
-                        echo "    dev: true" >> "$lock_file"
-                    fi
-                    echo "    plugin:" >> "$lock_file"
-                    echo "      name: \"$current_source\"" >> "$lock_file"
+                    local plugin_info=$(jq -n \
+                        --arg name "$current_source" \
+                        '{name: $name}')
 
                     # Add source path for all plugins
-                    local registry_file="$CLI_DIR/plugins/registry.yaml"
-                    local plugin_source=""
+                    local registry_file="$CLI_DIR/plugins/registry.json"
+                    local plugin_source_path=""
 
                     if [ "$is_dev_plugin" = true ]; then
                         # For dev plugins, get source from registry
-                        plugin_source=$(yq eval ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source" "$registry_file" 2> /dev/null | head -1)
+                        plugin_source_path=$(jq -r ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source // empty" "$registry_file" 2> /dev/null | head -1)
                     else
                         # For installed plugins, use plugins directory
-                        plugin_source="$CLI_DIR/plugins/$current_source"
+                        plugin_source_path="$CLI_DIR/plugins/$current_source"
                     fi
 
-                    if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
-                        echo "      source: \"$plugin_source\"" >> "$lock_file"
+                    if [ -n "$plugin_source_path" ] && [ "$plugin_source_path" != "" ]; then
+                        plugin_info=$(echo "$plugin_info" | jq --arg src "$plugin_source_path" '. + {source: $src}')
+                    fi
+
+                    cmd_obj=$(echo "$cmd_obj" | jq --argjson plugin "$plugin_info" '. + {plugin: $plugin}')
+
+                    if [ "$is_dev_plugin" = true ]; then
+                        cmd_obj=$(echo "$cmd_obj" | jq '. + {dev: true}')
                     fi
                 fi
+
+                json_data=$(echo "$json_data" | jq --argjson cmd "$cmd_obj" '.commands += [$cmd]')
             fi
 
             local cmd_category="$field1"
@@ -341,67 +384,73 @@ EOF
                 is_dev_plugin=false
             fi
 
-            # Start new buffer
-            buffer="  - category: \"$cmd_category\"
-    name: \"$cmd_name\""
+            # Start new command object
+            cmd_obj=$(jq -n \
+                --arg category "$cmd_category" \
+                --arg name "$cmd_name" \
+                '{category: $category, name: $name}')
 
         elif [ "$type" = "META" ]; then
             local meta_key="$field1"
             local meta_value="$field2"
 
-            # Add metadata to buffer
-            if [ -n "$meta_value" ] && [ "$meta_value" != "null" ]; then
+            # Add metadata to command object
+            if [ -n "$meta_value" ] && [ "$meta_value" != "" ]; then
                 # Handle array fields (os)
                 if [ "$meta_key" = "os" ] && echo "$meta_value" | grep -q '^\['; then
-                    # Convert to YAML array format
-                    buffer="$buffer
-    $meta_key: $meta_value"
+                    # Value is already a JSON array, add it directly
+                    cmd_obj=$(echo "$cmd_obj" | jq --argjson arr "$meta_value" --arg key "$meta_key" '.[$key] = $arr')
                 else
-                    buffer="$buffer
-    $meta_key: \"$meta_value\""
+                    cmd_obj=$(echo "$cmd_obj" | jq --arg key "$meta_key" --arg val "$meta_value" '.[$key] = $val')
                 fi
             fi
         fi
     done <<< "$scan_output"
 
     # Write last buffered command
-    if [ -n "$buffer" ]; then
-        echo "$buffer" >> "$lock_file"
+    if [ -n "$cmd_obj" ]; then
+        # Add plugin info if not from commands
         if [ "$current_source" != "commands" ]; then
-            # Add dev flag if it's a dev plugin
-            if [ "$is_dev_plugin" = true ]; then
-                echo "    dev: true" >> "$lock_file"
-            fi
-            echo "    plugin:" >> "$lock_file"
-            echo "      name: \"$current_source\"" >> "$lock_file"
+            local plugin_info=$(jq -n \
+                --arg name "$current_source" \
+                '{name: $name}')
 
             # Add source path for all plugins
-            local registry_file="$CLI_DIR/plugins/registry.yaml"
-            local plugin_source=""
+            local registry_file="$CLI_DIR/plugins/registry.json"
+            local plugin_source_path=""
 
             if [ "$is_dev_plugin" = true ]; then
                 # For dev plugins, get source from registry
-                plugin_source=$(yq eval ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source" "$registry_file" 2> /dev/null | head -1)
+                plugin_source_path=$(jq -r ".plugins[] | select(.name == \"$current_source\" and .dev == true) | .source // empty" "$registry_file" 2> /dev/null | head -1)
             else
                 # For installed plugins, use plugins directory
-                plugin_source="$CLI_DIR/plugins/$current_source"
+                plugin_source_path="$CLI_DIR/plugins/$current_source"
             fi
 
-            if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
-                echo "      source: \"$plugin_source\"" >> "$lock_file"
+            if [ -n "$plugin_source_path" ] && [ "$plugin_source_path" != "" ]; then
+                plugin_info=$(echo "$plugin_info" | jq --arg src "$plugin_source_path" '. + {source: $src}')
+            fi
+
+            cmd_obj=$(echo "$cmd_obj" | jq --argjson plugin "$plugin_info" '. + {plugin: $plugin}')
+
+            if [ "$is_dev_plugin" = true ]; then
+                cmd_obj=$(echo "$cmd_obj" | jq '. + {dev: true}')
             fi
         fi
+
+        json_data=$(echo "$json_data" | jq --argjson cmd "$cmd_obj" '.commands += [$cmd]')
     fi
 
     # Restore installations section if it was backed up
     if [ -f "$temp_installations" ]; then
         log_debug "Restaurando seção de instalações..."
-        echo "" >> "$lock_file"
-        echo "installations:" >> "$lock_file"
-        # Indent the installations content
-        sed 's/^/  /' "$temp_installations" >> "$lock_file"
+        local installations_data=$(cat "$temp_installations")
+        json_data=$(echo "$json_data" | jq --argjson inst "$installations_data" '.installations = $inst')
         rm -f "$temp_installations"
     fi
+
+    # Write JSON to lock file with pretty printing
+    echo "$json_data" | jq '.' > "$lock_file"
 
     log_success "Arquivo susa.lock gerado com sucesso!"
 

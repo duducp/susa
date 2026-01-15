@@ -1,6 +1,0 @@
-name: "Update"
-description: "Atualiza um plugin para a versão mais recente"
-entrypoint: "main.sh"
-sudo: false
-group:
-os: ["linux", "mac"]

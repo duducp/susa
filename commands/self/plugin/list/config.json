@@ -1,0 +1,11 @@
+{
+  "name": "List",
+  "description": "Lista todos os plugins instalados",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": null,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

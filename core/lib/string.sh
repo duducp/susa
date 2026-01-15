@@ -88,3 +88,29 @@ join_to_comma_separated() {
     )"
     arr_ref=("$joined")
 }
+
+# --- Boolean Helper Functions --- #
+
+# Converts a string to boolean
+# Returns 0 for true, 1 for false
+# Usage:
+#   strtobool "value"
+# Example:
+#   if strtobool "yes"; then
+#       echo "true"
+#   fi
+strtobool() {
+    local value
+    value=$(string_to_lower "$1")
+    case "$value" in
+        "true" | "1" | "on" | "yes")
+            return 0
+            ;;
+        "false" | "0" | "off" | "no")
+            return 1
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}

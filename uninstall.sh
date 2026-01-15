@@ -7,7 +7,7 @@ IFS=$'\n\t'
 # =================
 
 CLI_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="$CLI_SOURCE_DIR/core/cli.yaml"
+CONFIG_FILE="$CLI_SOURCE_DIR/core/cli.json"
 CLI_NAME="susa"
 
 # Detects the operating system

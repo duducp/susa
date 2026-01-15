@@ -1,32 +1,63 @@
-# yaml.sh
+# config.sh
 
-Parser YAML usando yq para configurações.
+Parser de configurações JSON usando jq para ler configs e lock files.
+
+## Visão Geral
+
+A biblioteca `config.sh` fornece funções para:
+
+- 📄 Leitura de configurações JSON (cli.json, config.json)
+- 🔒 Leitura do lock file (susa.lock)
+- 📦 Descoberta de categorias e comandos
+- ℹ️ Funções de versão do CLI
 
 ## Configuração Inicial
 
 Antes de usar, defina:
 
 ```bash
-GLOBAL_CONFIG_FILE="/path/to/cli.yaml"
+GLOBAL_CONFIG_FILE="/path/to/cli.json"
 CLI_DIR="/path/to/susa"
 ```
 
 ## Funções - Config Global
 
-### `get_yaml_field()`
+### `get_config_field()`
 
-Obtém campos do arquivo cli.yaml.
+Obtém campos do arquivo cli.json ou outros arquivos de configuração JSON.
 
 **Parâmetros:**
 
-- `$1` - Caminho do arquivo yaml
-- `$2` - Campo (name, description, version, commands_dir, plugins_dir)
+- `$1` - Caminho do arquivo JSON
+- `$2` - Campo (name, description, version)
 
 **Uso:**
 
 ```bash
-name=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "name")
-version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
+name=$(get_config_field "$GLOBAL_CONFIG_FILE" "name")
+version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
+```
+
+### `show_version()`
+
+Mostra nome e versão do CLI formatados.
+
+**Uso:**
+
+```bash
+show_version
+# Output: Susa CLI (versão 1.0.0)
+```
+
+### `show_number_version()`
+
+Mostra apenas o número da versão do CLI.
+
+**Uso:**
+
+```bash
+version=$(show_number_version)
+echo "$version"  # 1.0.0
 ```
 
 ### `discover_categories()`
@@ -42,11 +73,11 @@ done
 
 ### `get_category_info()`
 
-Obtém informações de uma categoria do config.yaml dela.
+Obtém informações de uma categoria do config.json dela.
 
 **Parâmetros:**
 
-- `$1` - Caminho do arquivo yaml global
+- `$1` - Caminho do arquivo JSON global
 - `$2` - Nome da categoria
 - `$3` - Campo (name, description)
 
@@ -59,7 +90,7 @@ echo "Categoria setup: $desc"
 
 ### `is_command_dir()`
 
-Verifica se um diretório é um comando (tem config.yaml com campo script).
+Verifica se um diretório é um comando (tem config.json com campo script).
 
 **Retorno:**
 
@@ -109,24 +140,24 @@ done
 
 ### `get_command_config_field()`
 
-Lê um campo do config.yaml de um comando.
+Lê um campo do config.json de um comando.
 
 **Parâmetros:**
 
-- `$1` - Caminho do arquivo config.yaml
+- `$1` - Caminho do arquivo config.json
 - `$2` - Campo (category, id, name, description, script, sudo, os)
 
 ```bash
-name=$(get_command_config_field "/opt/susa/commands/setup/asdf/config.yaml" "name")
+name=$(get_command_config_field "/opt/susa/commands/setup/asdf/config.json" "name")
 ```
 
 ### `find_command_config()`
 
-Encontra o arquivo config.yaml de um comando.
+Encontra o arquivo config.json de um comando.
 
 ```bash
 config=$(find_command_config "setup" "asdf")
-echo "$config"  # /opt/susa/commands/setup/asdf/config.yaml
+echo "$config"  # /opt/susa/commands/setup/asdf/config.json
 ```
 
 ### `get_command_info()`
@@ -135,7 +166,7 @@ Obtém informação de um comando específico.
 
 **Parâmetros:**
 
-- `$1` - Arquivo yaml global
+- `$1` - Arquivo JSON global
 - `$2` - Categoria
 - `$3` - ID do comando
 - `$4` - Campo (name, description, script, sudo, os)
@@ -171,15 +202,15 @@ fi
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/internal/yaml.sh"
+source "$LIB_DIR/internal/config.sh"
 source "$LIB_DIR/os.sh"
 
 # Configuração
-GLOBAL_CONFIG_FILE="$CORE_DIR/cli.yaml"
+GLOBAL_CONFIG_FILE="$CORE_DIR/cli.json"
 
 # Obtém info global
-cli_name=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "name")
-cli_version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
+cli_name=$(get_config_field "$GLOBAL_CONFIG_FILE" "name")
+cli_version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
 
 echo "$cli_name v$cli_version"
 
@@ -251,16 +282,16 @@ load_env_files "/" "/etc/myapp/.env" "$HOME/.env"
 
 ### `load_command_envs()`
 
-Carrega e exporta variáveis de ambiente de arquivos .env e da seção `envs` do config.yaml de um comando.
+Carrega e exporta variáveis de ambiente de arquivos .env e da seção `envs` do config.json de um comando.
 
 **Parâmetros:**
 
-- `$1` - Caminho do arquivo config.yaml do comando
+- `$1` - Caminho do arquivo config.json do comando
 
 **Comportamento:**
 
 1. Carrega arquivos .env (se especificados em `env_files:`)
-2. Carrega seção `envs:` do config.yaml
+2. Carrega seção `envs:` do config.json
 3. Exporta cada variável como variável de ambiente
 4. Expande variáveis como `$HOME`, `$USER`, etc.
 5. Respeita variáveis já definidas (não sobrescreve sistema)
@@ -283,26 +314,26 @@ local timeout="${MY_TIMEOUT:-30}"
 local url="${MY_API_URL:-https://default.com}"
 ```
 
-**Exemplo de config.yaml (com .env files):**
+**Exemplo de config.json (com .env files):**
 
-```yaml
-name: "My Command"
-description: "Meu comando"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux"]
-
-# Arquivos .env (opcional)
-env_files:
-  - ".env"              # Configurações base
-  - ".env.local"        # Configurações locais
-
-# Variáveis diretas (maior prioridade que .env)
-envs:
-  MY_API_URL: "https://api.example.com"
-  MY_TIMEOUT: "30"
-  MY_INSTALL_DIR: "$HOME/.myapp"
-  MY_MAX_RETRIES: "3"
+```json
+{
+  "name": "My Command",
+  "description": "Meu comando",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux"],
+  "env_files": [
+    ".env",
+    ".env.local"
+  ],
+  "envs": {
+    "MY_API_URL": "https://api.example.com",
+    "MY_TIMEOUT": "30",
+    "MY_INSTALL_DIR": "$HOME/.myapp",
+    "MY_MAX_RETRIES": "3"
+  }
+}
 ```
 
 **Exemplo de arquivo .env:**
@@ -321,7 +352,7 @@ DEBUG_MODE="false"
 set -euo pipefail
 
 
-# Variáveis do config.yaml já estão exportadas
+# Variáveis do config.json já estão exportadas
 install_app() {
     local api_url="${MY_API_URL:-https://api.example.com}"
     local timeout="${MY_TIMEOUT:-30}"
@@ -343,14 +374,14 @@ install_app "$@"
 - ✅ Suporta qualquer variável de ambiente válida
 - ✅ Funciona em comandos built-in e plugins
 - ✅ Suporta múltiplos arquivos .env
-- ✅ Caminhos relativos ao diretório do config.yaml
+- ✅ Caminhos relativos ao diretório do config.json
 - ✅ Arquivos .env inexistentes são ignorados silenciosamente
 
 **Ordem de Precedência (maior → menor):**
 
 1. **Variáveis de Sistema** (maior prioridade)
    - `export VAR=value` ou `VAR=value comando`
-2. **Variáveis do Config** - `config.yaml` → `envs:`
+2. **Variáveis do Config** - `config.json` → `envs:`
 3. **Variáveis Globais** - `config/settings.conf`
 4. **Arquivos .env** (menor prioridade entre fontes configuráveis)
    - Na ordem especificada em `env_files:`
@@ -360,13 +391,14 @@ install_app "$@"
 
 **Exemplo de precedência completa:**
 
-```yaml
-# config.yaml
-env_files:
-  - ".env"
-  - ".env.local"
-envs:
-  TIMEOUT: "60"
+```json
+// config.json
+{
+  "env_files": [".env", ".env.local"],
+  "envs": {
+    "TIMEOUT": "60"
+  }
+}
 ```
 
 ```bash
@@ -385,7 +417,7 @@ timeout="${TIMEOUT:-10}"
 api_url="${API_URL:-https://default.com}"
 
 # Resultados:
-./core/susa comando                  # → TIMEOUT=60 (do config.yaml envs)
+./core/susa comando                  # → TIMEOUT=60 (do config.json envs)
                                      # → API_URL=https://api.example.com (do .env)
 TIMEOUT=90 ./core/susa comando       # → TIMEOUT=90 (do sistema - maior prioridade)
 ```

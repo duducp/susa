@@ -192,18 +192,22 @@ susa self plugin remove nome-plugin
 mkdir -p commands/demo/hello
 
 # Configuração da categoria
-cat > commands/demo/config.yaml << EOF
-name: "Demo"
-description: "Comandos de demonstração"
+cat > commands/demo/config.json << EOF
+{
+  "name": "Demo",
+  "description": "Comandos de demonstração"
+}
 EOF
 
 # Configuração do comando
-cat > commands/demo/hello/config.yaml << EOF
-name: "Hello World"
-description: "Comando de exemplo"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
+cat > commands/demo/hello/config.json << EOF
+{
+  "name": "Hello World",
+  "description": "Comando de exemplo",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"]
+}
 EOF
 
 # Script do comando

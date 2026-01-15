@@ -1,6 +1,0 @@
-name: "Completion"
-description: "Configura autocompletar para o shell"
-entrypoint: "main.sh"
-sudo: false
-group:
-os: ["linux", "mac"]

@@ -61,7 +61,7 @@ Exemplos:
 feat: adiciona comando de backup automático
 fix: corrige detecção de SO em macOS
 docs: atualiza guia de instalação
-refactor: simplifica parsing YAML com yq
+refactor: simplifica parsing JSON com jq
 ```
 
 ## 🧪 Testes

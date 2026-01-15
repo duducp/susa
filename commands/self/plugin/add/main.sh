@@ -103,8 +103,8 @@ validate_local_plugin() {
         return 1
     fi
 
-    # Check if it has plugin structure (at least one category with config.yaml)
-    local found_configs=$(find "$plugin_dir" -mindepth 2 -maxdepth 2 -type f -name "config.yaml" 2> /dev/null | head -1)
+    # Check if it has plugin structure (at least one category with config.json)
+    local found_configs=$(find "$plugin_dir" -mindepth 2 -maxdepth 2 -type f -name "config.json" 2> /dev/null | head -1)
 
     if [ -z "$found_configs" ]; then
         log_error "Estrutura de plugin inválida"
@@ -112,9 +112,9 @@ validate_local_plugin() {
         log_output "${LIGHT_YELLOW}Estrutura esperada:${NC}" >&2
         log_output "  plugin/" >&2
         log_output "    categoria/" >&2
-        log_output "      config.yaml" >&2
+        log_output "      config.json" >&2
         log_output "      comando/" >&2
-        log_output "        config.yaml" >&2
+        log_output "        config.json" >&2
         log_output "        main.sh" >&2
         return 1
     fi
@@ -157,7 +157,7 @@ install_local_plugin() {
     log_debug "Categorias: $categories"
 
     # Register in registry with dev flag
-    local registry_file="$PLUGINS_DIR/registry.yaml"
+    local registry_file="$PLUGINS_DIR/registry.json"
     ensure_registry_exists "$registry_file"
 
     log_debug "Registrando plugin em modo desenvolvimento"
@@ -201,15 +201,15 @@ check_plugin_already_installed() {
     fi
 
     # Check if plugin exists in registry (could be dev plugin)
-    local registry_file="$PLUGINS_DIR/registry.yaml"
+    local registry_file="$PLUGINS_DIR/registry.json"
     local in_registry=false
     local is_dev=false
 
     if [ -f "$registry_file" ]; then
-        local plugin_count=$(yq eval ".plugins[] | select(.name == \"$plugin_name\") | .name" "$registry_file" 2> /dev/null | wc -l)
+        local plugin_count=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .name // empty" "$registry_file" 2> /dev/null | wc -l)
         if [ "$plugin_count" -gt 0 ]; then
             in_registry=true
-            local dev_flag=$(yq eval ".plugins[] | select(.name == \"$plugin_name\") | .dev" "$registry_file" 2> /dev/null | head -1)
+            local dev_flag=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .dev // false" "$registry_file" 2> /dev/null | head -1)
             if [ "$dev_flag" = "true" ]; then
                 is_dev=true
             fi
@@ -229,7 +229,7 @@ check_plugin_already_installed() {
 
     if [ "$is_dev" = true ]; then
         log_output "  ${YELLOW}Modo: desenvolvimento${NC}"
-        local source_path=$(yq eval ".plugins[] | select(.name == \"$plugin_name\") | .source" "$registry_file" 2> /dev/null | head -1)
+        local source_path=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .source // empty" "$registry_file" 2> /dev/null | head -1)
         if [ -n "$source_path" ]; then
             log_output "  ${GRAY}Local do plugin: $source_path${NC}"
         fi
@@ -267,7 +267,7 @@ check_plugin_already_installed() {
     return 0
 }
 
-# Ensure registry.yaml file exists
+# Ensure registry.json file exists
 ensure_registry_exists() {
     local registry_file="$1"
 
@@ -275,7 +275,7 @@ ensure_registry_exists() {
         return 0
     fi
 
-    log_debug "Creating registry.yaml file"
+    log_debug "Creating registry.json file"
     cat > "$registry_file" << 'EOF'
 # Plugin Registry
 # This file keeps track of all installed plugins
@@ -284,7 +284,7 @@ plugins:
 EOF
 }
 
-# Register plugin in registry.yaml
+# Register plugin in registry.json
 register_plugin() {
     local registry_file="$1"
     local plugin_name="$2"
@@ -294,7 +294,7 @@ register_plugin() {
     local categories="$6"
 
     if registry_add_plugin "$registry_file" "$plugin_name" "$plugin_url" "$plugin_version" "false" "$cmd_count" "$categories"; then
-        log_debug "Plugin registrado no registry.yaml"
+        log_debug "Plugin registrado no registry.json"
         return 0
     else
         log_warning "Não foi possível registrar no registry (plugin pode já existir)"
@@ -429,8 +429,8 @@ main() {
     local categories=$(get_plugin_categories "$PLUGINS_DIR/$plugin_name")
     log_debug "Categorias: $categories"
 
-    # Register in registry.yaml
-    local registry_file="$PLUGINS_DIR/registry.yaml"
+    # Register in registry.json
+    local registry_file="$PLUGINS_DIR/registry.json"
     log_debug "Garantindo existência do registry"
     ensure_registry_exists "$registry_file"
 

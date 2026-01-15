@@ -71,8 +71,8 @@ get_category_commands() {
         for item in "$category_dir"/*/; do
             if [ -d "$item" ]; then
                 local cmd=$(basename "$item")
-                # Ignora config.yaml
-                if [ "$cmd" != "config.yaml" ]; then
+                # Ignora config.json
+                if [ "$cmd" != "config.json" ]; then
                     commands="$commands $cmd"
                 fi
             fi
@@ -117,13 +117,13 @@ _susa_completion() {
         local current_os="$(_susa_get_os)"
         local config_file=""
 
-        # Tentar encontrar config.yaml do comando (commands ou plugins)
-        if [ -f "$susa_dir/commands/$category/$command/config.yaml" ]; then
-            config_file="$susa_dir/commands/$category/$command/config.yaml"
+        # Tentar encontrar config.json do comando (commands ou plugins)
+        if [ -f "$susa_dir/commands/$category/$command/config.json" ]; then
+            config_file="$susa_dir/commands/$category/$command/config.json"
         elif [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/ ; do
-                if [ -f "${plugin_dir}${category}/${command}/config.yaml" ]; then
-                    config_file="${plugin_dir}${category}/${command}/config.yaml"
+                if [ -f "${plugin_dir}${category}/${command}/config.json" ]; then
+                    config_file="${plugin_dir}${category}/${command}/config.json"
                     break
                 fi
             done
@@ -168,7 +168,7 @@ _susa_completion() {
         # Lista de plugins/
         if [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/ ; do
-                if [ -d "$plugin_dir" ] && [ -f "$plugin_dir/config.yaml" ]; then
+                if [ -d "$plugin_dir" ] && [ -f "$plugin_dir/config.json" ]; then
                     # Plugin pode ter suas próprias categorias
                     for cat_dir in "$plugin_dir"/*/ ; do
                         if [ -d "$cat_dir" ]; then
@@ -190,14 +190,14 @@ _susa_completion() {
 
         # Lista de commands/categoria/
         if [ -d "$susa_dir/commands/$category" ]; then
-            all_commands="$(ls -1 "$susa_dir/commands/$category" 2>/dev/null | grep -v "config.yaml")"
+            all_commands="$(ls -1 "$susa_dir/commands/$category" 2>/dev/null | grep -v "config.json")"
         fi
 
         # Lista de plugins/*/categoria/
         if [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/ ; do
                 if [ -d "$plugin_dir/$category" ]; then
-                    local plugin_cmds="$(ls -1 "$plugin_dir/$category" 2>/dev/null | grep -v "config.yaml")"
+                    local plugin_cmds="$(ls -1 "$plugin_dir/$category" 2>/dev/null | grep -v "config.json")"
                     all_commands="$all_commands $plugin_cmds"
                 fi
             done
@@ -220,14 +220,14 @@ _susa_completion() {
 
         # Lista de commands/path/
         if [ -d "$susa_dir/commands/$path" ]; then
-            subcommands="$(ls -1 "$susa_dir/commands/$path" 2>/dev/null | grep -v "config.yaml")"
+            subcommands="$(ls -1 "$susa_dir/commands/$path" 2>/dev/null | grep -v "config.json")"
         fi
 
         # Lista de plugins/*/path/
         if [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/ ; do
                 if [ -d "$plugin_dir/$path" ]; then
-                    local plugin_subs="$(ls -1 "$plugin_dir/$path" 2>/dev/null | grep -v "config.yaml")"
+                    local plugin_subs="$(ls -1 "$plugin_dir/$path" 2>/dev/null | grep -v "config.json")"
                     subcommands="$subcommands $plugin_subs"
                 fi
             done
@@ -300,13 +300,13 @@ _susa() {
         local current_os="$(_susa_get_os)"
         local config_file=""
 
-        # Procura config.yaml
-        if [ -f "$susa_dir/commands/$category/$command/config.yaml" ]; then
-            config_file="$susa_dir/commands/$category/$command/config.yaml"
+        # Procura config.json
+        if [ -f "$susa_dir/commands/$category/$command/config.json" ]; then
+            config_file="$susa_dir/commands/$category/$command/config.json"
         elif [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/; do
-                if [ -f "${plugin_dir}${category}/${command}/config.yaml" ]; then
-                    config_file="${plugin_dir}${category}/${command}/config.yaml"
+                if [ -f "${plugin_dir}${category}/${command}/config.json" ]; then
+                    config_file="${plugin_dir}${category}/${command}/config.json"
                     break
                 fi
             done
@@ -352,7 +352,7 @@ _susa() {
             for item in "$susa_dir/commands/$path"/*/; do
                 if [ -d "$item" ]; then
                     local name="${item:t}"
-                    [ "$name" != "config.yaml" ] && all_items+=("$name")
+                    [ "$name" != "config.json" ] && all_items+=("$name")
                 fi
             done
         fi
@@ -364,7 +364,7 @@ _susa() {
                     for item in "$plugin_dir/$path"/*/; do
                         if [ -d "$item" ]; then
                             local name="${item:t}"
-                            [ "$name" != "config.yaml" ] && all_items+=("$name")
+                            [ "$name" != "config.json" ] && all_items+=("$name")
                         fi
                     done
                 fi
@@ -469,13 +469,13 @@ function __susa_is_compatible
     set -l current_os (__susa_get_os)
     set -l config_file ""
 
-    # Procura config.yaml
-    if test -f "$susa_dir/commands/$category/$command/config.yaml"
-        set config_file "$susa_dir/commands/$category/$command/config.yaml"
+    # Procura config.json
+    if test -f "$susa_dir/commands/$category/$command/config.json"
+        set config_file "$susa_dir/commands/$category/$command/config.json"
     else if test -d "$susa_dir/plugins"
         for plugin_dir in $susa_dir/plugins/*/
-            if test -f "$plugin_dir$category/$command/config.yaml"
-                set config_file "$plugin_dir$category/$command/config.yaml"
+            if test -f "$plugin_dir$category/$command/config.json"
+                set config_file "$plugin_dir$category/$command/config.json"
                 break
             end
         end
@@ -567,7 +567,7 @@ function __susa_commands
     if test -d "$susa_dir/commands/$category"
         for item in $susa_dir/commands/$category/*/
             set -l cmd (basename $item)
-            if test -d $item; and test "$cmd" != "config.yaml"
+            if test -d $item; and test "$cmd" != "config.json"
                 set -a all_commands $cmd
             end
         end
@@ -579,7 +579,7 @@ function __susa_commands
             if test -d "$plugin_dir/$category"
                 for item in $plugin_dir/$category/*/
                     set -l cmd (basename $item)
-                    if test -d $item; and test "$cmd" != "config.yaml"
+                    if test -d $item; and test "$cmd" != "config.json"
                         set -a all_commands $cmd
                     end
                 end
@@ -610,7 +610,7 @@ function __susa_subcommands
     if test -d "$susa_dir/commands/$path"
         for item in $susa_dir/commands/$path/*/
             set -l sub (basename $item)
-            if test -d $item; and test "$sub" != "config.yaml"
+            if test -d $item; and test "$sub" != "config.json"
                 set -a subcommands $sub
             end
         end
@@ -622,7 +622,7 @@ function __susa_subcommands
             if test -d "$plugin_dir/$path"
                 for item in $plugin_dir/$path/*/
                     set -l sub (basename $item)
-                    if test -d $item; and test "$sub" != "config.yaml"
+                    if test -d $item; and test "$sub" != "config.json"
                         set -a subcommands $sub
                     end
                 end

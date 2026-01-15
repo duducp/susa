@@ -175,7 +175,7 @@ Obtém informações completas sobre uma instalação.
 
 **Retorno:**
 
-- Imprime informações YAML completas
+- Imprime informações JSON completas
 - Retorna `1` se não encontrada
 
 **Exemplo:**
@@ -183,10 +183,12 @@ Obtém informações completas sobre uma instalação.
 ```bash
 get_installation_info "docker"
 # Saída:
-# name: docker
-# installed: true
-# version: 24.0.5
-# installed_at: "2026-01-14T15:27:36Z"
+# {
+#   "name": "docker",
+#   "installed": true,
+#   "version": "24.0.5",
+#   "installed_at": "2026-01-14T15:27:36Z"
+# }
 ```
 
 #### `list_installed()`
@@ -397,29 +399,36 @@ main() {
 
 ## Estrutura no Lock File
 
-```yaml
-installations:
-  - name: docker
-    installed: true
-    version: 29.1.4
-    installed_at: "2026-01-14T15:27:36Z"
-
-  - name: mise
-    installed: true
-    version: 2026.1.1
-    installed_at: "2026-01-14T15:27:36Z"
-    updated_at: "2026-01-14T16:00:00Z"
-
-  - name: fake-app
-    installed: false
-    version: null
+```json
+{
+  "installations": [
+    {
+      "name": "docker",
+      "installed": true,
+      "version": "29.1.4",
+      "installed_at": "2026-01-14T15:27:36Z"
+    },
+    {
+      "name": "mise",
+      "installed": true,
+      "version": "2026.1.1",
+      "installed_at": "2026-01-14T15:27:36Z",
+      "updated_at": "2026-01-14T16:00:00Z"
+    },
+    {
+      "name": "fake-app",
+      "installed": false,
+      "version": null
+    }
+  ]
+}
 ```
 
 ## Dependências
 
 Esta biblioteca requer:
 
-- `yq` - Parser YAML (instalado via `ensure_yq_installed`)
+- `jq` - Parser JSON (instalado via `ensure_jq_installed`)
 - `$LIB_DIR/dependencies.sh` - Para verificar dependências
 - `$LIB_DIR/logger.sh` - Para mensagens (usado em sync_installations)
 - Variável `$CLI_DIR` - Diretório raiz do CLI
@@ -483,5 +492,5 @@ done
 
 - [susa self lock](../commands/self/lock.md) - Comando que usa esta biblioteca
 - [Logger Library](logger.md) - Para mensagens consistentes
-- [YAML Library](yaml.md) - Para manipulação de YAML
+- [Config Library](config.md) - Para manipulação de JSON
 - [Dependencies Library](dependencies.md) - Para verificar dependências

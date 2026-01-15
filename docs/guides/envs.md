@@ -8,7 +8,7 @@ Referência rápida sobre o sistema de variáveis de ambiente do Susa CLI.
 
 ### 1. Variáveis por Comando (Isoladas)
 
-Definidas no `config.yaml` do comando, disponíveis apenas durante sua execução.
+Definidas no `config.json` do comando, disponíveis apenas durante sua execução.
 
 **Funciona em:**
 
@@ -17,19 +17,22 @@ Definidas no `config.yaml` do comando, disponíveis apenas durante sua execuçã
 
 **Definição:**
 
-```yaml
-# commands/setup/docker/config.yaml (built-in)
-# ou
-# plugins/meu-plugin/deploy/staging/config.yaml (plugin)
-name: "Docker"
-description: "Instala Docker"
-entrypoint: "main.sh"
-sudo: true
-os: ["linux"]
-envs:
-  DOCKER_REPO_URL: "https://download.docker.com"
-  DOCKER_TIMEOUT: "300"
-  DOCKER_INSTALL_DIR: "$HOME/.docker"
+```json
+// commands/setup/docker/config.json (built-in)
+// ou
+// plugins/meu-plugin/deploy/staging/config.json (plugin)
+{
+  "name": "Docker",
+  "description": "Instala Docker",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": ["linux"],
+  "envs": {
+    "DOCKER_REPO_URL": "https://download.docker.com",
+    "DOCKER_TIMEOUT": "300",
+    "DOCKER_INSTALL_DIR": "$HOME/.docker"
+  }
+}
 ```
 
 **Uso no script:**
@@ -53,28 +56,28 @@ install_dir="${DOCKER_INSTALL_DIR:-$HOME/.docker}"
 
 ### 1.1 Variáveis de Arquivos .env
 
-Além de definir variáveis diretamente no `config.yaml`, você pode carregá-las de arquivos `.env`.
+Além de definir variáveis diretamente no `config.json`, você pode carregá-las de arquivos `.env`.
 
 **Definição:**
 
-```yaml
-# commands/deploy/app/config.yaml
-name: "Deploy App"
-description: "Deploy da aplicação"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux"]
-
-# Arquivos .env a serem carregados (na ordem especificada)
-env_files:
-  - ".env"
-  - ".env.local"
-  - ".env.production"
-
-# Variáveis diretas (maior prioridade que arquivos .env)
-envs:
-  DEPLOY_TIMEOUT: "300"
-  DEPLOY_TARGET: "production"
+```json
+// commands/deploy/app/config.json
+{
+  "name": "Deploy App",
+  "description": "Deploy da aplicação",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux"],
+  "env_files": [
+    ".env",
+    ".env.local",
+    ".env.production"
+  ],
+  "envs": {
+    "DEPLOY_TIMEOUT": "300",
+    "DEPLOY_TARGET": "production"
+  }
+}
 ```
 
 **Exemplo de arquivo .env:**
@@ -99,7 +102,7 @@ VERSION='1.0.0'
 
 **Características dos arquivos .env:**
 
-- ✅ Caminhos relativos ao diretório do `config.yaml`
+- ✅ Caminhos relativos ao diretório do `config.json`
 - ✅ Caminhos absolutos também suportados
 - ✅ Múltiplos arquivos .env podem ser especificados
 - ✅ Carregados na ordem definida em `env_files`
@@ -151,21 +154,22 @@ Ordem de precedência (maior → menor):
 
 ```text
 1. Variáveis de Sistema    → export VAR=value ou VAR=value comando
-2. Envs do Comando         → config.yaml → envs:
+2. Envs do Comando         → config.json → envs:
 3. Variáveis Globais       → config/settings.conf
-4. Arquivos .env           → config.yaml → env_files: (na ordem especificada)
+4. Arquivos .env           → config.json → env_files: (na ordem especificada)
 5. Valores Padrão          → ${VAR:-default}
 ```
 
 **Exemplo prático:**
 
-```yaml
-# config.yaml
-env_files:
-  - ".env"
-  - ".env.local"
-envs:
-  TIMEOUT: "60"
+```json
+// config.json
+{
+  "env_files": [".env", ".env.local"],
+  "envs": {
+    "TIMEOUT": "60"
+  }
+}
 ```
 
 ```bash
@@ -190,7 +194,7 @@ timeout="${TIMEOUT:-10}"
 api_url="${API_URL:-https://default.com}"
 
 # Resultados:
-./susa comando                    # → TIMEOUT=60 (do config.yaml envs)
+./susa comando                    # → TIMEOUT=60 (do config.json envs)
                                   # → API_URL=https://api.example.com (do .env)
 TIMEOUT=90 ./susa comando        # → TIMEOUT=90 (do sistema - maior prioridade)
 ```
@@ -200,32 +204,24 @@ TIMEOUT=90 ./susa comando        # → TIMEOUT=90 (do sistema - maior prioridade
 1. Sistema verifica variáveis de ambiente do sistema primeiro
 2. Carrega `config/settings.conf` (variáveis globais)
 3. Carrega arquivos .env na ordem especificada em `env_files`
-4. Carrega variáveis da seção `envs` do `config.yaml`
+4. Carrega variáveis da seção `envs` do `config.json`
 5. Variáveis já definidas não são sobrescritas (princípio da precedência)
 
-## 📝 Sintaxe YAML
+## 📝 Sintaxe JSON
 
 ### Tipos de Valores
 
-```yaml
-envs:
-  # String simples
-  VAR_STRING: "valor"
-
-  # Número (sempre como string)
-  VAR_NUMBER: "42"
-
-  # Boolean (sempre como string)
-  VAR_BOOL: "true"
-
-  # URL
-  VAR_URL: "https://example.com/path"
-
-  # Path com variável
-  VAR_PATH: "$HOME/.config/app"
-
-  # Path com múltiplas variáveis
-  VAR_COMPLEX: "$HOME/backups/$USER"
+```json
+{
+  "envs": {
+    "VAR_STRING": "valor",
+    "VAR_NUMBER": "42",
+    "VAR_BOOL": "true",
+    "VAR_URL": "https://example.com/path",
+    "VAR_PATH": "$HOME/.config/app",
+    "VAR_COMPLEX": "$HOME/backups/$USER"
+  }
+}
 ```
 
 ### Expansão de Variáveis
@@ -240,11 +236,14 @@ Variáveis suportadas para expansão:
 
 **Exemplo:**
 
-```yaml
-envs:
-  CONFIG_DIR: "$HOME/.config/myapp"        # → /home/user/.config/myapp
-  BACKUP_DIR: "$HOME/backups/$USER"        # → /home/user/backups/user
-  LOG_FILE: "$PWD/logs/app.log"           # → /current/dir/logs/app.log
+```json
+{
+  "envs": {
+    "CONFIG_DIR": "$HOME/.config/myapp",
+    "BACKUP_DIR": "$HOME/backups/$USER",
+    "LOG_FILE": "$PWD/logs/app.log"
+  }
+}
 ```
 
 ## 🛠️ Uso no Script
@@ -275,7 +274,7 @@ local timeout="$TIMEOUT"
 **Exemplos:**
 
 ```bash
-# Variável definida no config.yaml
+# Variável definida no config.json
 TIMEOUT="60"
 timeout="${TIMEOUT:-30}"        # → 60 (usa o valor da env)
 
@@ -333,7 +332,7 @@ local backup_dir="${BACKUP_DIR:-/var/backups}"        # Diretório de backup
 | Característica | Envs por Comando | Envs Globais | Variáveis de Sistema |
 | -------------- | ---------------- | ------------ | -------------------- |
 | **Escopo** | Apenas o comando | Todos os comandos | Override temporário |
-| **Arquivo** | `config.yaml` | `config/settings.conf` | Linha de comando |
+| **Arquivo** | `config.json` | `config/settings.conf` | Linha de comando |
 | **Isolamento** | ✅ Total | ❌ Compartilhado | ✅ Por execução |
 | **Expansão** | ✅ Automática | ❌ Manual | ❌ Manual |
 | **Precedência** | Média | Baixa | Alta |
@@ -343,50 +342,50 @@ local backup_dir="${BACKUP_DIR:-/var/backups}"        # Diretório de backup
 
 ### 1. Prefixos Únicos
 
-```yaml
-# ✅ Bom: prefixo único por comando
-envs:
-  DOCKER_REPO_URL: "..."
-  DOCKER_TIMEOUT: "..."
+```json
+// ✅ Bom: prefixo único por comando
+{
+  "envs": {
+    "DOCKER_REPO_URL": "...",
+    "DOCKER_TIMEOUT": "..."
+  }
+}
 
-# ❌ Ruim: muito genérico
-envs:
-  REPO_URL: "..."
-  TIMEOUT: "..."
+// ❌ Ruim: muito genérico
+{
+  "envs": {
+    "REPO_URL": "...",
+    "TIMEOUT": "..."
+  }
+}
 ```
 
 ### 2. Documentação
 
-```yaml
-envs:
-  # URL do repositório Docker (padrão: https://download.docker.com)
-  DOCKER_REPO_URL: "https://download.docker.com"
-
-  # Timeout máximo para download em segundos (padrão: 300)
-  # Aumentar se conexão for lenta
-  DOCKER_DOWNLOAD_TIMEOUT: "300"
-
-  # Diretório de instalação (padrão: /var/lib/docker)
-  # Deve ter pelo menos 20GB livres
-  DOCKER_DATA_ROOT: "/var/lib/docker"
+```json
+{
+  "envs": {
+    "DOCKER_REPO_URL": "https://download.docker.com",
+    "DOCKER_DOWNLOAD_TIMEOUT": "300",
+    "DOCKER_DATA_ROOT": "/var/lib/docker"
+  }
+}
 ```
 
 ### 3. Valores Padrão Sensatos
 
-Configure valores padrão no `config.yaml` e **sempre** forneça fallback no script:
+Configure valores padrão no `config.json` e **sempre** forneça fallback no script:
 
-```yaml
-# config.yaml
-envs:
-  # Timeouts razoáveis
-  HTTP_TIMEOUT: "30"           # 30 segundos
-  DOWNLOAD_TIMEOUT: "300"      # 5 minutos
-
-  # Retries apropriados
-  HTTP_RETRY: "3"              # 3 tentativas
-
-  # Paths seguros
-  INSTALL_DIR: "$HOME/.app"    # No home do usuário
+```json
+// config.json
+{
+  "envs": {
+    "HTTP_TIMEOUT": "30",
+    "DOWNLOAD_TIMEOUT": "300",
+    "HTTP_RETRY": "3",
+    "INSTALL_DIR": "$HOME/.app"
+  }
+}
 ```
 
 ```bash
@@ -399,26 +398,22 @@ install_dir="${INSTALL_DIR:-$HOME/.app}"
 
 **Por que usar fallback no script?**
 
-- ✅ Script funciona mesmo se `config.yaml` não tiver `envs`
+- ✅ Script funciona mesmo se `config.json` não tiver `envs`
 - ✅ Valores padrão visíveis no código
 - ✅ Facilita manutenção e testes
 - ✅ Documentação inline dos valores esperados
 
 ### 4. Tipos Consistentes
 
-```yaml
-envs:
-  # Números sempre como strings
-  PORT: "8080"                 # ✅
-  MAX_CONNECTIONS: "100"       # ✅
-
-  # Booleanos sempre como strings
-  ENABLE_CACHE: "true"         # ✅
-  DEBUG_MODE: "false"          # ✅
-
-  # Não use tipos nativos YAML
-  PORT: 8080                   # ❌
-  ENABLE_CACHE: true           # ❌
+```json
+{
+  "envs": {
+    "PORT": "8080",
+    "MAX_CONNECTIONS": "100",
+    "ENABLE_CACHE": "true",
+    "DEBUG_MODE": "false"
+  }
+}
 ```
 
 ## 🔍 Debugging
@@ -471,22 +466,22 @@ Plugins suportam variáveis de ambiente da **mesma forma** que comandos built-in
 
 **Exemplo de plugin com envs e arquivos .env:**
 
-```yaml
-# plugins/deploy-tools/deploy/staging/config.yaml
-name: "Deploy Staging"
-description: "Deploy para ambiente de staging"
-entrypoint: "main.sh"
-
-# Arquivos .env específicos do staging
-env_files:
-  - ".env"
-  - ".env.staging"
-
-# Variáveis específicas (maior prioridade)
-envs:
-  STAGING_API_URL: "https://api.staging.example.com"
-  STAGING_TIMEOUT: "60"
-  STAGING_SSH_KEY: "$HOME/.ssh/staging_key"
+```json
+// plugins/deploy-tools/deploy/staging/config.json
+{
+  "name": "Deploy Staging",
+  "description": "Deploy para ambiente de staging",
+  "entrypoint": "main.sh",
+  "env_files": [
+    ".env",
+    ".env.staging"
+  ],
+  "envs": {
+    "STAGING_API_URL": "https://api.staging.example.com",
+    "STAGING_TIMEOUT": "60",
+    "STAGING_SSH_KEY": "$HOME/.ssh/staging_key"
+  }
+}
 ```
 
 ```bash
@@ -525,9 +520,9 @@ log_info "Target: $deploy_target"
 ```text
 commands/
   deploy/
-    config.yaml
+    config.json
     app/
-      config.yaml
+      config.json
       main.sh
       .env
       .env.development
@@ -535,24 +530,24 @@ commands/
       .env.production
 ```
 
-**config.yaml:**
+**config.json:**
 
-```yaml
-name: "Deploy App"
-description: "Deploy da aplicação"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
-
-# Carrega arquivos .env baseado no ambiente
-env_files:
-  - ".env"                    # Configurações base
-  - ".env.${DEPLOY_ENV:-development}"  # Específicas do ambiente
-
-# Configurações diretas (maior prioridade)
-envs:
-  DEPLOY_TIMEOUT: "300"
-  DEPLOY_MAX_RETRIES: "3"
+```json
+{
+  "name": "Deploy App",
+  "description": "Deploy da aplicação",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"],
+  "env_files": [
+    ".env",
+    ".env.${DEPLOY_ENV:-development}"
+  ],
+  "envs": {
+    "DEPLOY_TIMEOUT": "300",
+    "DEPLOY_MAX_RETRIES": "3"
+  }
+}
 ```
 
 **.env (base):**
@@ -612,22 +607,24 @@ $ DEPLOY_ENV=production susa deploy app
 ```text
 commands/
   api/
-    config.yaml
+    config.json
     main.sh
     .env
     .env.secrets  # Não commitado (no .gitignore)
 ```
 
-**config.yaml:**
+**config.json:**
 
-```yaml
-name: "API Client"
-description: "Cliente da API"
-entrypoint: "main.sh"
-
-env_files:
-  - ".env"           # Configurações públicas
-  - ".env.secrets"   # Secrets (não commitado)
+```json
+{
+  "name": "API Client",
+  "description": "Cliente da API",
+  "entrypoint": "main.sh",
+  "env_files": [
+    ".env",
+    ".env.secrets"
+  ]
+}
 ```
 
 **.env:**
@@ -651,7 +648,7 @@ DATABASE_PASSWORD="super-secret-password"
 
 **.gitignore:**
 
-```
+```text
 .env.secrets
 .env.local
 .env.*.local
@@ -675,21 +672,22 @@ DATABASE_PASSWORD="your-database-password"
 commands/
   setup/
     project/
-      config.yaml
+      config.json
       main.sh
 ```
 
-**config.yaml:**
+**config.json:**
 
-```yaml
-name: "Setup Project"
-description: "Configura projeto"
-entrypoint: "main.sh"
-
-# Carrega .env do diretório atual (onde o comando é executado)
-env_files:
-  - "$PWD/.env"
-  - "$PWD/.env.local"
+```json
+{
+  "name": "Setup Project",
+  "description": "Configura projeto",
+  "entrypoint": "main.sh",
+  "env_files": [
+    "$PWD/.env",
+    "$PWD/.env.local"
+  ]
+}
 ```
 
 **Uso:**
@@ -707,15 +705,18 @@ $ susa setup project
 
 **Exemplo de plugin com envs:**
 
-```yaml
-# plugins/deploy-tools/deploy/staging/config.yaml
-name: "Deploy Staging"
-description: "Deploy para ambiente de staging"
-entrypoint: "main.sh"
-envs:
-  STAGING_API_URL: "https://api.staging.example.com"
-  STAGING_TIMEOUT: "60"
-  STAGING_SSH_KEY: "$HOME/.ssh/staging_key"
+```json
+// plugins/deploy-tools/deploy/staging/config.json
+{
+  "name": "Deploy Staging",
+  "description": "Deploy para ambiente de staging",
+  "entrypoint": "main.sh",
+  "envs": {
+    "STAGING_API_URL": "https://api.staging.example.com",
+    "STAGING_TIMEOUT": "60",
+    "STAGING_SSH_KEY": "$HOME/.ssh/staging_key"
+  }
+}
 ```
 
 ```bash
@@ -733,7 +734,7 @@ ssh -i "$ssh_key" deploy@staging.example.com "./deploy.sh"
 **Execução:**
 
 ```bash
-# Usar valores do config.yaml
+# Usar valores do config.json
 $ susa deploy staging
 
 # Override temporário
@@ -751,17 +752,20 @@ Veja [Arquitetura de Plugins](../plugins/architecture.md#variaveis-de-ambiente-e
 
 ## 🎯 Exemplo Mínimo
 
-**config.yaml:**
+**config.json:**
 
-```yaml
-name: "My Command"
-description: "Meu comando"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux"]
-envs:
-  MY_URL: "https://example.com"
-  MY_TIMEOUT: "30"
+```json
+{
+  "name": "My Command",
+  "description": "Meu comando",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux"],
+  "envs": {
+    "MY_URL": "https://example.com",
+    "MY_TIMEOUT": "30"
+  }
+}
 ```
 
 **main.sh:**
@@ -780,7 +784,7 @@ curl --max-time "$timeout" "$url"
 **Execução:**
 
 ```bash
-# Usar valores do config.yaml
+# Usar valores do config.json
 $ susa my command
 
 # Override temporário

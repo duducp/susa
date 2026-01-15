@@ -59,7 +59,7 @@ cli-uninstall: ## Remove o CLI do sistema
 	@./uninstall.sh
 
 # Quality Assurance
-lint: ## Executa ShellCheck, shfmt e yamllint em todos os arquivos
+lint: ## Executa ShellCheck, shfmt em todos os arquivos
 	@if shellcheck -x core/susa core/lib/*.sh core/lib/internal/*.sh install*.sh uninstall*.sh $$(find commands -name "*.sh" | grep -v "/node_modules/"); then \
 		echo "$(GREEN)✅ Todos os scripts passaram na verificação do ShellCheck!$(NC)"; \
 	else \
@@ -71,13 +71,6 @@ lint: ## Executa ShellCheck, shfmt e yamllint em todos os arquivos
 		echo "$(GREEN)✅ Todos os scripts passaram na verificação de formatação do shfmt!$(NC)"; \
 	else \
 		echo "$(RED)❌ Alguns scripts falharam na verificação de formatação do shfmt$(NC)"; \
-		exit 1; \
-	fi
-
-	@if yamllint .; then \
-		echo "$(GREEN)✅ Todos os arquivos YAML passaram na verificação!$(NC)"; \
-	else \
-		echo "$(RED)❌ Alguns arquivos YAML falharam na verificação$(NC)"; \
 		exit 1; \
 	fi
 
@@ -161,8 +154,8 @@ install-dev: ## Instala ferramentas de desenvolvimento
 	if [ -n "$$PIP_CMD" ]; then \
 		echo "$(BLUE)  → Instalando ferramentas Python...$(NC)"; \
 		$$PIP_CMD install --user --upgrade pip 2>/dev/null || $$PIP_CMD install --upgrade pip; \
-		$$PIP_CMD install --user pre-commit yamllint 2>/dev/null || $$PIP_CMD install pre-commit yamllint; \
-		echo "$(GREEN)    ✅ pre-commit e yamllint instalados!$(NC)"; \
+		$$PIP_CMD install --user pre-commit 2>/dev/null || $$PIP_CMD install pre-commit; \
+		echo "$(GREEN)    ✅ pre-commit instalado!$(NC)"; \
 		echo "$(BLUE)  → Instalando MkDocs e plugins...$(NC)"; \
 		$$PIP_CMD install --user mkdocs-material pymdown-extensions mkdocs-awesome-pages-plugin mkdocs-glightbox mkdocs-panzoom-plugin mkdocs-include-markdown-plugin 2>/dev/null || \
 		$$PIP_CMD install mkdocs-material pymdown-extensions mkdocs-awesome-pages-plugin mkdocs-glightbox mkdocs-panzoom-plugin mkdocs-include-markdown-plugin; \

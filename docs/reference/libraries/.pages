@@ -11,6 +11,7 @@ nav:
   - Instaladores: installations.md
   - Kubernetes: kubernetes.md
   - CLI: cli.md
-  - YAML: yaml.md
+  - Config: config.md
+  - Git: git.md
   - Plugins: plugin.md
   - Registry: registry.md

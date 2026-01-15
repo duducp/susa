@@ -174,20 +174,24 @@ O completion **filtra automaticamente** comandos baseado no OS:
 **Processo:**
 
 1. Detecta o OS atual (`linux` ou `mac`)
-2. Para cada comando, verifica o arquivo `config.yaml`
+2. Para cada comando, verifica o arquivo `config.json`
 3. Lê o campo `os: ["linux", "mac"]`
 4. Oculta comandos incompatíveis com o OS atual
 
 **Exemplo prático:**
 
-```yaml
-# commands/setup/iterm/config.yaml
-os: ["mac"]  # Apenas macOS
+```json
+// commands/setup/iterm/config.json
+{
+  "os": ["mac"]
+}
 ```
 
-```yaml
-# commands/setup/tilix/config.yaml
-os: ["linux"]  # Apenas Linux
+```json
+// commands/setup/tilix/config.json
+{
+  "os": ["linux"]
+}
 ```
 
 **Resultado:**
@@ -328,26 +332,21 @@ O script de completion:
 2. Detecta o sistema operacional atual (Linux ou macOS)
 3. Lista diretórios em `commands/` e `plugins/`
 4. Para cada comando, verifica compatibilidade de OS:
-   - Lê `config.yaml` do comando
+   - Lê `config.json` do comando
    - Verifica campo `os: [...]` (suporta formatos inline e multi-linha)
    - Filtra comandos incompatíveis
 
-    **Formatos suportados de `os` em config.yaml:**
+    **Formatos suportados de `os` em config.json:**
 
-    ```yaml
-    # Formato inline (compacto)
-    os: ["mac"]
-    os: ["linux", "mac"]
-
-    # Formato multi-linha (legível)
-    os:
-    - mac
-    - linux
+    ```json
+    // Formato inline (compacto)
+    { "os": ["mac"] }
+    { "os": ["linux", "mac"] }
     ```
 
-    **⚠️ Nota importante:** Comandos sem `config.yaml` são sempre exibidos no completion, independente do sistema operacional. Isso é intencional para permitir comandos multiplataforma simples.
+    **⚠️ Nota importante:** Comandos sem `config.json` são sempre exibidos no completion, independente do sistema operacional. Isso é intencional para permitir comandos multiplataforma simples.
 
-5. Filtra apenas diretórios (ignora arquivos como `config.yaml`)
+5. Filtra apenas diretórios (ignora arquivos como `config.json`)
 6. Remove duplicatas
 7. Retorna sugestões ordenadas e compatíveis com o SO atual
 

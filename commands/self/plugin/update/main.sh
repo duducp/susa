@@ -40,20 +40,20 @@ main() {
     local PLUGIN_NAME="$1"
     local USE_SSH="${2:-false}"
     local auto_confirm="${3:-false}"
-    local REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
+    local REGISTRY_FILE="$PLUGINS_DIR/registry.json"
 
     # Check if plugin exists in registry (could be dev plugin)
     if [ -f "$REGISTRY_FILE" ]; then
-        local plugin_count=$(yq eval ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .name" "$REGISTRY_FILE" 2> /dev/null | wc -l)
+        local plugin_count=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .name // empty" "$REGISTRY_FILE" 2> /dev/null | wc -l)
         if [ "$plugin_count" -gt 0 ]; then
-            local dev_flag=$(yq eval ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .dev" "$REGISTRY_FILE" 2> /dev/null | head -1)
+            local dev_flag=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .dev // false" "$REGISTRY_FILE" 2> /dev/null | head -1)
             if [ "$dev_flag" = "true" ]; then
                 log_error "Plugin '$PLUGIN_NAME' está em modo desenvolvimento"
                 log_output ""
                 log_output "${YELLOW}Plugins em modo desenvolvimento não podem ser atualizados.${NC}"
                 log_output "As alterações no código já refletem imediatamente!"
                 log_output ""
-                local source_path=$(yq eval ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source" "$REGISTRY_FILE" 2> /dev/null | head -1)
+                local source_path=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
                 if [ -n "$source_path" ]; then
                     log_output "${GRAY}Local do plugin: $source_path${NC}"
                 fi

@@ -154,33 +154,6 @@ ensure_jq_installed || exit 1
 version=$(curl -s https://api.github.com/repos/owner/repo/releases/latest | jq -r '.tag_name')
 ```
 
-### `ensure_yq_installed()`
-
-Garante que yq está instalado, baixando da última release do GitHub se necessário.
-
-**Retorno:**
-
-- `0` - yq disponível
-- `1` - Falha na instalação
-
-**Comportamento:**
-
-1. Verifica se `yq` já está disponível
-2. Se não, descobre a versão mais recente do GitHub
-3. Detecta plataforma (linux/darwin) e arquitetura (amd64/arm64/386)
-4. Baixa binário correto
-5. Instala em `/usr/local/bin/yq` (requer sudo)
-
-**Dependências:** Requer `curl` e `jq` (instala automaticamente)
-
-**Uso:**
-
-```bash
-ensure_yq_installed || exit 1
-
-name=$(yq eval '.name' config.yaml)
-```
-
 ### `ensure_fzf_installed()`
 
 Garante que fzf está instalado, baixando da última release do GitHub se necessário.
@@ -264,13 +237,12 @@ log_info "Verificando dependências..."
 # Garante todas as dependências
 ensure_curl_installed || exit 1
 ensure_jq_installed || exit 1
-ensure_yq_installed || exit 1
 ensure_fzf_installed || exit 1
 
 log_success "Todas as dependências instaladas!"
 
 # Usa as dependências
-config_name=$(yq eval '.name' cli.yaml)
+config_name=$(jq -r '.name' cli.json)
 selected_env=$(echo -e "dev\nstaging\nprod" | fzf --prompt="Ambiente: ")
 
 log_info "CLI: $config_name"

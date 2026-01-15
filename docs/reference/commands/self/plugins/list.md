@@ -10,7 +10,7 @@ susa self plugin list
 
 ## Como funciona
 
-O comando lê as informações diretamente do arquivo `registry.yaml`, evitando varredura de diretórios:
+O comando lê as informações diretamente do arquivo `registry.json`, evitando varredura de diretórios:
 
 - **Metadados em cache**: Quantidade de comandos e categorias são calculados durante a instalação
 - **Performance**: Resposta instantânea mesmo com muitos plugins

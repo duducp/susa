@@ -18,7 +18,7 @@ CORE_DIR="$(cd -P "$(dirname "$CURRENT_SCRIPT")" && pwd)"
 CLI_DIR="$(cd -P "$CORE_DIR/.." && pwd)"
 LIB_DIR="$CORE_DIR/lib"
 PLUGINS_DIR="$CLI_DIR/plugins"
-GLOBAL_CONFIG_FILE="$CORE_DIR/cli.yaml"
+GLOBAL_CONFIG_FILE="$CORE_DIR/cli.json"
 
 # Export variables for child processes (commands)
 export CORE_DIR
@@ -37,7 +37,7 @@ source "$LIB_DIR/string.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/sudo.sh"
 
-source "$LIB_DIR/internal/yaml.sh"
+source "$LIB_DIR/internal/config.sh"
 source "$LIB_DIR/cli.sh"
 source "$LIB_DIR/shell.sh"
 source "$LIB_DIR/dependencies.sh"
@@ -99,7 +99,7 @@ LOGO
 show_help() {
     show_logo
 
-    local description=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "description")
+    local description=$(get_config_field "$GLOBAL_CONFIG_FILE" "description")
     local categories=$(get_all_categories "$GLOBAL_CONFIG_FILE")
 
     echo "$description"
@@ -371,7 +371,7 @@ execute_command() {
     local plugin_source=""
     if has_valid_lock_file; then
         local lock_file="$CLI_DIR/susa.lock"
-        plugin_source=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
+        plugin_source=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
     fi
 
     # Build script path - use plugin source if available

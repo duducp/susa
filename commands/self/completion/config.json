@@ -1,0 +1,11 @@
+{
+  "name": "Completion",
+  "description": "Configura autocompletar para o shell",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": null,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

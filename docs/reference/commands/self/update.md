@@ -29,7 +29,7 @@ DEBUG=true susa self update
 Durante a atualização, **não são perdidos**:
 
 - ✅ Plugins instalados
-- ✅ Registry de plugins (`plugins/registry.yaml`)
+- ✅ Registry de plugins (`plugins/registry.json`)
 - ✅ Configurações personalizadas
 
 ## Opções

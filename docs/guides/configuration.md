@@ -2,7 +2,7 @@
 
 Este guia explica como configurar e personalizar o comportamento global do CLI.
 
-> **📖 Para configuração de comandos individuais** (config.yaml de comandos), veja [Como Adicionar Novos Comandos](adding-commands.md#3-configurar-o-comando).
+> **📖 Para configuração de comandos individuais** (config.json de comandos), veja [Como Adicionar Novos Comandos](adding-commands.md#3-configurar-o-comando).
 
 ---
 
@@ -10,20 +10,22 @@ Este guia explica como configurar e personalizar o comportamento global do CLI.
 
 O CLI usa diversos níveis de configuração:
 
-### 1. `cli.yaml` - Configuração Global
+### 1. `cli.json` - Configuração Global
 
 Arquivo principal localizado na raiz do Susa CLI que define metadados gerais.
 
-**Localização:** `/caminho/para/susa/core/cli.yaml`
+**Localização:** `/caminho/para/susa/core/cli.json`
 
 **Conteúdo:**
 
-```yaml
-name: "Susa CLI"
-description: "Gerenciador de Shell Scripts para automação"
-version: "1.0.0"
-commands_dir: "commands"
-plugins_dir: "plugins"
+```json
+{
+  "name": "Susa CLI",
+  "description": "Gerenciador de Shell Scripts para automação",
+  "version": "1.0.0",
+  "commands_dir": "commands",
+  "plugins_dir": "plugins"
+}
 ```
 
 **Campos:**
@@ -111,7 +113,8 @@ Quando você executa `susa categoria comando`, o framework carrega as configura�
 │ 3. Bibliotecas do Core                                      │
 │    ├─ color.sh, logger.sh, string.sh                       │
 │    ├─ os.sh, sudo.sh                                        │
-│    ├─ yaml.sh, cli.sh, shell.sh                            │
+│    ├─ config.sh, cli.sh, shell.sh                            │
+│    ├─ git.sh                                                   │
 │    └─ dependencies.sh                                        │
 └─────────────────────────────────────────────────────────────┘
                           ↓
@@ -124,7 +127,7 @@ Quando você executa `susa categoria comando`, o framework carrega as configura�
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ 5. Validação do CLI                                         │
-│    └─ core/cli.yaml                                         │
+│    └─ core/cli.json                                         │
 │       • Verifica se arquivo existe                          │
 │       • Obtém metadados (nome, versão, descrição)          │
 └─────────────────────────────────────────────────────────────┘
@@ -138,14 +141,14 @@ Quando você executa `susa categoria comando`, o framework carrega as configura�
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ 7. Configuração do Comando                                  │
-│    └─ categoria/comando/config.yaml                         │
+│    └─ categoria/comando/config.json                         │
 │       • Valida comando existe e é compatível com OS         │
 │       • Lê metadados (nome, entrypoint, sudo, os)          │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ 8. Variáveis de Ambiente do Comando                         │
-│    └─ load_command_envs() lê config.yaml → envs:           │
+│    └─ load_command_envs() lê config.json → envs:           │
 │       • Exporta variáveis específicas do comando            │
 │       • NÃO sobrescreve variáveis já definidas no sistema   │
 │       • Expande $HOME, $USER, etc.                          │
@@ -175,7 +178,7 @@ source "$LIB_DIR/logger.sh"
 # Linha 46: Carrega settings.conf (se existir)
 [ -f "$CLI_DIR/config/settings.conf" ] && source "$CLI_DIR/config/settings.conf"
 
-# Linhas 48-51: Valida cli.yaml
+# Linhas 48-51: Valida cli.json
 if [ ! -f "$GLOBAL_CONFIG_FILE" ]; then
     echo "Erro: Arquivo de configuração '$GLOBAL_CONFIG_FILE' não encontrado"
     exit 1
@@ -205,8 +208,8 @@ Quando uma mesma variável é definida em múltiplos lugares:
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ 2. Envs do Comando                                          │
-│    └─ config.yaml → envs:                                   │
-│    • Variáveis definidas no config.yaml do comando          │
+│    └─ config.json → envs:                                   │
+│    • Variáveis definidas no config.json do comando          │
 │    • Funciona em comandos built-in e plugins                │
 └─────────────────────────────────────────────────────────────┘
                           ↓
@@ -218,7 +221,7 @@ Quando uma mesma variável é definida em múltiplos lugares:
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ 4. Arquivos .env                                            │
-│    └─ config.yaml → env_files:                              │
+│    └─ config.json → env_files:                              │
 │    • Carregados na ordem especificada                       │
 │    • Último arquivo tem prioridade sobre anteriores         │
 │    • Funciona em comandos built-in e plugins                │
@@ -233,13 +236,14 @@ Quando uma mesma variável é definida em múltiplos lugares:
 
 **Exemplo prático completo:**
 
-```yaml
-# commands/setup/docker/config.yaml
-env_files:
-  - ".env"
-  - ".env.local"
-envs:
-  TIMEOUT: "60"
+```json
+// commands/setup/docker/config.json
+{
+  "env_files": [".env", ".env.local"],
+  "envs": {
+    "TIMEOUT": "60"
+  }
+}
 ```
 
 ```bash
@@ -270,7 +274,7 @@ database="${DATABASE_URL:-sqlite:///local.db}"
 ```bash
 # Sem override
 ./susa setup docker
-# → TIMEOUT=60 (do config.yaml envs - prioridade 2)
+# → TIMEOUT=60 (do config.json envs - prioridade 2)
 # → API_URL=https://api.example.com (do .env - prioridade 4)
 # → DATABASE_URL=postgresql://localhost/mydb (do .env.local - prioridade 4)
 
@@ -284,13 +288,14 @@ TIMEOUT=90 ./susa setup docker
 
 A mesma lógica de precedência se aplica a plugins:
 
-```yaml
-# plugins/meu-plugin/deploy/staging/config.yaml
-env_files:
-  - ".env"
-  - ".env.staging"
-envs:
-  DEPLOY_URL: "https://staging.example.com"
+```json
+// plugins/meu-plugin/deploy/staging/config.json
+{
+  "env_files": [".env", ".env.staging"],
+  "envs": {
+    "DEPLOY_URL": "https://staging.example.com"
+  }
+}
 ```
 
 ```bash
@@ -309,17 +314,17 @@ DATABASE_URL="postgresql://localhost/mydb"
 
 ### 3. Configuração de Categorias e Comandos
 
-> **📖 Documentação completa:** Para detalhes sobre `config.yaml` de categorias, subcategorias e comandos, consulte:
-> - **[Como Adicionar Novos Comandos](adding-commands.md)** - Estrutura básica e campos do config.yaml
+> **📖 Documentação completa:** Para detalhes sobre `config.json` de categorias, subcategorias e comandos, consulte:
+> - **[Como Adicionar Novos Comandos](adding-commands.md)** - Estrutura básica e campos do config.json
 > - **[Sistema de Subcategorias](subcategories.md)** - Hierarquias e organização multinível
 
 **Resumo:**
 
 | Tipo | Arquivo | Campos Principais | Referência |
 |------|---------|-------------------|------------|
-| Categoria | `commands/<categoria>/config.yaml` | `name`, `description` | [Ver guia](adding-commands.md#2-configurar-a-categoria) |
-| Comando | `commands/<categoria>/<comando>/config.yaml` | `name`, `description`, `script`, `sudo`, `os`, `group` (opcional) | [Ver guia](adding-commands.md#3-configurar-o-comando) |
-| Subcategoria | `commands/<categoria>/<sub>/config.yaml` | `name`, `description` (sem `script`) | [Ver guia](subcategories.md#todos-usam-configyaml) |
+| Categoria | `commands/<categoria>/config.json` | `name`, `description` | [Ver guia](adding-commands.md#2-configurar-a-categoria) |
+| Comando | `commands/<categoria>/<comando>/config.json` | `name`, `description`, `script`, `sudo`, `os`, `group` (opcional) | [Ver guia](adding-commands.md#3-configurar-o-comando) |
+| Subcategoria | `commands/<categoria>/<sub>/config.json` | `name`, `description` (sem `script`) | [Ver guia](subcategories.md#todos-usam-configjson) |
 
 **Indicadores Visuais:**
 
@@ -361,7 +366,7 @@ DEBUG=true susa setup docker
 **Saída:**
 
 ```text
-[DEBUG] 2026-01-12 14:30:45 - Carregando config de: /opt/cli/cli.yaml
+[DEBUG] 2026-01-12 14:30:45 - Carregando config de: /opt/cli/cli.json
 [DEBUG] 2026-01-12 14:30:45 - Categoria detectada: install
 [DEBUG] 2026-01-12 14:30:45 - Comando detectado: docker
 [INFO] 2026-01-12 14:30:45 - Instalando Docker Engine...
@@ -394,56 +399,52 @@ CLI_DIR=/opt/mycli ./susa setup docker
 
 ### `GLOBAL_CONFIG_FILE`
 
-Caminho para o arquivo cli.yaml (normalmente detectado automaticamente).
+Caminho para o arquivo cli.json (normalmente detectado automaticamente).
 
 **Uso:** Útil para testar com configurações alternativas.
 
 **Exemplo:**
 
 ```bash
-GLOBAL_CONFIG_FILE=/tmp/test-cli.yaml ./susa --version
+GLOBAL_CONFIG_FILE=/tmp/test-cli.json ./susa --version
 ```
 
 ---
 
 ## 🌍 Variáveis de Ambiente por Comando
 
-O Susa CLI permite definir variáveis de ambiente específicas para cada comando através da seção `envs` no `config.yaml`.
+O Susa CLI permite definir variáveis de ambiente específicas para cada comando através da seção `envs` no `config.json`.
 
 ### Como Funciona
 
 Cada comando pode ter suas próprias variáveis de ambiente que são automaticamente carregadas e exportadas **apenas durante a execução daquele comando**. Isso garante isolamento e evita conflitos entre comandos.
 
-### Definindo Variáveis no config.yaml
+### Definindo Variáveis no config.json
 
-No arquivo `config.yaml` do seu comando, adicione a seção `envs`:
+No arquivo `config.json` do seu comando, adicione a seção `envs`:
 
-```yaml
-name: "ASDF"
-description: "Instala ASDF (gerenciador de versões polyglot)"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
-envs:
-  # URLs do repositório
-  ASDF_GITHUB_API_URL: "https://api.github.com/repos/asdf-vm/asdf/releases/latest"
-  ASDF_GITHUB_REPO_URL: "https://github.com/asdf-vm/asdf.git"
-  ASDF_RELEASES_BASE_URL: "https://github.com/asdf-vm/asdf/releases/download"
-
-  # Timeouts (em segundos)
-  ASDF_API_MAX_TIME: "10"
-  ASDF_API_CONNECT_TIMEOUT: "5"
-  ASDF_GIT_TIMEOUT: "5"
-
-  # Configurações de download
-  ASDF_DOWNLOAD_CONNECT_TIMEOUT: "30"
-  ASDF_DOWNLOAD_MAX_TIME: "300"
-  ASDF_DOWNLOAD_RETRY: "3"
-  ASDF_DOWNLOAD_RETRY_DELAY: "2"
-
-  # Diretórios (suporta expansão de variáveis)
-  ASDF_INSTALL_DIR: "$HOME/.asdf"
-  ASDF_LOCAL_BIN_DIR: "$HOME/.local/bin"
+```json
+{
+  "name": "ASDF",
+  "description": "Instala ASDF (gerenciador de versões polyglot)",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"],
+  "envs": {
+    "ASDF_GITHUB_API_URL": "https://api.github.com/repos/asdf-vm/asdf/releases/latest",
+    "ASDF_GITHUB_REPO_URL": "https://github.com/asdf-vm/asdf.git",
+    "ASDF_RELEASES_BASE_URL": "https://github.com/asdf-vm/asdf/releases/download",
+    "ASDF_API_MAX_TIME": "10",
+    "ASDF_API_CONNECT_TIMEOUT": "5",
+    "ASDF_GIT_TIMEOUT": "5",
+    "ASDF_DOWNLOAD_CONNECT_TIMEOUT": "30",
+    "ASDF_DOWNLOAD_MAX_TIME": "300",
+    "ASDF_DOWNLOAD_RETRY": "3",
+    "ASDF_DOWNLOAD_RETRY_DELAY": "2",
+    "ASDF_INSTALL_DIR": "$HOME/.asdf",
+    "ASDF_LOCAL_BIN_DIR": "$HOME/.local/bin"
+  }
+}
 ```
 
 ### Usando no Script
@@ -479,10 +480,13 @@ install_asdf() {
 
 Variáveis como `$HOME`, `$USER`, etc., são automaticamente expandidas:
 
-```yaml
-envs:
-  MY_CONFIG_DIR: "$HOME/.config/myapp"  # Expande para /home/user/.config/myapp
-  BACKUP_PATH: "$HOME/backups/$USER"     # Expande para /home/user/backups/user
+```json
+{
+  "envs": {
+    "MY_CONFIG_DIR": "$HOME/.config/myapp",
+    "BACKUP_PATH": "$HOME/backups/$USER"
+  }
+}
 ```
 
 #### 🔒 Isolamento Total
@@ -508,13 +512,13 @@ Usuario executa comando
         ↓
 [core/susa] execute_command()
         ↓
-Valida e localiza config.yaml
+Valida e localiza config.json
         ↓
-[yaml.sh] load_command_envs(config.yaml)
+[config.sh] load_command_envs(config.json)
         ↓
 Carrega arquivos .env (se especificados)
         ↓
-Carrega seção envs do config.yaml
+Carrega seção envs do config.json
         ↓
 Exporta todas as envs (com expansão)
         ↓
@@ -527,28 +531,28 @@ Fim da execução (envs descartadas)
 
 ### Suporte a Arquivos .env
 
-Além de definir variáveis diretamente no `config.yaml`, você pode carregá-las de arquivos `.env`.
+Além de definir variáveis diretamente no `config.json`, você pode carregá-las de arquivos `.env`.
 
 #### Configuração
 
-```yaml
-# commands/deploy/app/config.yaml
-name: "Deploy App"
-description: "Deploy da aplicação"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux"]
-
-# Arquivos .env a serem carregados (na ordem especificada)
-env_files:
-  - ".env"              # Configurações base
-  - ".env.local"        # Configurações locais
-  - ".env.production"   # Configurações de produção
-
-# Variáveis diretas (maior prioridade que .env)
-envs:
-  DEPLOY_TIMEOUT: "300"
-  DEPLOY_TARGET: "production"
+```json
+// commands/deploy/app/config.json
+{
+  "name": "Deploy App",
+  "description": "Deploy da aplicação",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux"],
+  "env_files": [
+    ".env",
+    ".env.local",
+    ".env.production"
+  ],
+  "envs": {
+    "DEPLOY_TIMEOUT": "300",
+    "DEPLOY_TARGET": "production"
+  }
+}
 ```
 
 #### Formato dos Arquivos .env
@@ -575,7 +579,7 @@ REDIS_URL="redis://localhost:6379"
 
 #### Características
 
-- ✅ Caminhos relativos ao diretório do `config.yaml`
+- ✅ Caminhos relativos ao diretório do `config.json`
 - ✅ Caminhos absolutos também suportados
 - ✅ Múltiplos arquivos .env podem ser especificados
 - ✅ Carregados na ordem definida em `env_files`
@@ -588,16 +592,16 @@ REDIS_URL="redis://localhost:6379"
 
 ```text
 1. Variáveis de Sistema    → export VAR=value ou VAR=value comando
-2. Envs do Comando         → config.yaml → envs:
+2. Envs do Comando         → config.json → envs:
 3. Variáveis Globais       → config/settings.conf
-4. Arquivos .env           → config.yaml → env_files: (ordem especificada)
+4. Arquivos .env           → config.json → env_files: (ordem especificada)
 5. Valores Padrão          → ${VAR:-default}
 ```
 
 **Exemplo:**
 
-```yaml
-# config.yaml
+```json
+# config.json
 env_files:
   - ".env"
   - ".env.local"
@@ -618,14 +622,14 @@ DATABASE_URL="postgresql://localhost/mydb"
 
 **Resultado:**
 
-- `TIMEOUT` = 60 (do `config.yaml` envs, maior prioridade que .env)
+- `TIMEOUT` = 60 (do `config.json` envs, maior prioridade que .env)
 - `API_URL` = https://api.example.com (do `.env`)
 - `DATABASE_URL` = postgresql://localhost/mydb (do `.env.local`)
 
 #### Exemplo com Múltiplos Ambientes
 
-```yaml
-# config.yaml
+```json
+# config.json
 name: "Deploy"
 entrypoint: "main.sh"
 
@@ -644,7 +648,7 @@ $ DEPLOY_ENV=production susa deploy app # Usa .env.production
 ### Vantagens
 
 ✅ **Configurações Centralizadas**: Todos os parâmetros em um único lugar
-✅ **Fácil Customização**: Basta editar o YAML ou .env, sem tocar no código
+✅ **Fácil Customização**: Basta editar o JSON ou .env, sem tocar no código
 ✅ **Separação de Secrets**: Use .env.secrets no .gitignore
 ✅ **Múltiplos Ambientes**: Fácil gerenciar dev, staging, production
 ✅ **Valores de Fallback**: Scripts continuam funcionando sem as envs
@@ -656,7 +660,7 @@ $ DEPLOY_ENV=production susa deploy app # Usa .env.production
 
 **1. Use Prefixos Únicos**
 
-```yaml
+```json
 envs:
   ASDF_INSTALL_DIR: "..."      # ✅ Prefixo único
   INSTALL_DIR: "..."           # ❌ Muito genérico
@@ -674,7 +678,7 @@ local dir="$ASDF_INSTALL_DIR"
 
 **3. Documente as Variáveis**
 
-```yaml
+```json
 envs:
   # Timeout máximo para API do GitHub (em segundos)
   # Padrão: 10
@@ -687,43 +691,39 @@ envs:
 
 **4. Use Tipos Apropriados**
 
-```yaml
-envs:
-  # Números devem ser strings no YAML
-  TIMEOUT: "30"              # ✅ String
-  RETRY_COUNT: "3"           # ✅ String
-
-  # Booleanos também
-  ENABLE_CACHE: "true"       # ✅ String
-
-  # URLs e paths
-  API_URL: "https://..."     # ✅ String
-  INSTALL_DIR: "$HOME/..."   # ✅ String
+```json
+{
+  "envs": {
+    "TIMEOUT": "30",
+    "RETRY_COUNT": "3",
+    "ENABLE_CACHE": "true",
+    "API_URL": "https://...",
+    "INSTALL_DIR": "$HOME/..."
+  }
+}
 ```
 
 ### Exemplo Completo
 
-**config.yaml:**
+**config.json:**
 
-```yaml
-name: "Docker"
-description: "Instala Docker Engine"
-entrypoint: "main.sh"
-sudo: true
-os: ["linux", "mac"]
-envs:
-  # URLs
-  DOCKER_REPO_URL: "https://download.docker.com"
-  DOCKER_GPG_KEY_URL: "https://download.docker.com/linux/ubuntu/gpg"
-
-  # Configurações
-  DOCKER_DATA_ROOT: "/var/lib/docker"
-  DOCKER_LOG_LEVEL: "info"
-  DOCKER_MAX_CONCURRENT_DOWNLOADS: "3"
-
-  # Timeouts
-  DOCKER_DOWNLOAD_TIMEOUT: "300"
-  DOCKER_STARTUP_TIMEOUT: "60"
+```json
+{
+  "name": "Docker",
+  "description": "Instala Docker Engine",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": ["linux", "mac"],
+  "envs": {
+    "DOCKER_REPO_URL": "https://download.docker.com",
+    "DOCKER_GPG_KEY_URL": "https://download.docker.com/linux/ubuntu/gpg",
+    "DOCKER_DATA_ROOT": "/var/lib/docker",
+    "DOCKER_LOG_LEVEL": "info",
+    "DOCKER_MAX_CONCURRENT_DOWNLOADS": "3",
+    "DOCKER_DOWNLOAD_TIMEOUT": "300",
+    "DOCKER_STARTUP_TIMEOUT": "60"
+  }
+}
 ```
 
 **main.sh:**
@@ -828,7 +828,7 @@ Quando a mesma variável existe em múltiplos lugares:
 
 ```text
 1. Variáveis de Ambiente do Sistema (maior precedência)
-2. Variáveis do Comando (config.yaml envs:)
+2. Variáveis do Comando (config.json envs:)
 3. Variáveis Globais (config/settings.conf)
 4. Valores Padrão no Script (fallback)
 ```
@@ -839,7 +839,7 @@ Quando a mesma variável existe em múltiplos lugares:
 # settings.conf
 TIMEOUT="30"
 
-# comando/config.yaml
+# comando/config.json
 envs:
   TIMEOUT: "60"
 
@@ -870,19 +870,21 @@ HTTP_RETRY="3"
 API_BASE_URL="https://api.example.com"
 ```
 
-**commands/deploy/app/config.yaml:**
+**commands/deploy/app/config.json:**
 
-```yaml
-name: "Deploy App"
-description: "Deploy da aplicação"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux"]
-envs:
-  # Específicas deste comando
-  DEPLOY_TARGET_DIR: "/var/www/app"
-  DEPLOY_BACKUP_ENABLED: "true"
-  DEPLOY_ROLLBACK_ENABLED: "true"
+```json
+{
+  "name": "Deploy App",
+  "description": "Deploy da aplicação",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux"],
+  "envs": {
+    "DEPLOY_TARGET_DIR": "/var/www/app",
+    "DEPLOY_BACKUP_ENABLED": "true",
+    "DEPLOY_ROLLBACK_ENABLED": "true"
+  }
+}
 ```
 
 **commands/deploy/app/main.sh:**
@@ -941,11 +943,13 @@ $ API_BASE_URL=https://staging.api.com DEPLOY_BACKUP_ENABLED=false susa deploy a
 
 ### Alterar Nome do CLI
 
-Edite `cli.yaml`:
+Edite `cli.json`:
 
-```yaml
-name: "MeuApp CLI"     # Era: Susa CLI
-description: "Meu gerenciador customizado"
+```json
+{
+  "name": "MeuApp CLI",
+  "description": "Meu gerenciador customizado"
+}
 ```
 
 Renomeie o executável:
@@ -1053,31 +1057,31 @@ Ou durante instalação, o `install.sh` já faz isso automaticamente:
 ```text
 susa/
 ├── core/
-│   ├── cli.yaml                 # ✅ Config global (obrigatório)
+│   ├── cli.json                 # ✅ Config global (obrigatório)
 │   ├── susa                    # Entrypoint principal
 │   └── lib/                    # Bibliotecas
 ├── config/
 │   └── settings.conf           # ⚠️ Opcional (não usado por padrão)
 ├── commands/
 │   ├── setup/
-│   │   ├── config.yaml         # ⚠️ Opcional (metadados da categoria)
+│   │   ├── config.json         # ⚠️ Opcional (metadados da categoria)
 │   │   └── asdf/
-│   │       ├── config.yaml     # ✅ Obrigatório (config do comando)
+│   │       ├── config.json     # ✅ Obrigatório (config do comando)
 │   │       └── main.sh         # ✅ Obrigatório (script)
 │   └── self/
-│       ├── config.yaml
+│       ├── config.json
 │       └── plugin/
-│           ├── config.yaml
+│           ├── config.json
 │           └── add/
-│               ├── config.yaml # ✅ Obrigatório
+│               ├── config.json # ✅ Obrigatório
 │               └── main.sh     # ✅ Obrigatório
 └── plugins/
-    ├── registry.yaml            # 🔧 Gerado automaticamente
+    ├── registry.json            # 🔧 Gerado automaticamente
     └── hello-world/             # Exemplo de plugin
         └── text/
-            ├── config.yaml
+            ├── config.json
             └── hello-world/
-                ├── config.yaml  # ✅ Obrigatório (plugin)
+                ├── config.json  # ✅ Obrigatório (plugin)
                 └── main.sh      # ✅ Obrigatório (plugin)
 ```
 
@@ -1095,8 +1099,8 @@ susa/
 
 ❌ **Evite:**
 
-```yaml
-# Um YAML centralizado gigante
+```json
+# Um JSON centralizado gigante
 categories:
   install:
     commands:
@@ -1114,9 +1118,9 @@ categories:
 commands/
 ├── install/
 │   ├── docker/
-│   │   └── config.yaml    # Apenas config do docker
+│   │   └── config.json    # Apenas config do docker
 │   └── nodejs/
-│       └── config.yaml    # Apenas config do nodejs
+│       └── config.json    # Apenas config do nodejs
 ```
 
 ---
@@ -1125,9 +1129,11 @@ commands/
 
 ❌ **Evite:**
 
-```yaml
-# config.yaml
-api_token: "sk-1234567890abcdef"  # ❌ Nunca commite secrets!
+```json
+// config.json - NÃO FAÇA ISSO!
+{
+  "api_token": "sk-1234567890abcdef"
+}
 ```
 
 ✅ **Prefira:**
@@ -1220,17 +1226,17 @@ log_info "Conectando a API..."
 
 > **📖 Para troubleshooting de comandos específicos**, veja a seção [Troubleshooting](subcategories.md#troubleshooting) no guia de subcategorias.
 
-### Problema: CLI não encontra cli.yaml
+### Problema: CLI não encontra cli.json
 
 **Verificar:**
 
 ```bash
 # Verificar se arquivo existe no local correto
-ls -la ./cli.yaml
-ls -la /opt/susa/cli.yaml
+ls -la ./cli.json
+ls -la /opt/susa/cli.json
 
 # Testar com caminho absoluto
-GLOBAL_CONFIG_FILE=/caminho/completo/cli.yaml susa --version
+GLOBAL_CONFIG_FILE=/caminho/completo/cli.json susa --version
 ```
 
 ---
@@ -1244,13 +1250,13 @@ GLOBAL_CONFIG_FILE=/caminho/completo/cli.yaml susa --version
 DEBUG=true susa setup docker
 
 # Verificar se arquivo existe
-ls -la /caminho/para/cli/cli.yaml
+ls -la /caminho/para/cli/cli.json
 
 # Verificar permissões
-stat /caminho/para/cli/cli.yaml
+stat /caminho/para/cli/cli.json
 
-# Validar sintaxe YAML
-yq eval . /caminho/para/cli/cli.yaml
+# Validar sintaxe JSON
+jq . /caminho/para/cli/cli.json
 ```
 
 ---
@@ -1288,8 +1294,8 @@ DEBUG=true susa setup docker
 
 **Configurações principais:**
 
-1. **`cli.yaml`** - Metadados globais (obrigatório)
-2. **`<comando>/config.yaml`** - Config de cada comando com envs (obrigatório)
+1. **`cli.json`** - Metadados globais (obrigatório)
+2. **`<comando>/config.json`** - Config de cada comando com envs (obrigatório)
 3. **`config/settings.conf`** - Variáveis globais compartilhadas (opcional)
 4. **Variáveis de ambiente do sistema** - Override temporário (opcional)
 
@@ -1297,7 +1303,7 @@ DEBUG=true susa setup docker
 
 | Tipo | Arquivo | Escopo | Uso |
 |------|---------|--------|-----|
-| **Por Comando** | `config.yaml` (seção `envs:`) | Apenas durante execução do comando | URLs, timeouts, paths específicos |
+| **Por Comando** | `config.json` (seção `envs:`) | Apenas durante execução do comando | URLs, timeouts, paths específicos |
 | **Globais** | `config/settings.conf` | Todos os comandos | Credenciais, configs de rede |
 | **Sistema** | Linha de comando | Override temporário | `DEBUG=true susa comando` |
 
@@ -1306,7 +1312,7 @@ DEBUG=true susa setup docker
 ```text
 1. Variáveis de Ambiente do Sistema (export VAR=value ou VAR=value comando)
     ↓
-2. Envs do Comando (config.yaml → envs:)
+2. Envs do Comando (config.json → envs:)
     ↓
 3. Variáveis Globais (config/settings.conf)
     ↓
@@ -1323,22 +1329,25 @@ DEBUG=true susa setup docker
 
 **Para começar:**
 
-- **Básico:** Apenas `cli.yaml` e `<comando>/config.yaml` são necessários
-- **Com envs por comando:** Adicione seção `envs:` no `config.yaml` do comando
+- **Básico:** Apenas `cli.json` e `<comando>/config.json` são necessários
+- **Com envs por comando:** Adicione seção `envs:` no `config.json` do comando
 - **Com envs globais:** Crie `config/settings.conf` com variáveis compartilhadas
 
 **Exemplo mínimo com envs:**
 
-```yaml
-# commands/setup/docker/config.yaml
-name: "Docker"
-description: "Instala Docker"
-entrypoint: "main.sh"
-sudo: true
-os: ["linux"]
-envs:
-  DOCKER_REPO_URL: "https://download.docker.com"
-  DOCKER_TIMEOUT: "300"
+```json
+// commands/setup/docker/config.json
+{
+  "name": "Docker",
+  "description": "Instala Docker",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": ["linux"],
+  "envs": {
+    "DOCKER_REPO_URL": "https://download.docker.com",
+    "DOCKER_TIMEOUT": "300"
+  }
+}
 ```
 
 ```bash

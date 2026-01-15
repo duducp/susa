@@ -5,7 +5,7 @@ IFS=$'\n\t'
 # ============================================================
 # Plugin Registry Management
 # ============================================================
-# Functions to manage the plugins registry.yaml file
+# Functions to manage the plugins registry.json file
 
 # --- Registry Helper Functions ---
 
@@ -24,41 +24,43 @@ registry_add_plugin() {
     # Create file if it doesn't exist
     if [ ! -f "$registry_file" ]; then
         cat > "$registry_file" << EOF
-# Plugin Registry
-version: "1.0.0"
-
-plugins: []
+{
+  "version": "1.0.0",
+  "plugins": []
+}
 EOF
     fi
 
     # Check if plugin already exists
-    if grep -q "name: \"$plugin_name\"" "$registry_file" 2> /dev/null; then
+    if jq -e ".plugins[] | select(.name == \"$plugin_name\")" "$registry_file" &> /dev/null; then
         return 1
     fi
 
-    # Build plugin entry using yq
-    local plugin_index=$(yq eval '.plugins | length' "$registry_file" 2> /dev/null || echo 0)
-
-    # Add basic plugin info
-    yq eval -i ".plugins[$plugin_index].name = \"$plugin_name\"" "$registry_file"
-    yq eval -i ".plugins[$plugin_index].source = \"$source_url\"" "$registry_file"
-    yq eval -i ".plugins[$plugin_index].version = \"$version\"" "$registry_file"
-    yq eval -i ".plugins[$plugin_index].installed_at = \"$timestamp\"" "$registry_file"
+    # Build plugin entry using jq
+    local new_plugin=$(jq -n \
+        --arg name "$plugin_name" \
+        --arg source "$source_url" \
+        --arg version "$version" \
+        --arg installed "$timestamp" \
+        '{name: $name, source: $source, version: $version, installed_at: $installed}')
 
     # Add commands count if provided
     if [ -n "$cmd_count" ] && [ "$cmd_count" != "0" ]; then
-        yq eval -i ".plugins[$plugin_index].commands = $cmd_count" "$registry_file"
+        new_plugin=$(echo "$new_plugin" | jq --argjson cmds "$cmd_count" '. + {commands: $cmds}')
     fi
 
     # Add categories if provided
     if [ -n "$categories" ]; then
-        yq eval -i ".plugins[$plugin_index].categories = \"$categories\"" "$registry_file"
+        new_plugin=$(echo "$new_plugin" | jq --arg cats "$categories" '. + {categories: $cats}')
     fi
 
     # Add dev flag if it's a dev plugin
     if [ "$is_dev" = "true" ]; then
-        yq eval -i ".plugins[$plugin_index].dev = true" "$registry_file"
+        new_plugin=$(echo "$new_plugin" | jq '. + {dev: true}')
     fi
+
+    # Add the new plugin to the registry
+    jq ".plugins += [$new_plugin]" "$registry_file" > "$registry_file.tmp" && mv "$registry_file.tmp" "$registry_file"
 }
 
 # Removes a plugin from the registry
@@ -70,8 +72,8 @@ registry_remove_plugin() {
         return 1
     fi
 
-    # Use yq to remove the plugin entry
-    yq eval -i "del(.plugins[] | select(.name == \"$plugin_name\"))" "$registry_file" 2> /dev/null || return 1
+    # Use jq to remove the plugin entry
+    jq "del(.plugins[] | select(.name == \"$plugin_name\"))" "$registry_file" > "$registry_file.tmp" && mv "$registry_file.tmp" "$registry_file"
 
     return 0
 }
@@ -84,16 +86,8 @@ registry_list_plugins() {
         return 0
     fi
 
-    awk '
-    /- name:/ {
-        gsub(/.*name: "|".*/, "")
-        name=$0
-        getline; gsub(/.*source: "|".*/, ""); source=$0
-        getline; gsub(/.*version: "|".*/, ""); version=$0
-        getline; gsub(/.*installed_at: "|".*/, ""); installed=$0
-        print name"|"source"|"version"|"installed
-    }
-    ' "$registry_file"
+    # Use jq to format output
+    jq -r '.plugins[] | "\(.name)|\(.source)|\(.version)|\(.installed_at)"' "$registry_file" 2> /dev/null
 }
 
 # Gets information about a specific plugin
@@ -106,6 +100,6 @@ registry_get_plugin_info() {
         return 1
     fi
 
-    # Use yq to get the field value
-    yq eval ".plugins[] | select(.name == \"$plugin_name\") | .$field" "$registry_file" 2> /dev/null
+    # Use jq to get the field value
+    jq -r ".plugins[] | select(.name == \"$plugin_name\") | .$field // empty" "$registry_file" 2> /dev/null
 }

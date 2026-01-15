@@ -1,0 +1,9 @@
+{
+  "name": "lock",
+  "description": "Atualiza o arquivo susa.lock",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

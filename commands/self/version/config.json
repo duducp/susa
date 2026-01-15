@@ -1,0 +1,9 @@
+{
+  "name": "Version",
+  "description": "Mostra a versão do Susa CLI",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

@@ -3,19 +3,13 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # ============================================================
-# YAML Parser for Shell Script using yq
+# Config Parser for Shell Script using jq
 # ============================================================
-# Parser to read YAML configurations (centralized and decentralized)
+# Parser to read JSON configurations (centralized and decentralized)
 
 # Source registry lib
 source "$LIB_DIR/internal/registry.sh"
-source "$LIB_DIR/dependencies.sh"
-
-# Make sure yq is installed
-ensure_yq_installed || {
-    echo "Error: yq is required for Susa CLI to work" >&2
-    exit 1
-}
+source "$LIB_DIR/internal/json.sh"
 
 # ============================================================
 # Lock File Functions
@@ -39,7 +33,7 @@ get_categories_from_lock() {
         return 1
     fi
 
-    yq eval '.categories[].name' "$lock_file" 2> /dev/null
+    jq -r '.categories[].name' "$lock_file" 2> /dev/null
 }
 
 # Get category info from lock file
@@ -53,7 +47,7 @@ get_category_info_from_lock() {
         return 1
     fi
 
-    yq eval ".categories[] | select(.name == \"$category\") | .$field" "$lock_file" 2> /dev/null
+    jq -r ".categories[] | select(.name == \"$category\") | .$field" "$lock_file" 2> /dev/null
 }
 
 # Get commands from a category from lock file
@@ -67,7 +61,7 @@ get_category_commands_from_lock() {
     fi
 
     # Get commands that match the exact category path
-    yq eval ".commands[] | select(.category == \"$category\") | .name" "$lock_file" 2> /dev/null
+    jq -r ".commands[] | select(.category == \"$category\") | .name" "$lock_file" 2> /dev/null
 }
 
 # Get subcategories from a category from lock file
@@ -82,7 +76,7 @@ get_category_subcategories_from_lock() {
 
     # Find all commands that start with "category/"
     # Extract the next level subcategory name
-    local subcats=$(yq eval ".commands[].category" "$lock_file" 2> /dev/null |
+    local subcats=$(jq -r '.commands[].category' "$lock_file" 2> /dev/null |
         grep "^${category}/" |
         sed "s|^${category}/||" |
         cut -d'/' -f1 |
@@ -103,7 +97,7 @@ get_command_info_from_lock() {
         return 1
     fi
 
-    yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .$field" "$lock_file" 2> /dev/null
+    jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .$field" "$lock_file" 2> /dev/null
 }
 
 # Check if command is compatible with current OS from lock file
@@ -115,12 +109,12 @@ is_command_compatible_from_lock() {
     local lock_file="$cli_dir/susa.lock"
 
     if [ ! -f "$lock_file" ]; then
-        # Fallback: check config.yaml directly if lock file doesn't exist
+        # Fallback: check config.json directly if lock file doesn't exist
         local command_dir="$cli_dir/commands/$category/$command"
-        local config_file="$command_dir/config.yaml"
+        local config_file="$command_dir/config.json"
 
         if [ -f "$config_file" ]; then
-            local supported_os=$(yq eval '.os[]' "$config_file" 2> /dev/null)
+            local supported_os=$(jq -r '.os[]? // empty' "$config_file" 2> /dev/null)
 
             # If there's no OS restriction, it's compatible
             if [ -z "$supported_os" ]; then
@@ -140,7 +134,7 @@ is_command_compatible_from_lock() {
     fi
 
     # Get the OS array for this command
-    local supported_os=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .os[]" "$lock_file" 2> /dev/null)
+    local supported_os=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .os[]" "$lock_file" 2> /dev/null)
 
     # If there's no OS restriction, it's compatible
     if [ -z "$supported_os" ]; then
@@ -155,23 +149,39 @@ is_command_compatible_from_lock() {
     return 1
 }
 
-# --- Functions for Global Config (cli.yaml) ---
+# --- Functions for Global Config (cli.json) ---
 
-# Function to get global YAML fields (name, description, version)
-get_yaml_field() {
-    local yaml_file="$1"
-    local field="$2" # name, description, version, commands_dir, plugins_dir
+# Function to get global config fields (name, description, version)
+get_config_field() {
+    local config_file="$1"
+    local field="$2" # name, description, version
 
-    if [ ! -f "$yaml_file" ]; then
+    if [ ! -f "$config_file" ]; then
         return 1
     fi
 
-    yq eval ".$field" "$yaml_file" 2> /dev/null
+    # Use JSON parser (all configs are now JSON)
+    json_get_config_field "$config_file" "$field"
+}
+
+# Get CLI name and version formatted
+# Usage: show_version
+show_version() {
+    local name=$(get_config_field "$GLOBAL_CONFIG_FILE" "name")
+    local version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
+    echo -e "${BOLD}$name${NC} (versão ${GRAY}$version${NC})"
+}
+
+# Get CLI version number only
+# Usage: show_number_version
+show_number_version() {
+    local version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
+    echo "$version"
 }
 
 # Get all categories from lock file only
 get_all_categories() {
-    local yaml_file="$1"
+    local config_file="$1"
 
     # Only read from lock file - no fallback
     if has_valid_lock_file; then
@@ -185,7 +195,7 @@ get_all_categories() {
 
 # Function to get information about a category or subcategory from lock file only
 get_category_info() {
-    local yaml_file="$1"
+    local config_file="$1"
     local category="$2"
     local field="$3" # name or description
 
@@ -263,12 +273,10 @@ get_command_config_field() {
         return 1
     fi
 
-    local value=$(yq eval ".$field" "$config_file" 2> /dev/null)
+    # Use jq to read JSON config
+    local value=$(jq -r ".$field // empty" "$config_file" 2> /dev/null)
 
-    # If it's an array or list, convert to compatible format
-    if echo "$value" | grep -q '^\['; then
-        echo "$value" | sed 's/\[//g' | sed 's/\]//g' | sed 's/, /,/g'
-    elif [ "$value" != "null" ]; then
+    if [ -n "$value" ]; then
         echo "$value"
     fi
 }
@@ -283,10 +291,10 @@ find_command_config() {
     # First check if it's a plugin command in lock (has source)
     if has_valid_lock_file; then
         local lock_file="$cli_dir/susa.lock"
-        local plugin_source=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
+        local plugin_source=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
 
         if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
-            local config_path="$plugin_source/$category/$command_id/config.yaml"
+            local config_path="$plugin_source/$category/$command_id/config.json"
             if [ -f "$config_path" ]; then
                 echo "$config_path"
                 return 0
@@ -295,7 +303,7 @@ find_command_config() {
     fi
 
     # Search in commands/
-    local config_path="$cli_dir/commands/$category/$command_id/config.yaml"
+    local config_path="$cli_dir/commands/$category/$command_id/config.json"
     if [ -f "$config_path" ]; then
         echo "$config_path"
         return 0
@@ -308,10 +316,10 @@ find_command_config() {
             local plugin_name=$(basename "$plugin_dir")
 
             # Ignore special files
-            [ "$plugin_name" = "registry.yaml" ] && continue
+            [ "$plugin_name" = "registry.json" ] && continue
             [ "$plugin_name" = "README.md" ] && continue
 
-            config_path="$plugin_dir/$category/$command_id/config.yaml"
+            config_path="$plugin_dir/$category/$command_id/config.json"
             if [ -f "$config_path" ]; then
                 echo "$config_path"
                 return 0
@@ -332,7 +340,7 @@ is_plugin_command() {
         local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
         local lock_file="$cli_dir/susa.lock"
 
-        local plugin_name=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .plugin.name" "$lock_file" 2> /dev/null)
+        local plugin_name=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .plugin.name" "$lock_file" 2> /dev/null)
 
         if [ -n "$plugin_name" ] && [ "$plugin_name" != "null" ]; then
             return 0
@@ -359,7 +367,7 @@ is_dev_plugin_command() {
         local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
         local lock_file="$cli_dir/susa.lock"
 
-        local is_dev=$(yq eval ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .dev" "$lock_file" 2> /dev/null)
+        local is_dev=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .dev" "$lock_file" 2> /dev/null)
 
         if [ "$is_dev" = "true" ]; then
             return 0
@@ -371,7 +379,7 @@ is_dev_plugin_command() {
 
 # Gets information from a specific command from lock file only
 get_command_info() {
-    local yaml_file="$1" # Kept for compatibility, but not used
+    local config_file="$1" # Kept for compatibility, but not used
     local category="$2"
     local command_id="$3"
     local field="$4" # name, description, script, sudo, os, group
@@ -385,14 +393,14 @@ get_command_info() {
         fi
     fi
 
-    # Fallback: read directly from config.yaml if lock file doesn't exist
+    # Fallback: read directly from config.json if lock file doesn't exist
     local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
     local command_dir="$cli_dir/commands/$category/$command_id"
-    local config_file="$command_dir/config.yaml"
+    local config_file="$command_dir/config.json"
 
     if [ -f "$config_file" ]; then
-        local value=$(yq eval ".$field" "$config_file" 2> /dev/null)
-        if [ -n "$value" ] && [ "$value" != "null" ]; then
+        local value=$(jq -r ".$field // empty" "$config_file" 2> /dev/null)
+        if [ -n "$value" ]; then
             echo "$value"
             return 0
         fi
@@ -404,7 +412,7 @@ get_command_info() {
 
 # Function to check if command is compatible with current OS from lock file only
 is_command_compatible() {
-    local yaml_file="$1" # Kept for compatibility
+    local config_file="$1" # Kept for compatibility
     local category="$2"
     local command_id="$3"
     local current_os="$4" # linux or mac
@@ -415,7 +423,7 @@ is_command_compatible() {
 
 # Function to check if command requires sudo from lock file only
 requires_sudo() {
-    local yaml_file="$1" # Kept for compatibility
+    local config_file="$1" # Kept for compatibility
     local category="$2"
     local command_id="$3"
 
@@ -432,7 +440,7 @@ requires_sudo() {
 
 # Function to get the group of a command from lock file only
 get_command_group() {
-    local yaml_file="$1" # Kept for compatibility
+    local config_file="$1" # Kept for compatibility
     local category="$2"
     local command_id="$3"
 
@@ -450,7 +458,7 @@ get_command_group() {
 
 # Function to get unique list of groups in a category
 get_category_groups() {
-    local yaml_file="$1" # Kept for compatibility
+    local config_file="$1" # Kept for compatibility
     local category="$2"
     local current_os="$3"
 
@@ -459,11 +467,11 @@ get_category_groups() {
 
     for cmd in $commands; do
         # Skip incompatible commands
-        if ! is_command_compatible "$yaml_file" "$category" "$cmd" "$current_os"; then
+        if ! is_command_compatible "$config_file" "$category" "$cmd" "$current_os"; then
             continue
         fi
 
-        local group=$(get_command_group "$yaml_file" "$category" "$cmd")
+        local group=$(get_command_group "$config_file" "$category" "$cmd")
 
         if [ -n "$group" ]; then
             # Add group if not already in the list
@@ -530,7 +538,7 @@ load_env_files() {
     done
 }
 
-# Load environment variables from command config.yaml
+# Load environment variables from command config.json
 load_command_envs() {
     local config_file="$1"
 
@@ -542,11 +550,11 @@ load_command_envs() {
     local config_dir="$(dirname "$config_file")"
 
     # Load environment variables from .env files first (lowest priority)
-    if yq eval '.env_files' "$config_file" 2> /dev/null | grep -q .; then
+    if jq -e '.env_files' "$config_file" &> /dev/null; then
         local env_files=()
         while IFS= read -r env_file; do
             [ -n "$env_file" ] && env_files+=("$env_file")
-        done < <(yq eval '.env_files[]' "$config_file" 2> /dev/null)
+        done < <(jq -r '.env_files[]? // empty' "$config_file" 2> /dev/null)
 
         if [ ${#env_files[@]} -gt 0 ]; then
             load_env_files "$config_dir" "${env_files[@]}"
@@ -554,7 +562,7 @@ load_command_envs() {
     fi
 
     # Load environment variables from envs section (higher priority than .env files)
-    if yq eval '.envs' "$config_file" 2> /dev/null | grep -q .; then
+    if jq -e '.envs' "$config_file" &> /dev/null; then
         # Get all env keys and values, export them
         while IFS='=' read -r key value; do
             if [ -n "$key" ] && [ -n "$value" ]; then
@@ -565,6 +573,6 @@ load_command_envs() {
                     export "$key=$value"
                 fi
             fi
-        done < <(yq eval '.envs | to_entries | .[] | .key + "=" + .value' "$config_file" 2> /dev/null)
+        done < <(jq -r '.envs | to_entries[] | "\(.key)=\(.value)"' "$config_file" 2> /dev/null)
     fi
 }

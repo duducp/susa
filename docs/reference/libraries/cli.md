@@ -28,21 +28,21 @@ echo "$path"  # self plugin add
 
 ### `get_command_config_file()`
 
-Obtém o caminho do arquivo config.yaml do comando sendo executado.
+Obtém o caminho do arquivo config.json do comando sendo executado.
 
 **Comportamento:**
 
 - Detecta automaticamente o script main.sh na pilha de chamadas
-- Retorna o caminho para config.yaml do mesmo diretório
+- Retorna o caminho para config.json do mesmo diretório
 
-**Retorno:** Caminho absoluto para config.yaml
+**Retorno:** Caminho absoluto para config.json
 
 **Exemplo:**
 
 ```bash
 # Se executando commands/setup/docker/main.sh
 config=$(get_command_config_file)
-echo "$config"  # /path/to/commands/setup/docker/config.yaml
+echo "$config"  # /path/to/commands/setup/docker/config.json
 ```
 
 **Uso interno:** Chamada automaticamente por `show_description()`
@@ -71,16 +71,16 @@ show_usage --no-options
 
 ### `show_description()`
 
-Exibe a descrição do comando do arquivo config.yaml.
+Exibe a descrição do comando do arquivo config.json.
 
 **Comportamento:**
 
-- Detecta automaticamente o config.yaml do comando
+- Detecta automaticamente o config.json do comando
 - Lê e exibe o campo "description"
 
 **Requisitos:**
 
-- O arquivo config.yaml deve ter um campo "description"
+- O arquivo config.json deve ter um campo "description"
 
 **Uso:**
 
@@ -89,23 +89,7 @@ show_description
 # Output: Instala Docker no sistema
 ```
 
-### `show_version()`
-
-Mostra nome e versão do CLI formatados.
-
-```bash
-show_version
-# Output: Susa CLI v1.0.0
-```
-
-### `show_number_version()`
-
-Mostra apenas o número da versão do CLI.
-
-```bash
-version=$(show_number_version)
-echo "$version"  # 1.0.0
-```
+**Nota:** Para funções de versão (`show_version()` e `show_number_version()`), veja a documentação de [config.sh](config.md).
 
 ## Exemplo Completo
 
@@ -126,7 +110,7 @@ fi
 
 # Mostra versão se solicitado
 if [ "$1" = "--version" ]; then
-    show_version
+    show_version  # Função em config.sh
     exit 0
 fi
 ```
@@ -134,4 +118,5 @@ fi
 ## Boas Práticas
 
 1. Use `show_description` e `show_usage` na função de ajuda
-2. Use `show_version` para comandos `--version`
+2. Para versão, use funções de `config.sh`
+3. Use `build_command_path()` é chamado automaticamente por `show_usage()`

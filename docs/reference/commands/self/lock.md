@@ -77,9 +77,9 @@ susa self lock --sync --quiet
 
 ### Exemplo de Saída com `--sync`
 
-### Exemplo de Saída com `--sync`
-
 **Com mudanças detectadas:**
+
+```text
 $ susa self lock --sync
 [INFO] Gerando arquivo susa.lock...
 [SUCCESS] Arquivo susa.lock gerado com sucesso!
@@ -95,7 +95,7 @@ $ susa self lock --sync
 
 **Sem alterações detectadas:**
 
-```bash
+```text
 $ susa self lock --sync
 [INFO] Gerando arquivo susa.lock...
 [SUCCESS] Arquivo susa.lock gerado com sucesso!
@@ -104,10 +104,6 @@ $ susa self lock --sync
 
 [INFO] Nenhuma alteração encontrada.
 ```
-
-## Geração Automática
-
-O arquivo `susa.lock` é gerado automaticamente em duas situações:
 
 ## Geração Automática
 
@@ -149,52 +145,48 @@ Execute `susa self lock --sync` quando:
 
 ## Estrutura do Arquivo
 
-O arquivo `susa.lock` é um arquivo YAML com a seguinte estrutura:
+O arquivo `susa.lock` é um arquivo JSON com a seguinte estrutura:
 
-```yaml
-version: "1.0.0"
-generated_at: "2026-01-13T17:13:49Z"
-
-categories:
-  - name: "self"
-    description: "Gerencia as configurações do Susa CLI"
-    source: "commands"
-  - name: "setup"
-    description: "Instalação e atualização de softwares"
-    source: "commands"
-
-commands:
-  - category: "self"
-    name: "lock"
-    description: "Atualiza o arquivo susa.lock"
-  - category: "setup"
-    name: "docker"
-    description: "Instala Docker"
-    os: ["linux", "mac"]
-    sudo: "true"
-    group: "containers"
-  - category: "deploy"
-    name: "staging"
-    description: "Deploy para staging"
-    plugin:
-      name: "backup-tools"
-      source: "/home/user/.config/susa/plugins/backup-tools"
-      dev: false
-
-# Seção de instalações (gerenciada automaticamente)
-installations:
-  - name: docker
-    installed: true
-    version: 29.1.4
-    installed_at: "2026-01-14T15:27:36Z"
-  - name: podman
-    installed: true
-    version: 5.7.1
-    installed_at: "2026-01-14T15:27:36Z"
-  - name: mise
-    installed: true
-    version: 2026.1.1
-    installed_at: "2026-01-14T15:27:36Z"
+```json
+{
+  "version": "1.0.0",
+  "generated_at": "2026-01-13T17:13:49Z",
+  "categories": [
+    {
+      "name": "self",
+      "description": "Gerencia as configurações do Susa CLI",
+      "source": "commands"
+    },
+    {
+      "name": "setup",
+      "description": "Instalação e atualização de softwares",
+      "source": "commands"
+    }
+  ],
+  "commands": [
+    {
+      "category": "self",
+      "name": "lock",
+      "description": "Atualiza o arquivo susa.lock"
+    },
+    {
+      "category": "setup",
+      "name": "docker",
+      "description": "Instala Docker",
+      "os": ["linux", "mac"],
+      "sudo": "true",
+      "group": "containers"
+    },
+    {
+      "category": "deploy",
+      "name": "staging",
+      "description": "Deploy para staging",
+      "plugin": {
+        "name": "backup-tools"
+      }
+    }
+  ]
+}
 ```
 
 ### Seção `installations`

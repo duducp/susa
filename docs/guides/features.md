@@ -24,11 +24,11 @@ O **Susa CLI** é um framework modular e extensível para criar ferramentas de l
 | Funcionalidade | Descrição |
 |----------------|------------|
 | 🔍 **Descoberta Automática** | Comandos descobertos da estrutura de diretórios |
-| 📄 **Config Descentralizada** | Cada comando tem seu próprio `config.yaml` |
+| 📄 **Config Descentralizada** | Cada comando tem seu próprio `config.json` |
 | 🌍 **Multi-plataforma** | Suporte para Linux e macOS |
 | 📂 **Subcategorias** | Hierarquia de comandos ilimitada |
 | 🔌 **Plugins** | Extensão via Git sem modificar código |
-| 📦 **Bibliotecas** | Logger, OS detection, YAML parser, etc |
+| 📦 **Bibliotecas** | Logger, OS detection, JSON parser, etc |
 | 📖 **Help Customizado** | Documentação por comando |
 
 ### 🚀 Caso de Uso Ideal
@@ -49,7 +49,7 @@ O CLI **descobre comandos automaticamente** da estrutura de diretórios:
 ```bash
 # Criar nova pasta = novo comando disponível
 mkdir -p commands/setup/docker
-cat > commands/setup/docker/config.yaml << EOF
+cat > commands/setup/docker/config.json << EOF
 name: "Docker"
 description: "Instala Docker Engine"
 entrypoint: "main.sh"
@@ -61,14 +61,16 @@ susa setup docker
 
 ### 📄 Configuração Descentralizada
 
-Cada comando tem seu próprio `config.yaml`:
+Cada comando tem seu próprio `config.json`:
 
-```yaml
-name: "Docker"          # Nome amigável
-description: "Instala Docker Engine"
-entrypoint: "main.sh"       # Script a executar
-sudo: false             # Requer privilégios?
-os: ["linux", "mac"]    # SOs compatíveis
+```json
+{
+  "name": "Docker",
+  "description": "Instala Docker Engine",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"]
+}
 ```
 
 ### 📂 Hierarquia de Comandos
@@ -77,12 +79,12 @@ os: ["linux", "mac"]    # SOs compatíveis
 commands/
   setup/                 # Categoria
   ├── asdf/              # Comando
-  │   ├── config.yaml
+  │   ├── config.json
   │   └── main.sh
   └── python/            # Subcategoria
-      ├── config.yaml
+      ├── config.json
       └── pip/           # Comando
-          ├── config.yaml
+          ├── config.json
           └── main.sh
 ```
 
@@ -105,9 +107,9 @@ Procura em:
 
 | Condição | Tipo | Resultado |
 |----------|------|-----------|
-| Tem `config.yaml` + campo `entrypoint` + arquivo existe | **Comando** | Executável |
-| Tem `config.yaml` sem script | **Categoria** | Navegável |
-| Sem `config.yaml` | **Ignorado** | - |
+| Tem `config.json` + campo `entrypoint` + arquivo existe | **Comando** | Executável |
+| Tem `config.json` sem script | **Categoria** | Navegável |
+| Sem `config.json` | **Ignorado** | - |
 
 #### 3. Disponibilização Imediata
 
@@ -115,7 +117,7 @@ Comandos ficam disponíveis automaticamente:
 
 ```bash
 mkdir -p commands/deploy/production
-cat > commands/deploy/production/config.yaml << EOF
+cat > commands/deploy/production/config.json << EOF
 name: "Production"
 description: "Deploy para produção"
 entrypoint: "main.sh"
@@ -130,7 +132,7 @@ susa deploy production
 
 ### Vantagens
 
-- ✅ Sem YAML centralizado
+- ✅ Sem JSON centralizado
 - ✅ Cada comando é independente
 - ✅ Fácil adicionar/remover (apenas pasta)
 - ✅ Plugins não modificam arquivos centrais
@@ -163,27 +165,27 @@ susa setup python pip
 ```text
 commands/
 ├── setup/               # Categoria
-│   ├── config.yaml
+│   ├── config.json
 │   ├── asdf/            # Comando
-│   │   ├── config.yaml
+│   │   ├── config.json
 │   │   └── main.sh
 │   └── python/          # Subcategoria
-│       ├── config.yaml
+│       ├── config.json
 │       └── pip/         # Comando
-│           ├── config.yaml
+│           ├── config.json
 │           └── main.sh
 └── self/                # Categoria
-    ├── config.yaml
+    ├── config.json
     ├── version/         # Comando
-    │   ├── config.yaml
+    │   ├── config.json
     │   └── main.sh
     └── plugin/          # Subcategoria
-        ├── config.yaml
+        ├── config.json
         ├── add/         # Comando
-        │   ├── config.yaml
+        │   ├── config.json
         │   └── main.sh
         └── list/        # Comando
-            ├── config.yaml
+            ├── config.json
             └── main.sh
 ```
 
@@ -192,7 +194,7 @@ commands/
 - Mantenha 2-3 níveis de profundidade
 - Use nomes descritivos e curtos
 - Agrupe comandos relacionados
-- Cada nível pode ter `config.yaml` com metadados
+- Cada nível pode ter `config.json` com metadados
 
 Para mais detalhes, veja [Guia de Subcategorias](subcategories.md).
 
@@ -202,37 +204,41 @@ Para mais detalhes, veja [Guia de Subcategorias](subcategories.md).
 
 ### Como Funciona
 
-O campo `os` no `config.yaml` filtra comandos automaticamente:
+O campo `os` no `config.json` filtra comandos automaticamente:
 
-```yaml
-# Apenas Linux
-os: ["linux"]
+```json
+// Apenas Linux
+{ "os": ["linux"] }
 
-# Apenas macOS
-os: ["mac"]
+// Apenas macOS
+{ "os": ["mac"] }
 
-# Ambos
-os: ["linux", "mac"]
+// Ambos
+{ "os": ["linux", "mac"] }
 
-# Omitir = todos os SOs
+// Omitir = todos os SOs
 ```
 
 ### Exemplos
 
-```yaml
-# commands/setup/apt/config.yaml
-name: "APT Tools"
-description: "Ferramentas APT (Ubuntu/Debian)"
-entrypoint: "main.sh"
-os: ["linux"]  # Só aparece no Linux
+```json
+// commands/setup/apt/config.json
+{
+  "name": "APT Tools",
+  "description": "Ferramentas APT (Ubuntu/Debian)",
+  "entrypoint": "main.sh",
+  "os": ["linux"]
+}
 ```
 
-```yaml
-# commands/setup/brew/config.yaml
-name: "Homebrew"
-description: "Gerenciador de pacotes"
-entrypoint: "main.sh"
-os: ["mac"]  # Só aparece no macOS
+```json
+// commands/setup/brew/config.json
+{
+  "name": "Homebrew",
+  "description": "Gerenciador de pacotes",
+  "entrypoint": "main.sh",
+  "os": ["mac"]
+}
 ```
 
 ### Detecção de SO
@@ -271,14 +277,14 @@ susa self plugin add usuario/plugin
 ```text
 meu-plugin/
 ├── categoria1/
-│   ├── config.yaml
+│   ├── config.json
 │   └── comando1/
-│       ├── config.yaml
+│       ├── config.json
 │       └── main.sh
 └── categoria2/
-    ├── config.yaml
+    ├── config.json
     └── comando2/
-        ├── config.yaml
+        ├── config.json
         └── main.sh
 ```
 
@@ -354,28 +360,34 @@ Para documentação completa, veja [Referência de Bibliotecas](../reference/lib
 
 ### Estrutura de Arquivos
 
-```yaml
-# cli.yaml (raiz)
-name: "Susa CLI"
-description: "Gerenciador de Shell Scripts"
-version: "1.0.0"
-commands_dir: "commands"
-plugins_dir: "plugins"
+```json
+// cli.json (raiz)
+{
+  "name": "Susa CLI",
+  "description": "Gerenciador de Shell Scripts",
+  "version": "1.0.0",
+  "commands_dir": "commands",
+  "plugins_dir": "plugins"
+}
 ```
 
-```yaml
-# commands/categoria/config.yaml
-name: "Setup"
-description: "Instalar e configurar ferramentas"
+```json
+// commands/categoria/config.json
+{
+  "name": "Setup",
+  "description": "Instalar e configurar ferramentas"
+}
 ```
 
-```yaml
-# commands/categoria/comando/config.yaml
-name: "ASDF"
-description: "Instala ASDF Version Manager"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
+```json
+// commands/categoria/comando/config.json
+{
+  "name": "ASDF",
+  "description": "Instala ASDF",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"]
+}
 ```
 
 ### Template de Comando

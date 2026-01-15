@@ -4,7 +4,7 @@
 
 O CLI suporta uma estrutura hierárquica de categorias e subcategorias baseada em diretórios, permitindo organizar comandos em múltiplos níveis de profundidade.
 
-> **📖 Pré-requisito:** Este guia assume que você já conhece os conceitos básicos de estrutura de comandos, `config.yaml` e criação de scripts. Se não, veja primeiro [Como Adicionar Novos Comandos](adding-commands.md).
+> **📖 Pré-requisito:** Este guia assume que você já conhece os conceitos básicos de estrutura de comandos, `config.json` e criação de scripts. Se não, veja primeiro [Como Adicionar Novos Comandos](adding-commands.md).
 
 ## 🏗️ Estrutura de Diretórios
 
@@ -14,8 +14,8 @@ O CLI suporta uma estrutura hierárquica de categorias e subcategorias baseada e
 
 O sistema verifica:
 
-1. Se o diretório tem `config.yaml`
-2. Se o `config.yaml` tem o campo `entrypoint:` definido
+1. Se o diretório tem `config.json`
+2. Se o `config.json` tem o campo `entrypoint:` definido
 3. Se o arquivo do script existe
 
 **Resultado:**
@@ -28,16 +28,16 @@ O sistema verifica:
   - Sistema permite navegar (listar sub-itens)
   - Aparece na seção "Subcategories"
 
-### Todos usam config.yaml
+### Todos usam config.json
 
-Tanto comandos quanto subcategorias têm `config.yaml`, mas com campos diferentes:
+Tanto comandos quanto subcategorias têm `config.json`, mas com campos diferentes:
 
-| Tipo | Campos no config.yaml |
+| Tipo | Campos no config.json |
 | ---- | --------------------- |
 | **Comando** | `name`, `description`, `script` (obrigatório), `sudo`, `os` |
 | **Subcategoria** | `name`, `description` (sem campo `entrypoint`) |
 
-> **ℹ️ Para detalhes completos sobre campos do config.yaml, veja [Configuração de Comandos](adding-commands.md#3-configurar-o-comando).**
+> **ℹ️ Para detalhes completos sobre campos do config.json, veja [Configuração de Comandos](adding-commands.md#3-configurar-o-comando).**
 
 **Vantagens dessa abordagem:**
 
@@ -50,27 +50,27 @@ Tanto comandos quanto subcategorias têm `config.yaml`, mas com campos diferente
 ```text
 commands/
   setup/                            # Categoria principal
-    config.yaml                     # name, description (sem script)
+    config.json                     # name, description (sem script)
     asdf/                           # Comando direto
-      config.yaml                   # category, id, name, description, script, sudo, os
+      config.json                   # category, id, name, description, script, sudo, os
       main.sh                       # Script executável
     python/                         # Subcategoria
-      config.yaml                   # name, description (sem script)
+      config.json                   # name, description (sem script)
       pip/                          # Comando
-        config.yaml                 # category, id, name, description, script
+        config.json                 # category, id, name, description, script
         main.sh
       poetry/                       # Comando
-        config.yaml
+        config.json
         main.sh
       tools/                        # Sub-subcategoria (nível 3)
-        config.yaml                 # name, description (sem script)
+        config.json                 # name, description (sem script)
         venv/                       # Comando nível 3
-          config.yaml               # category, id, name, description, script
+          config.json               # category, id, name, description, script
           main.sh
     nodejs/                         # Subcategoria
-      config.yaml                   # name, description (sem script)
+      config.json                   # name, description (sem script)
       npm/                          # Comando
-        config.yaml                 # category, id, name, description, script
+        config.json                 # category, id, name, description, script
         main.sh
 ```
 
@@ -103,36 +103,39 @@ susa setup python tools venv
 
 ## 📝 Arquivos de Configuração
 
-### Arquivo Único: config.yaml
+### Arquivo Único: config.json
 
-Todos os itens (categorias, subcategorias e comandos) usam `config.yaml`.
+Todos os itens (categorias, subcategorias e comandos) usam `config.json`.
 A diferença está nos **campos definidos**.
 
 ### 1. Categoria/Subcategoria (Navegável)
 
 Usado para itens que contêm outros itens.
 
-```yaml
-name: "Python"
-description: "Ferramentas Python"
-# SEM campo 'script' = navegável
+```json
+{
+  "name": "Python",
+  "description": "Ferramentas Python"
+}
 ```
 
-**Localização:** `commands/{categoria}/config.yaml` ou `commands/{categoria}/{subcategoria}/config.yaml`
+**Localização:** `commands/{categoria}/config.json` ou `commands/{categoria}/{subcategoria}/config.json`
 
 ### 2. Comando (Executável)
 
 Configuração completa de um comando executável.
 
-```yaml
-name: "Pip"
-description: "Instala gerenciador de pacotes Python (pip)"
-entrypoint: "main.sh"        # ← Este campo indica que é executável
-sudo: false              # true = exibe indicador [sudo] na listagem
-os: ["linux", "mac"]
+```json
+{
+  "name": "Pip",
+  "description": "Instala gerenciador de pacotes Python (pip)",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"]
+}
 ```
 
-**Localização:** `commands/{categoria}/.../{comando}/config.yaml`
+**Localização:** `commands/{categoria}/.../{comando}/config.json`
 
 **Importante:** O arquivo definido em `entrypoint:` DEVE existir e ter permissão de execução.
 
@@ -194,26 +197,26 @@ Commands:
 
 ```bash
 mkdir -p commands/setup/comando-novo
-# Criar config.yaml e main.sh conforme guia básico
+# Criar config.json e main.sh conforme guia básico
 ```
 
 ### 2. Comando em Nova Subcategoria
 
-A diferença principal: criar um `config.yaml` **sem** campo `entrypoint` para a subcategoria.
+A diferença principal: criar um `config.json` **sem** campo `entrypoint` para a subcategoria.
 
 ```bash
 # Criar estrutura
 mkdir -p commands/install/nova-categoria/comando-xyz
 
 # Criar configuração da subcategoria (SEM campo 'script')
-cat > commands/install/nova-categoria/config.yaml << EOF
+cat > commands/install/nova-categoria/config.json << EOF
 name: "Nova Categoria"
 description: "Descrição da nova categoria"
 # Sem campo 'script' = subcategoria navegável
 EOF
 
 # Criar configuração do comando (COM campo 'script')
-cat > commands/install/nova-categoria/comando-xyz/config.yaml << EOF
+cat > commands/install/nova-categoria/comando-xyz/config.json << EOF
 name: "Comando XYZ"
 description: "Descrição do comando XYZ"
 entrypoint: "main.sh"       # ← Indica que é executável
@@ -238,19 +241,19 @@ chmod +x commands/setup/nova-categoria/comando-xyz/main.sh
 # Criar estrutura completa
 mkdir -p commands/install/categoria/subcategoria/comando
 
-# Criar config.yaml para cada nível navegável
-cat > commands/install/categoria/config.yaml << EOF
+# Criar config.json para cada nível navegável
+cat > commands/install/categoria/config.json << EOF
 name: "Categoria"
 description: "Nível 1"
 EOF
 
-cat > commands/install/categoria/subcategoria/config.yaml << EOF
+cat > commands/install/categoria/subcategoria/config.json << EOF
 name: "Subcategoria"
 description: "Nível 2"
 EOF
 
 # Criar comando executável (COM campo 'script')
-cat > commands/install/categoria/subcategoria/comando/config.yaml << EOF
+cat > commands/install/categoria/subcategoria/comando/config.json << EOF
 name: "Comando"
 description: "Comando no nível 3"
 entrypoint: "main.sh"       # ← Indica que é executável
@@ -272,8 +275,8 @@ chmod +x commands/setup/categoria/subcategoria/comando/main.sh
 O sistema descobre automaticamente:
 
 - ✅ Todas as categorias em `commands/`
-- ✅ Todas as subcategorias (diretórios sem `config.yaml`)
-- ✅ Todos os comandos (diretórios com `config.yaml`)
+- ✅ Todas as subcategorias (diretórios sem `config.json`)
+- ✅ Todos os comandos (diretórios com `config.json`)
 - ✅ Múltiplos níveis de aninhamento
 - ✅ Comandos em plugins externos
 
@@ -287,28 +290,28 @@ Plugins também suportam a mesma estrutura hierárquica com subcategorias aninha
 plugins/
   dev-tools/                    # Plugin
     deploy/                     # Categoria
-      config.yaml               # name, description (sem script)
+      config.json               # name, description (sem script)
       staging/                  # Comando
-        config.yaml             # name, description, script
+        config.json             # name, description, script
         main.sh
       production/               # Comando
-        config.yaml
+        config.json
         main.sh
       aws/                      # Subcategoria
-        config.yaml             # name, description (sem script)
+        config.json             # name, description (sem script)
         ec2/                    # Comando
-          config.yaml           # name, description, script
+          config.json           # name, description, script
           main.sh
         lambda/                 # Comando
-          config.yaml
+          config.json
           main.sh
     test/                       # Categoria
-      config.yaml
+      config.json
       unit/                     # Comando
-        config.yaml
+        config.json
         main.sh
       integration/              # Comando
-        config.yaml
+        config.json
         main.sh
 ```
 
@@ -334,7 +337,7 @@ plugins/
 ✅ Plugins funcionam **exatamente** como `commands/`:
 
 - Mesma lógica de detecção (script = comando, sem script = subcategoria)
-- Mesma estrutura de config.yaml
+- Mesma estrutura de config.json
 - Mesma navegação multinível
 - Mesma descoberta automática
 
@@ -375,12 +378,16 @@ Commands:
 
 Comandos podem ser agrupados para melhor organização:
 
-```yaml
-# commands/install/tool1/config.yaml
-group: "Development Tools"
+```json
+// commands/install/tool1/config.json
+{
+  "group": "Development Tools"
+}
 
-# commands/install/tool2/config.yaml
-group: "Development Tools"
+// commands/install/tool2/config.json
+{
+  "group": "Development Tools"
+}
 ```
 
 **Exibição:**
@@ -425,12 +432,14 @@ commands/tools/dev/lang/python/pkg/pip
 
 ### Comando não aparece na listagem
 
- 1:** Falta campo `entrypoint:` no `config.yaml`
+ 1:** Falta campo `entrypoint:` no `config.json`
 
 **Solução:** Adicionar o campo script
 
-```yaml
-entrypoint: "main.sh"
+```json
+{
+  "entrypoint": "main.sh"
+}
 ```
 
 **Causa 2:** Arquivo do script não existe ou não tem o nome correto
@@ -443,11 +452,11 @@ ls -la commands/categoria/comando/main.sh
 
 **Causa 3:** Incompatível com o sistema operacional atual
 
-**Solução:** Verificar campo `os:` no config.yaml
+**Solução:** Verificar campo `os:` no config.json
 
 ### Subcategoria aparece como comando (não consigo navegar)
 
-**Causa:** Config.yaml tem campo `entrypoint:` definido e o arquivo existe
+**Causa:** config.json tem campo `entrypoint:` definido e o arquivo existe
 
 **Explicação:** O sistema identifica como comando executável pela presença do script.
 
@@ -459,7 +468,7 @@ ls -la commands/categoria/comando/main.sh
 chmod +x commands/path/to/command/main.sh
 ```
 
-**Causa 2:** Nome do script no config.yaml não corresponde ao arquivo
+**Causa 2:** Nome do script no config.json não corresponde ao arquivo
 
 **Solução:** Verificar se `entrypoint:` aponta para o arquivo correto
 
@@ -469,24 +478,28 @@ chmod +x commands/path/to/command/main.sh
 
 ### Descrição não aparece
 
-**Causa:** Falta campo `description:` no config.yaml
+**Causa:** Falta campo `description:` no config.json
 
 **Solução:** Adicionar descrição
 
-```yaml
-name: "Nome"
-description: "Descrição aqui"
+```json
+{
+  "name": "Nome",
+  "description": "Descrição aqui"
+}
 ```
 
 ### Descrição da subcategoria não aparece
 
-**Causa:** Falta `config.yaml` ou está sem campos obrigatórios
+**Causa:** Falta `config.json` ou está sem campos obrigatórios
 
-**Solução:** Criar `config.yaml` com `name` e `description` (SEM campo `entrypoint`)
+**Solução:** Criar `config.json` com `name` e `description` (SEM campo `entrypoint`)
 
-```yaml
-name: "Nome da Subcategoria"
-description: "Descrição aqui"
+```json
+{
+  "name": "Nome da Subcategoria",
+  "description": "Descrição aqui"
+}
 ```
 
 ## 📚 Exemplos Completos
@@ -500,13 +513,13 @@ description: "Descrição aqui"
 mkdir -p commands/backup/{local,cloud}/{full,incremental}
 
 # Subcategoria: backup/local (SEM campo 'script')
-cat > commands/backup/local/config.yaml << EOF
+cat > commands/backup/local/config.json << EOF
 name: "Local"
 description: "Backups locais"
 EOF
 
 # Comando: backup/local/full (COM campo 'script')
-cat > commands/backup/local/full/config.yaml << EOF
+cat > commands/backup/local/full/config.json << EOF
 name: "Full Backup"
 description: "Backup completo local"
 entrypoint: "main.sh"
@@ -537,13 +550,13 @@ mkdir -p plugins/dev-tools/deploy/{staging,production,aws/{ec2,lambda}}
 mkdir -p plugins/dev-tools/test/{unit,integration}
 
 # Categoria: deploy (SEM script)
-cat > plugins/dev-tools/deploy/config.yaml << EOF
+cat > plugins/dev-tools/deploy/config.json << EOF
 name: "Deploy"
 description: "Ferramentas de deployment"
 EOF
 
 # Comando: deploy/staging
-cat > plugins/dev-tools/deploy/staging/config.yaml << EOF
+cat > plugins/dev-tools/deploy/staging/config.json << EOF
 name: "Staging"
 description: "Deploy para ambiente de staging"
 entrypoint: "main.sh"
@@ -556,13 +569,13 @@ echo "✅ Deploy concluído!"
 EOF
 
 # Subcategoria: deploy/aws (SEM script)
-cat > plugins/dev-tools/deploy/aws/config.yaml << EOF
+cat > plugins/dev-tools/deploy/aws/config.json << EOF
 name: "AWS"
 description: "Deploy para serviços AWS"
 EOF
 
 # Comando em subcategoria: deploy/aws/ec2
-cat > plugins/dev-tools/deploy/aws/ec2/config.yaml << EOF
+cat > plugins/dev-tools/deploy/aws/ec2/config.json << EOF
 name: "EC2"
 description: "Deploy para instâncias EC2"
 entrypoint: "main.sh"

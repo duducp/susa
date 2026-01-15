@@ -56,7 +56,7 @@ show_help() {
 
 # Function to get the current version
 get_current_version() {
-    local version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
+    local version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
     echo "$version"
 }
 
@@ -79,11 +79,11 @@ get_latest_version() {
     fi
     rm -f "$temp_file"
 
-    # If it fails, try to get the version of cli.yaml from the remote repository
+    # If it fails, try to get the version of cli.json from the remote repository
     log_debug "GitHub API falhou, tentando via raw content..." >&2
-    if curl -sSL --max-time 5 --connect-timeout 3 "${CLI_GITHUB_RAW_URL}/${CLI_REPO_BRANCH}/core/cli.yaml" -o "$temp_file" 2> /dev/null; then
+    if curl -sSL --max-time 5 --connect-timeout 3 "${CLI_GITHUB_RAW_URL}/${CLI_REPO_BRANCH}/core/cli.json" -o "$temp_file" 2> /dev/null; then
         if [[ -f "$temp_file" ]] && [[ -s "$temp_file" ]]; then
-            latest_version=$(grep 'version:' "$temp_file" 2> /dev/null | head -1 | sed -E 's/.*version: *"?([^"]+)"?/\1/' || echo "")
+            latest_version=$(jq -r '.version // empty' "$temp_file" 2> /dev/null || echo "")
             if [[ -n "$latest_version" ]]; then
                 log_debug "Versão obtida via raw content: $latest_version" >&2
                 rm -f "$temp_file"
@@ -136,8 +136,8 @@ perform_update() {
 
     cd susa-update
 
-    # Check if cli.yaml exists
-    if [ ! -f "core/cli.yaml" ]; then
+    # Check if cli.json exists
+    if [ ! -f "core/cli.json" ]; then
         log_error "Arquivo de configuração não encontrado na versão baixada"
         return 1
     fi
@@ -145,9 +145,9 @@ perform_update() {
     # Preserve critical files before updating
     log_info "Preservando configurações de plugins..."
     local backup_registry=""
-    if [ -f "$CLI_DIR/plugins/registry.yaml" ]; then
-        backup_registry="$TEMP_DIR/registry.yaml.backup"
-        cp "$CLI_DIR/plugins/registry.yaml" "$backup_registry"
+    if [ -f "$CLI_DIR/plugins/registry.json" ]; then
+        backup_registry="$TEMP_DIR/registry.json.backup"
+        cp "$CLI_DIR/plugins/registry.json" "$backup_registry"
         log_debug "Registry de plugins preservado"
     fi
 
@@ -158,7 +158,7 @@ perform_update() {
 
     # Restores plugin registry if there was a backup
     if [ -n "$backup_registry" ] && [ -f "$backup_registry" ]; then
-        cp "$backup_registry" "$CLI_DIR/plugins/registry.yaml"
+        cp "$backup_registry" "$CLI_DIR/plugins/registry.json"
         log_debug "Registry de plugins restaurado"
     fi
 

@@ -11,9 +11,9 @@ Cada comando deve seguir esta estrutura hierárquica:
 ```text
 commands/
   <categoria>/
-    config.yaml           # Configuração da categoria
+    config.json           # Configuração da categoria
     <comando>/
-      config.yaml         # Configuração do comando
+      config.json         # Configuração do comando
       main.sh             # Entrypoint principal executável
 ```
 
@@ -22,12 +22,12 @@ commands/
 ```text
 commands/
   setup/
-    config.yaml
+    config.json
     asdf/
-      config.yaml
+      config.json
       main.sh
     docker/
-      config.yaml
+      config.json
       main.sh
 ```
 
@@ -50,33 +50,39 @@ mkdir -p commands/setup/vscode
 
 ### 2. Configurar a Categoria
 
-Crie ou edite `commands/<categoria>/config.yaml`:
+Crie ou edite `commands/<categoria>/config.json`:
 
-```yaml
-name: "Setup"
-description: "Instalar e configurar ferramentas"
+```json
+{
+  "name": "Setup",
+  "description": "Instalar e configurar ferramentas"
+}
 ```
 
 ### 3. Configurar o Comando
 
-Crie `commands/<categoria>/<comando>/config.yaml`:
+Crie `commands/<categoria>/<comando>/config.json`:
 
-```yaml
-name: "Nome Amigável"
-description: "Descrição clara e objetiva do comando"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
+```json
+{
+  "name": "Nome Amigável",
+  "description": "Descrição clara e objetiva do comando",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"]
+}
 ```
 
 **Exemplo completo:**
 
-```yaml
-name: "VS Code"
-description: "Instala Visual Studio Code"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
+```json
+{
+  "name": "VS Code",
+  "description": "Instala Visual Studio Code",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"]
+}
 ```
 
 **Campos disponíveis:**
@@ -92,27 +98,22 @@ os: ["linux", "mac"]
 
 Você pode definir variáveis de ambiente específicas para cada comando usando a seção `envs`:
 
-```yaml
-name: "Docker"
-description: "Instala Docker Engine"
-entrypoint: "main.sh"
-sudo: true
-os: ["linux", "mac"]
-envs:
-  # URLs
-  DOCKER_REPO_URL: "https://download.docker.com"
-  DOCKER_GPG_KEY_URL: "https://download.docker.com/linux/ubuntu/gpg"
-
-  # Configurações
-  DOCKER_DATA_ROOT: "/var/lib/docker"
-  DOCKER_LOG_LEVEL: "info"
-
-  # Timeouts (em segundos)
-  DOCKER_DOWNLOAD_TIMEOUT: "300"
-  DOCKER_STARTUP_TIMEOUT: "60"
-
-  # Diretórios (suporta expansão de $HOME, $USER, etc)
-  DOCKER_CONFIG_DIR: "$HOME/.docker"
+```json
+{
+  "name": "Docker",
+  "description": "Instala Docker Engine",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": ["linux", "mac"],
+  "envs": {
+    "DOCKER_REPO_URL": "https://download.docker.com",
+    "DOCKER_GPG_KEY_URL": "https://download.docker.com/linux/ubuntu/gpg",
+    "DOCKER_DATA_ROOT": "/var/lib/docker",
+    "DOCKER_LOG_LEVEL": "info",
+    "DOCKER_DOWNLOAD_TIMEOUT": "300",
+    "DOCKER_STARTUP_TIMEOUT": "60"
+  }
+}
 ```
 
 **Características:**
@@ -120,7 +121,7 @@ envs:
 ✅ **Carregamento automático**: As variáveis são exportadas antes da execução do script
 ✅ **Expansão de variáveis**: `$HOME`, `$USER` e outras variáveis são automaticamente expandidas
 ✅ **Isolamento**: Cada comando tem suas próprias variáveis (não vazam entre comandos)
-✅ **Configuração centralizada**: Todos os parâmetros em um único arquivo YAML
+✅ **Configuração centralizada**: Todos os parâmetros em um único arquivo JSON
 
 **Uso no script:**
 
@@ -150,14 +151,6 @@ install_docker() {
 - ✅ Documentação inline das configurações
 
 > **📖 Para mais detalhes sobre variáveis de ambiente**, veja [Guia de Variáveis de Ambiente](envs.md).
-
-**Campos disponíveis (antigo):**
-
-- `name`: Nome amigável exibido ao usuário
-- `description`: Descrição breve do comando
-- `script`: Nome do arquivo executável (geralmente `main.sh`)
-- `sudo`: Se requer privilégios de administrador (`true`/`false`). Quando `true`, o comando exibe o indicador `[sudo]` na listagem
-- `os`: Sistemas suportados (`["linux"]`, `["mac"]`, `["linux", "mac"]`)
 
 ### 4. Criar o Script Principal
 
@@ -275,11 +268,11 @@ Para detalhes completos de todas as bibliotecas, veja [Referência de Biblioteca
 6. **Validação**: Verifique se dependências estão instaladas antes de usar
 7. **Cores com reset**: Sempre termine mensagens coloridas com `${NC}`
 8. **Variáveis de ambiente**:
-   - Use seção `envs` no `config.yaml` para URLs, timeouts e configurações
+   - Use seção `envs` no `config.json` para URLs, timeouts e configurações
    - Sempre forneça valores de fallback: `${VAR:-default}`
    - Use prefixos únicos para evitar conflitos: `COMANDO_VAR` em vez de `VAR`
-   - Documente as variáveis com comentários no YAML
-9. **Configurações**: Prefira `envs` no `config.yaml` em vez de hardcoded no script
+   - Documente as variáveis com comentários no JSON
+9. **Configurações**: Prefira `envs` no `config.json` em vez de hardcoded no script
 
 ## 🔍 Descoberta Automática
 
@@ -287,7 +280,7 @@ O Susa CLI descobre comandos **automaticamente**:
 
 - Não há registro central de comandos
 - O CLI varre o diretório `commands/` em tempo de execução
-- Cada `config.yaml` é lido dinamicamente
+- Cada `config.json` é lido dinamicamente
 - Plugins funcionam da mesma forma em `plugins/`
 
 > **💡 Para entender como o sistema diferencia comandos e subcategorias**, veja [Diferença entre Comandos e Subcategorias](subcategories.md#diferenca-entre-comandos-e-subcategorias).
@@ -324,42 +317,42 @@ Veja o comando [setup asdf](../reference/commands/setup/asdf.md) como referênci
 ```text
 commands/
   deploy/
-    config.yaml
+    config.json
     app/
-      config.yaml    # Com seção envs
+      config.json    # Com seção envs
       main.sh        # Usa as envs
 ```
 
-**commands/deploy/config.yaml:**
+**commands/deploy/config.json:**
 
-```yaml
-name: "Deploy"
-description: "Comandos de deploy"
+```json
+{
+  "name": "Deploy",
+  "description": "Comandos de deploy"
+}
 ```
 
-**commands/deploy/app/config.yaml:**
+**commands/deploy/app/config.json:**
 
-```yaml
-name: "Deploy App"
-description: "Deploy da aplicação para produção"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux", "mac"]
-envs:
-  # URLs e Endpoints
-  DEPLOY_API_URL: "https://api.example.com"
-  DEPLOY_WEBHOOK_URL: "https://hooks.slack.com/services/XXX"
-
-  # Configurações de Deploy
-  DEPLOY_TARGET_DIR: "/var/www/app"
-  DEPLOY_BACKUP_DIR: "$HOME/backups"
-  DEPLOY_MAX_RETRIES: "3"
-  DEPLOY_TIMEOUT: "300"
-
-  # Features
-  DEPLOY_BACKUP_ENABLED: "true"
-  DEPLOY_ROLLBACK_ENABLED: "true"
-  DEPLOY_NOTIFICATIONS_ENABLED: "true"
+```json
+{
+  "name": "Deploy App",
+  "description": "Deploy da aplicação para produção",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"],
+  "envs": {
+    "DEPLOY_API_URL": "https://api.example.com",
+    "DEPLOY_WEBHOOK_URL": "https://hooks.slack.com/services/XXX",
+    "DEPLOY_TARGET_DIR": "/var/www/app",
+    "DEPLOY_BACKUP_DIR": "$HOME/backups",
+    "DEPLOY_MAX_RETRIES": "3",
+    "DEPLOY_TIMEOUT": "300",
+    "DEPLOY_BACKUP_ENABLED": "true",
+    "DEPLOY_ROLLBACK_ENABLED": "true",
+    "DEPLOY_NOTIFICATIONS_ENABLED": "true"
+  }
+}
 ```
 
 **commands/deploy/app/main.sh:**
@@ -553,12 +546,14 @@ $ susa deploy app --help
 
 **Customização sem editar código:**
 
-```yaml
-# Apenas edite config.yaml para customizar
-envs:
-  DEPLOY_API_URL: "https://api.staging.com"  # Mudar URL
-  DEPLOY_TIMEOUT: "600"                       # Aumentar timeout
-  DEPLOY_NOTIFICATIONS_ENABLED: "false"      # Desabilitar notificações
+```json
+{
+  "envs": {
+    "DEPLOY_API_URL": "https://api.staging.com",
+    "DEPLOY_TIMEOUT": "600",
+    "DEPLOY_NOTIFICATIONS_ENABLED": "false"
+  }
+}
 ```
 
 ## 🔗 Guias Relacionados

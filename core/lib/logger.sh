@@ -54,21 +54,3 @@ log_debug() {
         fi
     fi
 }
-
-strtobool() {
-    # How to use: strtobool "value"
-    local value
-    value=$(string_to_lower "$1")
-    case "$value" in
-        "true" | "1" | "on" | "yes")
-            return 0
-            ;;
-        "false" | "0" | "off" | "no")
-            return 1
-            ;;
-        *)
-            log_error "Invalid boolean value: $1"
-            return 1
-            ;;
-    esac
-}

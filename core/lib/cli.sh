@@ -4,7 +4,7 @@ IFS=$'\n\t'
 
 # Get the lib directory
 source "$LIB_DIR/color.sh"
-source "$LIB_DIR/internal/yaml.sh"
+source "$LIB_DIR/internal/config.sh"
 
 # --- CLI Helper Functions ---
 
@@ -61,7 +61,7 @@ get_command_config_file() {
     fi
 
     local script_dir="$(cd "$(dirname "$script_path")" && pwd)"
-    echo "$script_dir/config.yaml"
+    echo "$script_dir/config.json"
 }
 
 # Displays the command usage information with customizable arguments
@@ -115,23 +115,10 @@ show_usage() {
     echo -e "$usage_string"
 }
 
-# Get and display the command description from config.yaml
-# The file config.yaml must have a "description" field.
+# Get and display the command description from config.json
+# The file config.json must have a "description" field.
 show_description() {
     local config_file=$(get_command_config_file)
-    local cmd_desc=$(get_yaml_field "$config_file" "description")
+    local cmd_desc=$(get_config_field "$config_file" "description")
     echo -e "$cmd_desc"
-}
-
-# Displays the CLI name and version
-show_version() {
-    local name=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "name")
-    local version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
-    echo -e "${BOLD}$name${NC} (versão ${GRAY}$version${NC})"
-}
-
-# Displays the CLI version number only
-show_number_version() {
-    local version=$(get_yaml_field "$GLOBAL_CONFIG_FILE" "version")
-    echo "$version"
 }

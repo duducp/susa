@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source "$LIB_DIR/internal/json.sh"
+
 # Get plugin info from lock file
 get_plugin_info_from_lock() {
     local plugin_name="$1"
@@ -12,13 +14,13 @@ get_plugin_info_from_lock() {
 
     case "$field" in
         version)
-            yq eval ".plugins[] | select(.name == \"$plugin_name\") | .version" "$lock_file" 2> /dev/null | head -1
+            json_get_field_from_array "$lock_file" ".plugins" "select(.name == \"$plugin_name\")" ".version"
             ;;
         commands)
-            yq eval ".plugins[] | select(.name == \"$plugin_name\") | .commands" "$lock_file" 2> /dev/null | head -1
+            json_get_field_from_array "$lock_file" ".plugins" "select(.name == \"$plugin_name\")" ".commands"
             ;;
         categories)
-            yq eval ".plugins[] | select(.name == \"$plugin_name\") | .categories" "$lock_file" 2> /dev/null | head -1
+            json_get_field_from_array "$lock_file" ".plugins" "select(.name == \"$plugin_name\")" ".categories"
             ;;
         *)
             return 1

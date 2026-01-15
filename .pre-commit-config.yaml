@@ -44,16 +44,6 @@ repos:
         exclude: ^(\.git|\.vscode|docs)/
         stages: [pre-commit, manual]
 
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
-        name: yamllint
-        args: ["-c", ".yamllint"]
-        types: [yaml]
-        exclude: ^(\.git|\.vscode)/
-        stages: [pre-commit, manual]
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -82,4 +72,8 @@ repos:
       - id: mixed-line-ending
         name: Check mixed line endings
         args: ['--fix=lf']
+        stages: [pre-commit, manual]
+      - id: check-json
+        name: Check JSON syntax
+        exclude: ^(\.git|\.vscode)/
         stages: [pre-commit, manual]

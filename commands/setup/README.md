@@ -5,7 +5,7 @@ Este documento descreve os padrões e convenções utilizados nos comandos da ca
 ## 📋 Índice
 
 - [Estrutura de Arquivos](#estrutura-de-arquivos)
-- [Arquivo config.yaml](#arquivo-configyaml)
+- [Arquivo config.json](#arquivo-configjson)
 - [Estrutura do main.sh](#estrutura-do-mainsh)
 - [Funções Obrigatórias](#funções-obrigatórias)
 - [Funções Auxiliares Comuns](#funções-auxiliares-comuns)
@@ -23,7 +23,7 @@ Cada comando de setup deve seguir esta estrutura:
 ```text
 commands/setup/
 └── nome-ferramenta/
-    ├── config.yaml      # Configuração do comando
+    ├── config.json      # Configuração do comando
     └── main.sh          # Script de instalação
 ```
 
@@ -35,32 +35,32 @@ Alguns comandos podem incluir:
 
 ---
 
-## Arquivo config.yaml
+## Arquivo config.json
 
 Configuração padrão com metadados e variáveis de ambiente:
 
-```yaml
-name: "Nome da Ferramenta"
-description: "Breve descrição do que a ferramenta faz"
-entrypoint: "main.sh"
-sudo: true|false          # Se requer privilégios de superusuário
-os: ["linux", "mac"]      # Sistemas operacionais suportados
-group: "categoria"        # Opcional: agrupa ferramentas similares (ex: python, containers)
-envs:
-  # URLs de API e repositório
-  TOOL_GITHUB_API_URL: "https://api.github.com/repos/owner/repo/releases/latest"
-  TOOL_GITHUB_REPO_URL: "https://github.com/owner/repo.git"
-  TOOL_INSTALL_SCRIPT_URL: "https://install.example.com"
-
-  # Timeouts para verificação de versão (em segundos)
-  TOOL_API_MAX_TIME: "10"
-  TOOL_API_CONNECT_TIMEOUT: "5"
-  TOOL_GIT_TIMEOUT: "5"
-
-  # Diretórios de instalação
-  TOOL_HOME: "$HOME/.local/share/tool"
-  TOOL_LOCAL_BIN_DIR: "$HOME/.local/bin"
+```json
+{
+  "name": "Nome da Ferramenta",
+  "description": "Breve descrição do que a ferramenta faz",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"],
+  "group": "categoria",
+  "envs": {
+    "TOOL_GITHUB_API_URL": "https://api.github.com/repos/owner/repo/releases/latest",
+    "TOOL_GITHUB_REPO_URL": "https://github.com/owner/repo.git",
+    "TOOL_INSTALL_SCRIPT_URL": "https://install.example.com",
+    "TOOL_API_MAX_TIME": "10",
+    "TOOL_API_CONNECT_TIMEOUT": "5",
+    "TOOL_GIT_TIMEOUT": "5",
+    "TOOL_HOME": "$HOME/.local/share/tool",
+    "TOOL_LOCAL_BIN_DIR": "$HOME/.local/bin"
+  }
+}
 ```
+
+**Nota:** JSON não suporta comentários. Use a documentação ou README para explicar os campos.
 
 ### Convenções de Nomenclatura
 
@@ -903,7 +903,7 @@ nav:
 
 Ao criar um novo comando setup, certifique-se de:
 
-- [ ] Criar `config.yaml` com todas as variáveis necessárias
+- [ ] Criar `config.json` com todas as variáveis necessárias
 - [ ] Definir `sudo: true|false` corretamente
 - [ ] Listar sistemas operacionais suportados em `os:`
 - [ ] Implementar `show_help()` completo

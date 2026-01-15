@@ -65,7 +65,7 @@ Remove o Mise do sistema. Você terá a opção de também remover o cache salvo
 ## Opções
 
 | Opção | O que faz |
-|-------|-----------|
+| --- | --- |
 | `-h, --help` | Mostra ajuda detalhada |
 | `--update` | Atualiza o Mise para a versão mais recente |
 | `--uninstall` | Remove o Mise do sistema |
@@ -76,7 +76,7 @@ Remove o Mise do sistema. Você terá a opção de também remover o cache salvo
 
 ### Comandos Essenciais
 
-**Instalar e Usar Ferramentas**
+#### Instalar e Usar Ferramentas
 
 ```bash
 # Instalar Node.js 20

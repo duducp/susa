@@ -34,18 +34,18 @@ main() {
     local PLUGIN_NAME="$1"
     local auto_confirm="${2:-false}"
 
-    local REGISTRY_FILE="$PLUGINS_DIR/registry.yaml"
+    local REGISTRY_FILE="$PLUGINS_DIR/registry.json"
     local is_dev_plugin=false
     local source_path=""
 
     # Check if plugin exists in registry (could be dev plugin)
     if [ -f "$REGISTRY_FILE" ]; then
-        local plugin_count=$(yq eval ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .name" "$REGISTRY_FILE" 2> /dev/null | wc -l)
+        local plugin_count=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .name // empty" "$REGISTRY_FILE" 2> /dev/null | wc -l)
         if [ "$plugin_count" -gt 0 ]; then
-            local dev_flag=$(yq eval ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .dev" "$REGISTRY_FILE" 2> /dev/null | head -1)
+            local dev_flag=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .dev // false" "$REGISTRY_FILE" 2> /dev/null | head -1)
             if [ "$dev_flag" = "true" ]; then
                 is_dev_plugin=true
-                source_path=$(yq eval ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source" "$REGISTRY_FILE" 2> /dev/null | head -1)
+                source_path=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
                 log_debug "Plugin dev com source: $source_path"
             fi
         fi
@@ -75,9 +75,9 @@ main() {
     # List commands that will be removed
     local cmd_count=0
     if [ "$is_dev_plugin" = true ] && [ -d "$source_path" ]; then
-        cmd_count=$(find "$source_path" -name "config.yaml" -type f 2> /dev/null | wc -l)
+        cmd_count=$(find "$source_path" -name "config.json" -type f 2> /dev/null | wc -l)
     elif [ -d "$PLUGINS_DIR/$PLUGIN_NAME" ]; then
-        cmd_count=$(find "$PLUGINS_DIR/$PLUGIN_NAME" -name "config.yaml" -type f | wc -l)
+        cmd_count=$(find "$PLUGINS_DIR/$PLUGIN_NAME" -name "config.json" -type f | wc -l)
     fi
     log_output "Comandos que serão removidos: ${GRAY}$cmd_count${NC}"
     log_output ""

@@ -10,68 +10,67 @@ O CLI agora suporta uma arquitetura descentralizada com suporte a plugins extern
 cli/
 ├── core/                    # Core do CLI
 │   ├── susa                # Entrypoint principal
-│   ├── cli.yaml            # Config global (nome, versão, categorias)
+│   ├── cli.json            # Config global (nome, versão, categorias)
 │   └── lib/                # Bibliotecas
 │
 ├── commands/                # Comandos built-in
 │   ├── install/
 │   │   ├── asdf/
-│   │   │   ├── config.yaml  # Config do comando
+│   │   │   ├── config.json  # Config do comando
 │   │   │   └── main.sh      # Script
 │   │   └── docker/
-│   │       ├── config.yaml
+│   │       ├── config.json
 │   │       └── main.sh
 │   └── daily/
 │       └── backup/
-│           ├── config.yaml
+│           ├── config.json
 │           └── main.sh
 └── plugins/                 # Plugins externos
-    ├── registry.yaml        # Registro de plugins
+    ├── registry.json        # Registro de plugins
     └── backup-tools/        # Exemplo de plugin
         └── daily/
             └── backup-s3/
-                ├── config.yaml
+                ├── config.json
                 └── main.sh
 ```
 
-## 📝 Formato do config.yaml
+## 📝 Formato do config.json
 
-Cada comando deve ter um arquivo `config.yaml` no seu diretório:
+Cada comando deve ter um arquivo `config.json` no seu diretório:
 
-```yaml
-name: "Backup S3"           # Nome para exibição
-description: "Descrição"    # Descrição curta
-entrypoint: "main.sh"       # Entrypoint principal
-sudo: false                 # Requer sudo?
-os: ["linux", "mac"]        # Sistemas compatíveis
-group: "Backups"            # (Opcional) Grupo para organização
-envs:                       # (Opcional) Variáveis de ambiente
-  BACKUP_BUCKET: "my-bucket-name"
-  BACKUP_TIMEOUT: "300"
-  BACKUP_DIR: "$HOME/.backups"
+```json
+{
+  "name": "Backup S3",
+  "description": "Descrição",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux", "mac"],
+  "group": "Backups",
+  "envs": {
+    "BACKUP_BUCKET": "my-bucket-name",
+    "BACKUP_TIMEOUT": "300",
+    "BACKUP_DIR": "$HOME/.backups"
+  }
+}
 ```
 
 ### Variáveis de Ambiente (envs)
 
 Plugins suportam **variáveis de ambiente isoladas** da mesma forma que comandos built-in.
 
-**Definição no config.yaml:**
+**Definição no config.json:**
 
-```yaml
-envs:
-  # URLs e endpoints
-  DEPLOY_API_URL: "https://api.example.com"
-
-  # Timeouts (sempre como string)
-  DEPLOY_TIMEOUT: "60"
-  DEPLOY_RETRY: "3"
-
-  # Paths com expansão de variáveis
-  DEPLOY_CONFIG_DIR: "$HOME/.config/deploy"
-  DEPLOY_LOG_FILE: "$PWD/logs/deploy.log"
-
-  # Tokens e credenciais
-  DEPLOY_API_TOKEN: "secret-token"
+```json
+{
+  "envs": {
+    "DEPLOY_API_URL": "https://api.example.com",
+    "DEPLOY_TIMEOUT": "60",
+    "DEPLOY_RETRY": "3",
+    "DEPLOY_CONFIG_DIR": "$HOME/.config/deploy",
+    "DEPLOY_LOG_FILE": "$PWD/logs/deploy.log",
+    "DEPLOY_API_TOKEN": "secret-token"
+  }
+}
 ```
 
 **Uso no main.sh:**
@@ -107,17 +106,20 @@ Crie um diretório dentro de `plugins/`:
 mkdir -p plugins/meu-plugin/categoria/comando
 ```
 
-### 2. Crie o config.yaml
+### 2. Crie o config.json
 
-```yaml
-name: "Meu Comando"
-description: "Descrição do comando"
-entrypoint: "main.sh"
-sudo: false
-os: ["linux"]
-envs:
-  MY_API_URL: "https://api.example.com"
-  MY_TIMEOUT: "30"
+```json
+{
+  "name": "Meu Comando",
+  "description": "Descrição do comando",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": ["linux"],
+  "envs": {
+    "MY_API_URL": "https://api.example.com",
+    "MY_TIMEOUT": "30"
+  }
+}
 ```
 
 ### 3. Crie o Script
@@ -177,7 +179,7 @@ Durante a instalação:
 
 - Clona o repositório
 - Detecta versão (de version.txt)
-- Registra no registry.yaml
+- Registra no registry.json
 
 ### Remover Plugin
 
@@ -188,7 +190,7 @@ susa self plugin remove plugin-name
 Remove completamente:
 
 - Diretório do plugin
-- Entrada no registry.yaml
+- Entrada no registry.json
 
 ### Atualizar Plugin
 
@@ -220,7 +222,7 @@ my-cli-plugin/
 ├── README.md
 └── daily/
     └── meu-comando/
-        ├── config.yaml
+        ├── config.json
         └── main.sh
 ```
 
@@ -240,21 +242,25 @@ O sistema descobre comandos automaticamente:
 3. Filtra por compatibilidade de SO
 4. Aplica permissões (sudo)
 
-## 📋 Registry (plugins/registry.yaml)
+## 📋 Registry (plugins/registry.json)
 
 O registry mantém controle de todos os plugins:
 
-```yaml
-version: "1.0.0"
-
-plugins:
-  - name: "backup-tools"
-    source: "https://github.com/user/backup-tools.git"
-    version: "1.2.0"
-    installed_at: "2026-01-11T22:30:00Z"
-    commands: 4
-    categories: backup, restore
-    dev: false
+```json
+{
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "name": "backup-tools",
+      "source": "https://github.com/user/backup-tools.git",
+      "version": "1.2.0",
+      "installed_at": "2026-01-11T22:30:00Z",
+      "commands": 4,
+      "categories": "backup, restore",
+      "dev": false
+    }
+  ]
+}
 ```
 
 **Campos:**
@@ -279,14 +285,20 @@ plugins:
 
 O arquivo `susa.lock` contém cache de todos os comandos, incluindo campo `source` para resolução de paths:
 
-```yaml
-commands:
-  - category: "deploy"
-    name: "staging"
-    description: "Deploy para staging"
-    plugin:
-      name: "backup-tools"
-      source: "/home/user/.config/susa/plugins/backup-tools"
+```json
+{
+  "commands": [
+    {
+      "category": "deploy",
+      "name": "staging",
+      "description": "Deploy para staging",
+      "plugin": {
+        "name": "backup-tools",
+        "source": "/home/user/.config/susa/plugins/backup-tools"
+      }
+    }
+  ]
+}
 ```
 
 **Campo `source` no plugin:**
@@ -298,5 +310,5 @@ commands:
 ## ⚡ Performance
 
 - **Lazy Loading**: Configs são lidas apenas quando necessário
-- **Filesystem-based**: Não precisa parsear YAML central
+- **Filesystem-based**: Não precisa parsear JSON central
 - **Cache**: Possível implementar cache em `/tmp` futuramente

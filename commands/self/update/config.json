@@ -1,0 +1,17 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Susa CLI para a versão mais recente",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ],
+  "envs": {
+    "CLI_REPO_URL": "https://github.com/duducp/susa.git",
+    "CLI_REPO_BRANCH": "main",
+    "CLI_GITHUB_API_URL": "https://api.github.com/repos/duducp/susa/releases/latest",
+    "CLI_GITHUB_RAW_URL": "https://raw.githubusercontent.com/duducp/susa",
+    "CLI_API_MAX_TIME": "10",
+    "CLI_API_CONNECT_TIMEOUT": "5"
+  }
+}

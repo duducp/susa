@@ -19,7 +19,7 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 - 🌍 **Variáveis de Ambiente** - Configurações isoladas por comando com expansão automática
 - 🖥️ **Multi-plataforma** - Suporte para Linux (Debian, Fedora) e macOS
 - 🎨 **Interface Rica** - Logs coloridos, agrupamento visual, help customizado
-- ⚙️ **Parser YAML Robusto** - yq v4+ com instalação automática
+- ⚙️ **Parser JSON Robusto** - jq com instalação automática
 - 🔐 **Gestão de Permissões** - Indicadores e verificação de sudo
 - 🌐 **Instalação Remota** - Instale com um único comando curl
 
@@ -60,9 +60,10 @@ Para exemplos detalhados e tutoriais práticos, veja o [Guia de Início Rápido]
 cli/
 ├── core/                 # Core do CLI
 │   ├── susa             # Entrypoint principal
-│   ├── cli.yaml         # Configuração global
+│   ├── cli.json         # Configuração global
 │   └── lib/             # Bibliotecas
-│       ├── yaml.sh      # Parser YAML (com yq)
+│       ├── config.sh    # Parser JSON (com jq)
+│       ├── git.sh       # Operações Git
 │       ├── plugin.sh    # Sistema de plugins
 │       ├── registry.sh  # Registro de plugins
 │       ├── dependencies.sh  # Gerenciamento de dependências
@@ -78,7 +79,7 @@ cli/
 │       └── version/    # Versão do CLI
 │
 ├── plugins/            # Plugins externos
-│   └── registry.yaml  # Registro de plugins
+│   └── registry.json  # Registro de plugins
 │
 ├── config/            # Configurações de usuário
 │   └── settings.conf
@@ -104,7 +105,7 @@ Comandos são descobertos automaticamente da estrutura de diretórios:
 
 ```bash
 mkdir -p commands/setup/docker
-# Criar config.yaml e main.sh
+# Criar config.json e main.sh
 ```
 
 Veja o [Guia de Adição de Comandos](guides/adding-commands.md) para instruções completas.
