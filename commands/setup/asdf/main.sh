@@ -8,35 +8,35 @@ source "$LIB_DIR/internal/installations.sh"
 # Help function
 show_help() {
     show_description
-    echo ""
+    log_output ""
     show_usage
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  ASDF é um gerenciador de versões universal que suporta múltiplas"
     log_output "  linguagens de programação através de plugins (Node.js, Python, Ruby,"
-    echo "  Elixir, Java, e muitos outros)."
-    echo ""
+    log_output "  Elixir, Java, e muitos outros)."
+    log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o ASDF do sistema"
     log_output "  --update          Atualiza o ASDF para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup asdf              # Instala o ASDF"
     log_output "  susa setup asdf --update     # Atualiza o ASDF"
     log_output "  susa setup asdf --uninstall  # Desinstala o ASDF"
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
     log_output "  Após a instalação, reinicie o terminal ou execute:"
-    echo "    source ~/.bashrc   (para Bash)"
-    echo "    source ~/.zshrc    (para Zsh)"
-    echo ""
+    log_output "    source ~/.bashrc   (para Bash)"
+    log_output "    source ~/.zshrc    (para Zsh)"
+    log_output ""
     log_output "${LIGHT_GREEN}Próximos passos:${NC}"
     log_output "  asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git"
-    echo "  asdf install nodejs latest"
-    echo "  asdf global nodejs latest"
+    log_output "  asdf install nodejs latest"
+    log_output "  asdf global nodejs latest"
 }
 
 get_latest_asdf_version() {
@@ -138,7 +138,7 @@ check_existing_installation() {
     local latest_version=$(get_latest_asdf_version)
     if [ $? -eq 0 ] && [ -n "$latest_version" ]; then
         if [ "$current_version" != "$latest_version" ]; then
-            echo ""
+            log_output ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
             log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup asdf --update${NC}"
         fi
@@ -310,8 +310,8 @@ install_asdf() {
         local version=$(get_asdf_version)
         log_success "ASDF instalado com sucesso!"
         mark_installed "asdf" "$version"
-        echo ""
-        echo "Próximos passos:"
+        log_output ""
+        log_output "Próximos passos:"
         log_output "  1. Reinicie o terminal ou execute: ${LIGHT_CYAN}source $shell_config${NC}"
         log_output "  2. Liste plugins disponíveis: ${LIGHT_CYAN}asdf plugin list all${NC}"
         log_output "  3. Use ${LIGHT_CYAN}susa setup asdf --help${NC} para mais informações"
@@ -418,7 +418,7 @@ update_asdf() {
         local new_version=$(get_asdf_version)
         log_success "ASDF atualizado com sucesso para versão $new_version!"
         update_version "asdf" "$new_version"
-        echo ""
+        log_output ""
         log_output "Plugins e versões de ferramentas foram preservados."
     else
         log_error "Falha na atualização do ASDF"
@@ -460,7 +460,7 @@ uninstall_asdf() {
 
     log_success "ASDF desinstalado com sucesso!"
     mark_uninstalled "asdf"
-    echo ""
+    log_output ""
     log_info "Reinicie o terminal ou execute: source $shell_config"
 }
 

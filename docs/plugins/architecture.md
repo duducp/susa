@@ -28,6 +28,7 @@ cli/
 └── plugins/                 # Plugins externos
     ├── registry.json        # Registro de plugins
     └── backup-tools/        # Exemplo de plugin
+        ├── plugin.json      # ⚠️ Config do plugin (OBRIGATÓRIO)
         └── daily/
             └── backup-s3/
                 ├── config.json
@@ -96,17 +97,99 @@ curl --max-time "$timeout" "$api_url"
 
 **Documentação completa:** [Guia de Variáveis de Ambiente](../guides/envs.md)
 
+## � Formato do plugin.json
+
+⚠️ **OBRIGATÓRIO**: Todo plugin deve ter um arquivo `plugin.json` na raiz do diretório do plugin.
+
+```json
+{
+  "name": "backup-tools",
+  "version": "1.2.0",
+  "description": "Ferramentas de backup e restore",
+  "directory": "src"
+}
+```
+
+### Campos
+
+**Obrigatórios:**
+
+- `name`: Nome do plugin (usado para identificação)
+- `version`: Versão no formato semver (ex: 1.0.0, 2.1.3)
+
+**Opcionais:**
+
+- `description`: Descrição do que o plugin faz
+- `directory`: Subdiretório onde os comandos estão localizados (útil para organização)
+
+### Validação
+
+O sistema valida o `plugin.json` durante a instalação:
+
+- ✅ Arquivo deve existir na raiz do plugin
+- ✅ JSON deve ser válido (sem erros de sintaxe)
+- ✅ Campo `name` é obrigatório e não pode estar vazio
+- ✅ Campo `version` é obrigatório e não pode estar vazio
+- ⚠️ Plugins sem `plugin.json` válido serão **rejeitados**
+
+### Campo directory
+
+O campo `directory` permite organizar seus comandos em um subdiretório específico do plugin.
+
+**Para que serve:**
+Separar os comandos do plugin de outros arquivos (README, testes, docs), mantendo uma estrutura organizada.
+
+**Onde usar:**
+Configure este campo no `plugin.json` quando seus comandos não estão na raiz do repositório:
+
+```json
+{
+  "name": "meu-plugin",
+  "version": "1.0.0",
+  "directory": "src"
+}
+```
+
+**Como funciona:**
+Quando o Susa executa um comando do plugin, ele busca automaticamente no diretório especificado. Por exemplo, com `"directory": "src"`, o comando `demo hello` será buscado em:
+
+```text
+meu-plugin/
+├── plugin.json          # directory: "src"
+├── README.md
+└── src/                 # Comandos aqui dentro
+    └── demo/
+        └── hello/
+            ├── config.json
+            └── main.sh
+```
+
+O sistema automaticamente resolve o caminho correto usando as informações do `susa.lock`.
+
 ## 🔌 Como Criar um Plugin
 
-### 1. Estrutura Básica
+### 1. Crie o plugin.json (OBRIGATÓRIO)
+
+Na raiz do seu plugin, crie o arquivo `plugin.json`:
+
+```json
+{
+  "name": "meu-plugin",
+  "version": "1.0.0",
+  "description": "Descrição do meu plugin",
+  "directory": "src"
+}
+```
+
+### 2. Estrutura Básica
 
 Crie um diretório dentro de `plugins/`:
 
 ```bash
-mkdir -p plugins/meu-plugin/categoria/comando
+mkdir -p plugins/meu-plugin/src/categoria/comando
 ```
 
-### 2. Crie o config.json
+### 3. Crie o config.json do Comando
 
 ```json
 {
@@ -122,7 +205,7 @@ mkdir -p plugins/meu-plugin/categoria/comando
 }
 ```
 
-### 3. Crie o Script
+### 4. Crie o Script
 
 ```bash
 #!/bin/bash
@@ -135,10 +218,10 @@ echo "Conectando em $api_url (timeout: ${timeout}s)"
 curl --max-time "$timeout" "$api_url"
 ```
 
-### 4. Torne Executável
+### 5. Torne Executável
 
 ```bash
-chmod +x plugins/meu-plugin/categoria/comando/main.sh
+chmod +x plugins/meu-plugin/src/categoria/comando/main.sh
 ```
 
 ## ✅ Vantagens
@@ -147,7 +230,9 @@ chmod +x plugins/meu-plugin/categoria/comando/main.sh
 2. **Plugins Externos**: Fácil adicionar comandos sem modificar o core
 3. **Isolamento**: Plugins não quebram outros comandos
 4. **Distribuição**: Comandos podem ser compartilhados como repositórios Git
-5. **Versionamento**: Cada plugin pode ter sua versão
+5. **Versionamento**: Cada plugin tem sua própria versão via plugin.json
+6. **Validação**: Plugin.json obrigatório garante qualidade e compatibilidade
+7. **Metadados**: Descrição e informações organizadas em um único arquivo
 
 ## 🚀 Comandos de Gerenciamento
 
@@ -173,13 +258,20 @@ susa self plugin add https://github.com/user/cli-plugin-name
 
 # Atalho GitHub
 susa self plugin add user/cli-plugin-name
+
+# Modo desenvolvimento (local)
+susa self plugin add /caminho/para/meu-plugin
+susa self plugin add .
 ```
 
 Durante a instalação:
 
-- Clona o repositório
-- Detecta versão (de version.txt)
+- Clona o repositório (ou referencia caminho local)
+- **Valida plugin.json** (obrigatório)
+- Lê metadados do plugin (nome, versão, descrição)
+- Conta comandos e categorias
 - Registra no registry.json
+- ⚠️ **Rejeita plugins sem plugin.json válido**
 
 ### Remover Plugin
 
@@ -219,6 +311,7 @@ Plugins podem ser distribuídos como repositórios Git:
 ```bash
 # Estrutura do repositório
 my-cli-plugin/
+├── plugin.json
 ├── README.md
 └── daily/
     └── meu-comando/
@@ -226,12 +319,27 @@ my-cli-plugin/
         └── main.sh
 ```
 
-Usuários podem clonar e copiar para `plugins/`:
+**plugin.json obrigatório:**
+
+```json
+{
+  "name": "my-cli-plugin",
+  "version": "1.0.0",
+  "description": "Meu plugin CLI"
+}
+```
+
+Usuários podem instalar diretamente:
 
 ```bash
-git clone https://github.com/user/my-cli-plugin
-cp -r my-cli-plugin plugins/
+# Via GitHub
+susa self plugin add user/my-cli-plugin
+
+# Via URL completa
+susa self plugin add https://github.com/user/my-cli-plugin.git
 ```
+
+⚠️ **Importante**: Plugins sem `plugin.json` válido serão rejeitados durante a instalação.
 
 ## 🔍 Discovery de Comandos
 
@@ -254,6 +362,7 @@ O registry mantém controle de todos os plugins:
       "name": "backup-tools",
       "source": "https://github.com/user/backup-tools.git",
       "version": "1.2.0",
+      "description": "Ferramentas de backup e restore",
       "installed_at": "2026-01-11T22:30:00Z",
       "commands": 4,
       "categories": "backup, restore",
@@ -265,13 +374,14 @@ O registry mantém controle de todos os plugins:
 
 **Campos:**
 
-- `name`: Nome do plugin
-- `source`: URL do repositório Git
-- `version`: Versão instalada
+- `name`: Nome do plugin (do plugin.json)
+- `source`: URL do repositório Git ou caminho local (modo dev)
+- `version`: Versão instalada (do plugin.json)
+- `description`: Descrição do plugin (do plugin.json, opcional)
 - `installed_at`: Data/hora da instalação
 - `commands`: Quantidade de comandos disponíveis (calculado automaticamente)
 - `categories`: Lista de categorias de comandos (calculado automaticamente)
-- `dev`: Flag indicando se é plugin em desenvolvimento
+- `dev`: Flag indicando se é plugin em desenvolvimento local
 
 **Funcionalidades:**
 

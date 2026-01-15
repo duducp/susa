@@ -50,8 +50,12 @@ susa self plugin update --verbose
 3. Valida acesso ao repositório
 4. Cria backup da versão atual
 5. Clona a nova versão do repositório
-6. Substitui os arquivos pelo backup
-7. Atualiza o registro no sistema
+6. Valida estrutura do plugin (inclui suporte ao campo `directory`)
+7. Substitui os arquivos antigos pela nova versão
+8. Atualiza o registro no sistema com metadados atualizados
+9. Regenera o arquivo `susa.lock` para refletir mudanças
+
+**Nota:** O sistema detecta automaticamente se o plugin usa o campo `directory` no `plugin.json` e busca os comandos no local correto.
 
 ## Processo de atualização
 

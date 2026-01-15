@@ -9,6 +9,7 @@ source "$LIB_DIR/internal/config.sh"
 source "$LIB_DIR/internal/json.sh"
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/internal/plugin.sh"
+source "$LIB_DIR/internal/lock.sh"
 
 # ============================================================
 # Help Function
@@ -145,8 +146,19 @@ scan_all_structure() {
             [ "$plugin_name" = "README.md" ] && continue
             [ "$plugin_name" = ".gitkeep" ] && continue
 
+            # Get the configured directory for plugin commands
+            local commands_subdir=$(get_plugin_directory "$plugin_dir")
+            local plugin_scan_dir="$plugin_dir"
+
+            if [ -n "$commands_subdir" ]; then
+                plugin_scan_dir="$plugin_dir/$commands_subdir"
+            fi
+
+            # Skip if the scan directory doesn't exist
+            [ ! -d "$plugin_scan_dir" ] && continue
+
             # Scan each top-level category in the plugin
-            for cat_dir in "$plugin_dir"/*; do
+            for cat_dir in "$plugin_scan_dir"/*; do
                 [ ! -d "$cat_dir" ] && continue
                 local cat_name=$(basename "$cat_dir")
 
@@ -158,8 +170,8 @@ scan_all_structure() {
                     echo "CATEGORY|$cat_name||$plugin_name"
                 fi
 
-                # Scan category structure
-                scan_category_dir "$plugin_dir" "$cat_name" "$plugin_name"
+                # Scan category structure (use relative path from plugin_scan_dir)
+                scan_category_dir "$plugin_scan_dir" "$cat_name" "$plugin_name"
             done
         done
     fi
@@ -174,8 +186,19 @@ scan_all_structure() {
             [ -z "$plugin_name" ] && continue
             [ ! -d "$plugin_source" ] && continue
 
+            # Get the configured directory for plugin commands
+            local commands_subdir=$(get_plugin_directory "$plugin_source")
+            local plugin_scan_dir="$plugin_source"
+
+            if [ -n "$commands_subdir" ]; then
+                plugin_scan_dir="$plugin_source/$commands_subdir"
+            fi
+
+            # Skip if the scan directory doesn't exist
+            [ ! -d "$plugin_scan_dir" ] && continue
+
             # Scan each top-level category in the dev plugin
-            for cat_dir in "$plugin_source"/*; do
+            for cat_dir in "$plugin_scan_dir"/*; do
                 [ ! -d "$cat_dir" ] && continue
                 local cat_name=$(basename "$cat_dir")
 
@@ -191,8 +214,8 @@ scan_all_structure() {
                     echo "CATEGORY|$cat_name||$plugin_name"
                 fi
 
-                # Scan category structure - mark as dev
-                scan_category_dir "$plugin_source" "$cat_name" "$plugin_name###DEV"
+                # Scan category structure - mark as dev (use relative path from plugin_scan_dir)
+                scan_category_dir "$plugin_scan_dir" "$cat_name" "$plugin_name###DEV"
             done
         done <<< "$dev_plugins"
     fi
@@ -224,7 +247,7 @@ generate_lock_file() {
     local version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
     [ -z "$version" ] && version="1.0.0"
 
-    log_info "Gerando arquivo susa.lock..."
+    log_info "Gerando o lock..."
 
     # Scan and process structure
     local scan_output=$(scan_all_structure)
@@ -270,64 +293,8 @@ generate_lock_file() {
         fi
     done <<< "$scan_output"
 
-    # Get unique plugins from scan output and add their metadata
-    local plugins_found=$(echo "$scan_output" | grep "^COMMAND" | awk -F'|' '{print $4}' | sed 's/###DEV$//' | sort -u)
-
-    while IFS= read -r plugin_source; do
-        [ -z "$plugin_source" ] || [ "$plugin_source" = "commands" ] && continue
-
-        local is_dev=false
-        local plugin_dir=""
-
-        # Check if it's a dev plugin
-        if echo "$scan_output" | grep -q "${plugin_source}###DEV"; then
-            is_dev=true
-            plugin_dir=$(jq -r ".plugins[] | select(.name == \"$plugin_source\" and .dev == true) | .source // empty" "$CLI_DIR/plugins/registry.json" 2> /dev/null | head -1)
-        else
-            plugin_dir="$CLI_DIR/plugins/$plugin_source"
-        fi
-
-        if [ -d "$plugin_dir" ]; then
-            # Get plugin metadata
-            local plugin_version=$(detect_plugin_version "$plugin_dir")
-            local plugin_cmd_count=$(count_plugin_commands "$plugin_dir")
-            local plugin_categories=$(get_plugin_categories "$plugin_dir")
-
-            # Ensure cmd_count is a valid number
-            if [ -z "$plugin_cmd_count" ] || ! [[ "$plugin_cmd_count" =~ ^[0-9]+$ ]]; then
-                plugin_cmd_count=0
-            fi
-
-            # Build plugin object inline to avoid parsing issues
-            if [ -n "$plugin_categories" ] && [ "$is_dev" = true ]; then
-                json_data=$(echo "$json_data" | jq \
-                    --arg name "$plugin_source" \
-                    --arg version "$plugin_version" \
-                    --argjson commands "$plugin_cmd_count" \
-                    --arg cats "$plugin_categories" \
-                    '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, dev: true}]')
-            elif [ -n "$plugin_categories" ]; then
-                json_data=$(echo "$json_data" | jq \
-                    --arg name "$plugin_source" \
-                    --arg version "$plugin_version" \
-                    --argjson commands "$plugin_cmd_count" \
-                    --arg cats "$plugin_categories" \
-                    '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats}]')
-            elif [ "$is_dev" = true ]; then
-                json_data=$(echo "$json_data" | jq \
-                    --arg name "$plugin_source" \
-                    --arg version "$plugin_version" \
-                    --argjson commands "$plugin_cmd_count" \
-                    '.plugins += [{name: $name, version: $version, commands: $commands, dev: true}]')
-            else
-                json_data=$(echo "$json_data" | jq \
-                    --arg name "$plugin_source" \
-                    --arg version "$plugin_version" \
-                    --argjson commands "$plugin_cmd_count" \
-                    '.plugins += [{name: $name, version: $version, commands: $commands}]')
-            fi
-        fi
-    done <<< "$plugins_found"
+    # Add all plugins from registry to lock
+    json_data=$(add_plugins_to_lock "$json_data")
 
     # Second pass: process commands
     local buffer=""
@@ -452,7 +419,7 @@ generate_lock_file() {
     # Write JSON to lock file with pretty printing
     echo "$json_data" | jq '.' > "$lock_file"
 
-    log_success "Arquivo susa.lock gerado com sucesso!"
+    log_success "Lock gerado com sucesso!"
 
     # Return to original directory
     cd "$original_dir" || true

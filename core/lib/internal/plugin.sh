@@ -10,43 +10,327 @@ IFS=$'\n\t'
 # Source Git functions
 source "$LIB_DIR/internal/git.sh"
 
+# --- Plugin Display Functions ---
+
+# Show plugin details in a standardized format
+# Usage: show_plugin_details <name> [version] [commands] [categories] [description] [directory] [source] [installed_at] [dev_mode]
+show_plugin_details() {
+    local name="${1:-}"
+    local version="${2:-}"
+    local commands="${3:-}"
+    local categories="${4:-}"
+    local description="${5:-}"
+    local directory="${6:-}"
+    local source="${7:-}"
+    local installed_at="${8:-}"
+    local dev_mode="${9:-false}"
+
+    log_output "Detalhes do plugin:"
+
+    if [ -n "$name" ]; then
+        log_output "  ${GRAY}Nome:${NC} $name"
+    fi
+
+    if [ -n "$version" ]; then
+        log_output "  ${GRAY}Versão:${NC} $version"
+    fi
+
+    if [ -n "$commands" ] && [ "$commands" != "0" ]; then
+        log_output "  ${GRAY}Comandos:${NC} $commands"
+    fi
+
+    if [ -n "$categories" ]; then
+        log_output "  ${GRAY}Categorias:${NC} $categories"
+    fi
+
+    if [ -n "$description" ]; then
+        log_output "  ${GRAY}Descrição:${NC} $description"
+    fi
+
+    if [ -n "$directory" ]; then
+        log_output "  ${GRAY}Diretório:${NC} $directory"
+    fi
+
+    if [ -n "$source" ]; then
+        if [ "$dev_mode" = "true" ]; then
+            log_output "  ${GRAY}Local:${NC} $source"
+        else
+            log_output "  ${GRAY}Origem:${NC} $source"
+        fi
+    fi
+
+    if [ -n "$installed_at" ]; then
+        log_output "  ${GRAY}Instalado em:${NC} $installed_at"
+    fi
+}
+
 # --- Plugin Metadata Functions ---
 
+# Validates that a plugin has a valid plugin.json file
+validate_plugin_config() {
+    local plugin_dir="$1"
+    local config_file="$plugin_dir/plugin.json"
+
+    if [ ! -f "$config_file" ]; then
+        return 1
+    fi
+
+    # Validate JSON syntax
+    if ! jq empty "$config_file" 2> /dev/null; then
+        return 1
+    fi
+
+    # Validate required fields
+    local name=$(jq -r '.name // empty' "$config_file" 2> /dev/null)
+    local version=$(jq -r '.version // empty' "$config_file" 2> /dev/null)
+
+    if [ -z "$name" ] || [ "$name" = "null" ] || [ "$name" = "empty" ]; then
+        return 1
+    fi
+
+    if [ -z "$version" ] || [ "$version" = "null" ] || [ "$version" = "empty" ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+# Reads plugin metadata from plugin.json
+# Returns: name|version|description|directory
+# Note: plugin.json is required and must have name and version fields
+read_plugin_config() {
+    local plugin_dir="$1"
+    local config_file="$plugin_dir/plugin.json"
+
+    if [ ! -f "$config_file" ]; then
+        echo "ERROR: plugin.json not found in $plugin_dir" >&2
+        return 1
+    fi
+
+    local name=$(jq -r '.name // empty' "$config_file" 2> /dev/null)
+    local version=$(jq -r '.version // empty' "$config_file" 2> /dev/null)
+    local description=$(jq -r '.description // empty' "$config_file" 2> /dev/null)
+    local directory=$(jq -r '.directory // empty' "$config_file" 2> /dev/null)
+
+    # Validate required fields
+    if [ -z "$name" ] || [ "$name" = "null" ] || [ "$name" = "empty" ]; then
+        echo "ERROR: 'name' field is required in plugin.json" >&2
+        return 1
+    fi
+
+    if [ -z "$version" ] || [ "$version" = "null" ] || [ "$version" = "empty" ]; then
+        echo "ERROR: 'version' field is required in plugin.json" >&2
+        return 1
+    fi
+
+    # Optional fields
+    if [ "$description" = "null" ]; then
+        description=""
+    fi
+    if [ "$directory" = "null" ]; then
+        directory=""
+    fi
+
+    echo "$name|$version|$description|$directory"
+}
+
 # Detects the version of a plugin in the directory
+# Requires plugin.json to exist
 detect_plugin_version() {
     local plugin_dir="$1"
-    local version="0.0.0"
+    local config_file="$plugin_dir/plugin.json"
 
-    if [ -f "$plugin_dir/version.txt" ]; then
-        version=$(cat "$plugin_dir/version.txt" | tr -d '\n')
+    if [ ! -f "$config_file" ]; then
+        echo "ERROR: plugin.json not found in $plugin_dir" >&2
+        return 1
+    fi
+
+    local version=$(jq -r '.version // empty' "$config_file" 2> /dev/null)
+
+    if [ -z "$version" ] || [ "$version" = "null" ] || [ "$version" = "empty" ]; then
+        echo "ERROR: 'version' field is required in plugin.json" >&2
+        return 1
     fi
 
     echo "$version"
 }
 
+# Gets the plugin name from plugin.json
+# Requires plugin.json to exist
+get_plugin_name() {
+    local plugin_dir="$1"
+    local config_file="$plugin_dir/plugin.json"
+
+    if [ ! -f "$config_file" ]; then
+        echo "ERROR: plugin.json not found in $plugin_dir" >&2
+        return 1
+    fi
+
+    local name=$(jq -r '.name // empty' "$config_file" 2> /dev/null)
+
+    if [ -z "$name" ] || [ "$name" = "null" ] || [ "$name" = "empty" ]; then
+        echo "ERROR: 'name' field is required in plugin.json" >&2
+        return 1
+    fi
+
+    echo "$name"
+}
+
+# Gets the plugin description from plugin.json
+# Returns empty string if description is not provided (optional field)
+get_plugin_description() {
+    local plugin_dir="$1"
+    local config_file="$plugin_dir/plugin.json"
+
+    if [ ! -f "$config_file" ]; then
+        echo "ERROR: plugin.json not found in $plugin_dir" >&2
+        return 1
+    fi
+
+    local description=$(jq -r '.description // empty' "$config_file" 2> /dev/null)
+
+    if [ "$description" = "null" ] || [ "$description" = "empty" ]; then
+        description=""
+    fi
+
+    echo "$description"
+}
+
+# Gets the plugin directory from plugin.json (where commands are located)
+# Returns empty string if directory is not specified (optional field)
+get_plugin_directory() {
+    local plugin_dir="$1"
+    local config_file="$plugin_dir/plugin.json"
+
+    if [ ! -f "$config_file" ]; then
+        echo "ERROR: plugin.json not found in $plugin_dir" >&2
+        return 1
+    fi
+
+    local directory=$(jq -r '.directory // empty' "$config_file" 2> /dev/null)
+
+    if [ "$directory" = "null" ] || [ "$directory" = "empty" ]; then
+        directory=""
+    fi
+
+    echo "$directory"
+}
+
 # Counts commands from a plugin
 count_plugin_commands() {
     local plugin_dir="$1"
-    find "$plugin_dir" -type f -name "main.sh" 2> /dev/null | wc -l | xargs
+    local commands_dir="$plugin_dir"
+
+    # Check if plugin has a specific directory configured
+    local configured_dir=$(get_plugin_directory "$plugin_dir")
+    if [ -n "$configured_dir" ]; then
+        commands_dir="$plugin_dir/$configured_dir"
+    fi
+
+    # Count main.sh files if directory exists
+    if [ -d "$commands_dir" ]; then
+        find "$commands_dir" -type f -name "main.sh" 2> /dev/null | wc -l | xargs
+    else
+        echo "0"
+    fi
 }
 
 # Gets plugin categories (first-level directories excluding .git)
 get_plugin_categories() {
     local plugin_dir="$1"
-    find "$plugin_dir" -mindepth 1 -maxdepth 1 -type d ! -name ".git" ! -name ".*" -exec basename {} \; 2> /dev/null | sort | paste -sd "," -
+    local commands_dir="$plugin_dir"
+
+    # Check if plugin has a specific directory configured
+    local configured_dir=$(get_plugin_directory "$plugin_dir")
+    if [ -n "$configured_dir" ]; then
+        commands_dir="$plugin_dir/$configured_dir"
+    fi
+
+    # Get categories if directory exists
+    if [ -d "$commands_dir" ]; then
+        find "$commands_dir" -mindepth 1 -maxdepth 1 -type d ! -name ".git" ! -name ".*" -exec basename {} \; 2> /dev/null | sort | paste -sd "," -
+    else
+        echo ""
+    fi
 }
 
-# Updates the lock file (creates if doesn't exist)
-update_lock_file() {
-    log_info "Atualizando arquivo susa.lock..."
-    log_debug "Executando: $CORE_DIR/susa self lock"
+# Updates plugin metadata in the registry
+# Args: plugin_name, source_path (local path), is_dev, [source_url] (Git URL for non-dev plugins)
+update_plugin_registry() {
+    local plugin_name="$1"
+    local source_path="$2"
+    local is_dev="${3:-false}"
+    local source_url="${4:-}" # Optional: Git URL for non-dev plugins
+    local REGISTRY_FILE="$PLUGINS_DIR/registry.json"
 
-    if "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
-        log_debug "Lock file atualizado com sucesso"
-    else
-        log_warning "Não foi possível atualizar o susa.lock. Execute 'susa self lock' manualmente."
-        log_debug "Você pode precisar executar: susa self lock"
+    log_info "Atualizando o registry..."
+    log_debug "Plugin: $plugin_name"
+    log_debug "Source path: $source_path"
+    log_debug "Dev mode: $is_dev"
+    log_debug "Source URL: $source_url"
+
+    # Validate plugin.json
+    if ! validate_plugin_config "$source_path"; then
+        log_error "Plugin inválido: plugin.json não encontrado ou inválido"
+        return 1
     fi
+
+    # Read the actual plugin name from plugin.json
+    local actual_plugin_name=$(get_plugin_name "$source_path")
+    if [ $? -ne 0 ]; then
+        log_error "Não foi possível ler o nome do plugin.json"
+        return 1
+    fi
+
+    # Remove old entry if name was different
+    if [ "$actual_plugin_name" != "$plugin_name" ]; then
+        registry_remove_plugin "$REGISTRY_FILE" "$plugin_name"
+    fi
+
+    # Use the name from plugin.json
+    plugin_name="$actual_plugin_name"
+
+    # Read updated metadata
+    local plugin_version=$(detect_plugin_version "$source_path")
+    local description=$(get_plugin_description "$source_path")
+    local cmd_count=$(count_plugin_commands "$source_path")
+    local categories=$(get_plugin_categories "$source_path")
+    local directory=$(get_plugin_directory "$source_path")
+
+    log_debug "Versão: $plugin_version"
+    log_debug "Descrição: $description"
+    log_debug "Comandos: $cmd_count"
+    log_debug "Categorias: $categories"
+    log_debug "Diretório: $directory"
+
+    # Determine the source value for registry
+    local registry_source=""
+    if [ "$is_dev" = "true" ]; then
+        # For dev plugins, source is the local path
+        registry_source="$source_path"
+    elif [ -n "$source_url" ]; then
+        # For Git plugins, use provided URL
+        registry_source="$source_url"
+    else
+        # Fallback: try to get from existing registry entry
+        registry_source=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .source // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
+        if [ -z "$registry_source" ]; then
+            log_error "Source URL não fornecido e não encontrado no registry"
+            return 1
+        fi
+    fi
+
+    log_debug "Registry source: $registry_source"
+
+    # Update registry - remove old entry and add with updated metadata
+    registry_remove_plugin "$REGISTRY_FILE" "$plugin_name"
+    registry_add_plugin "$REGISTRY_FILE" "$plugin_name" "$registry_source" "$plugin_version" "$is_dev" "$cmd_count" "$categories" "$description" "$directory"
+    log_debug "Registry atualizado com sucesso"
+
+    # Export the updated plugin name for caller to use
+    UPDATED_PLUGIN_NAME="$plugin_name"
+
+    return 0
 }
 
 # Converts user/repo to full Git URL

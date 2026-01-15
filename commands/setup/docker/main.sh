@@ -8,31 +8,31 @@ source "$LIB_DIR/internal/installations.sh"
 # Help function
 show_help() {
     show_description
-    echo ""
+    log_output ""
     show_usage
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Docker é a plataforma líder em containers para desenvolvimento,"
     log_output "  empacotamento e execução de aplicações. Esta instalação inclui"
     log_output "  apenas o Docker CLI e Engine, sem o Docker Desktop."
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o Docker do sistema"
     log_output "  --update          Atualiza o Docker para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup docker              # Instala o Docker"
     log_output "  susa setup docker --update     # Atualiza o Docker"
     log_output "  susa setup docker --uninstall  # Desinstala o Docker"
-    echo ""
+    log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
     log_output "  Após a instalação, faça logout e login novamente para que"
     log_output "  as permissões do grupo docker sejam aplicadas, ou execute:"
-    echo "    newgrp docker"
-    echo ""
+    log_output "    newgrp docker"
+    log_output ""
     log_output "${LIGHT_GREEN}Próximos passos:${NC}"
     log_output "  docker --version               # Verifica a instalação"
     log_output "  docker run hello-world         # Teste com container simples"
@@ -99,7 +99,7 @@ check_existing_installation() {
     local latest_version=$(get_latest_docker_version)
     if [ $? -eq 0 ] && [ -n "$latest_version" ]; then
         if [ "$current_version" != "$latest_version" ]; then
-            echo ""
+            log_output ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
             log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup docker --update${NC}"
         fi
@@ -373,8 +373,8 @@ install_docker() {
             mark_installed "docker" "$installed_version"
 
             log_success "Docker $installed_version instalado com sucesso!"
-            echo ""
-            echo "Próximos passos:"
+            log_output ""
+            log_output "Próximos passos:"
 
             if [ "$os_name" = "darwin" ]; then
                 log_output "  1. Instale colima: ${LIGHT_CYAN}brew install colima${NC}"
@@ -516,7 +516,7 @@ uninstall_docker() {
     local current_version=$(get_docker_version)
     log_debug "Versão a ser removida: $current_version"
 
-    echo ""
+    log_output ""
     log_output "${YELLOW}Deseja realmente desinstalar o Docker $current_version? (s/N)${NC}"
     read -r response
 
@@ -597,7 +597,7 @@ uninstall_docker() {
         return 1
     fi
 
-    echo ""
+    log_output ""
     log_output "${YELLOW}Deseja remover também as imagens, containers e volumes do Docker? (s/N)${NC}"
     read -r response
 

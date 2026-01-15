@@ -5,8 +5,8 @@ IFS=$'\n\t'
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
-source "$LIB_DIR/internal/args.sh"
 source "$LIB_DIR/internal/lock.sh"
+source "$LIB_DIR/internal/args.sh"
 
 # Help function
 show_help() {
@@ -59,20 +59,50 @@ main() {
             log_info "Plugin ${BOLD}$PLUGIN_NAME${NC} está em modo desenvolvimento."
 
             local source_path=$(jq -r ".plugins[] | select(.name == \"$PLUGIN_NAME\") | .source // empty" "$REGISTRY_FILE" 2> /dev/null | head -1)
-            if [ -n "$source_path" ]; then
-                log_output "  As alterações no código já refletem imediatamente!"
-                log_output "  Local do plugin: ${GRAY}$source_path${NC}"
+            if [ -z "$source_path" ] || [ ! -d "$source_path" ]; then
+                log_error "Caminho do plugin dev não encontrado: $source_path"
+                exit 1
             fi
+
+            # Validate plugin.json still exists and is valid
+            if ! validate_plugin_config "$source_path"; then
+                log_error "Plugin inválido: plugin.json não encontrado ou inválido"
+                log_output ""
+                log_output "${LIGHT_YELLOW}O plugin deve ter um plugin.json válido.${NC}"
+                exit 1
+            fi
+
+            # Update plugin registry with latest metadata
+            if ! update_plugin_registry "$PLUGIN_NAME" "$source_path" "true"; then
+                log_error "Falha ao atualizar o registry"
+                exit 1
+            fi
+
+            # Use the updated name from global variable (may have changed in plugin.json)
+            PLUGIN_NAME="$UPDATED_PLUGIN_NAME"
 
             # Update lock file to reflect any changes
-            log_info "Atualizando lock para identificar novas categorias..."
-            if "$CLI_DIR/core/susa" self lock > /dev/null 2>&1; then
-                log_success "Arquivo lock atualizado com sucesso!"
-            else
-                log_warning "Não foi possível atualizar o lock."
+            if ! update_lock_file; then
+                log_error "Falha ao atualizar o lock"
+                exit 1
             fi
 
-            exit 1
+            # Read metadata for display
+            local plugin_version=$(detect_plugin_version "$source_path")
+            local cmd_count=$(count_plugin_commands "$source_path")
+            local categories=$(get_plugin_categories "$source_path")
+            local description=$(get_plugin_description "$source_path")
+            local directory=$(get_plugin_directory "$source_path")
+
+            # Show success message
+            log_success "Plugin ${BOLD}$PLUGIN_NAME${NC} atualizado em modo desenvolvimento!"
+            log_output ""
+            show_plugin_details "$PLUGIN_NAME" "$plugin_version" "$cmd_count" "$categories" "$description" "$directory" "$source_path" "" "true"
+            log_output ""
+
+            log_info "💡 As alterações no código já refletem imediatamente!"
+
+            exit 0
         fi
     fi
 
@@ -130,7 +160,7 @@ main() {
     # Confirm update
     if [ "$auto_confirm" = false ]; then
         read -p "Deseja continuar? (y/N): " -n 1 -r
-        echo ""
+        log_output ""
 
         if [[ ! $REPLY =~ ^[YySs]$ ]]; then
             log_info "Operação cancelada"
@@ -143,31 +173,94 @@ main() {
 
     mv "$PLUGINS_DIR/$PLUGIN_NAME" "$BACKUP_DIR"
 
-    # Clones the latest version
-    log_debug "Clonando para: $PLUGINS_DIR/$PLUGIN_NAME"
-    if clone_plugin "$SOURCE_URL" "$PLUGINS_DIR/$PLUGIN_NAME"; then
+    # Extract temp name from URL for cloning
+    local temp_plugin_name=$(extract_plugin_name "$SOURCE_URL")
+    log_debug "Nome temporário para clone: $temp_plugin_name"
 
-        # Detect new version
+    # Clones the latest version
+    log_debug "Clonando para: $PLUGINS_DIR/$temp_plugin_name"
+    if clone_plugin "$SOURCE_URL" "$PLUGINS_DIR/$temp_plugin_name"; then
+
+        # Validate plugin.json
+        if ! validate_plugin_config "$PLUGINS_DIR/$temp_plugin_name"; then
+            log_error "Plugin atualizado inválido: plugin.json não encontrado ou inválido"
+            log_output ""
+            log_output "${LIGHT_YELLOW}O plugin atualizado não contém um plugin.json válido.${NC}"
+            log_info "Restaurando versão anterior..."
+            rm -rf "${PLUGINS_DIR:?}/${temp_plugin_name:?}"
+            mv "$BACKUP_DIR" "$PLUGINS_DIR/$PLUGIN_NAME"
+            exit 1
+        fi
+        log_debug "plugin.json validado com sucesso"
+
+        # Get actual plugin name from plugin.json
+        local actual_plugin_name=$(get_plugin_name "$PLUGINS_DIR/$temp_plugin_name")
+        if [ $? -ne 0 ]; then
+            log_error "Não foi possível ler o nome do plugin.json"
+            log_info "Restaurando versão anterior..."
+            rm -rf "${PLUGINS_DIR:?}/${temp_plugin_name:?}"
+            mv "$BACKUP_DIR" "$PLUGINS_DIR/$PLUGIN_NAME"
+            exit 1
+        fi
+        log_debug "Nome do plugin (do plugin.json): $actual_plugin_name"
+
+        # Store old name in case it changed
+        local old_plugin_name="$PLUGIN_NAME"
+
+        # Check if name changed
+        if [ "$actual_plugin_name" != "$PLUGIN_NAME" ]; then
+            log_warning "Nome do plugin mudou: $PLUGIN_NAME → $actual_plugin_name"
+            log_output ""
+            log_output "${LIGHT_YELLOW}O plugin foi renomeado no plugin.json.${NC}"
+            log_output "O plugin será registrado com o novo nome."
+            log_output ""
+
+            # Remove old entry from registry
+            registry_remove_plugin "$REGISTRY_FILE" "$PLUGIN_NAME"
+
+            # Update PLUGIN_NAME to new name
+            PLUGIN_NAME="$actual_plugin_name"
+        fi
+
+        # Rename if temp name differs from actual name
+        if [ "$temp_plugin_name" != "$PLUGIN_NAME" ]; then
+            log_debug "Renomeando de $temp_plugin_name para $PLUGIN_NAME"
+            mv "$PLUGINS_DIR/$temp_plugin_name" "$PLUGINS_DIR/$PLUGIN_NAME"
+        fi
+
+        # Update registry with new metadata (handles version, description, directory, etc)
+        # Pass SOURCE_URL as 4th parameter for Git plugins
+        if ! update_plugin_registry "$PLUGIN_NAME" "$PLUGINS_DIR/$PLUGIN_NAME" "false" "$SOURCE_URL"; then
+            log_error "Falha ao atualizar o registry"
+            log_info "Restaurando versão anterior..."
+            rm -rf "${PLUGINS_DIR:?}/${PLUGIN_NAME:?}"
+            mv "$BACKUP_DIR" "$PLUGINS_DIR/$old_plugin_name"
+            # Restore old registry entry if name changed
+            if [ "$old_plugin_name" != "$PLUGIN_NAME" ]; then
+                registry_remove_plugin "$REGISTRY_FILE" "$PLUGIN_NAME"
+            fi
+            exit 1
+        fi
+        log_debug "Registry atualizado via update_plugin_registry"
+
+        # Detect new version for display
         local NEW_VERSION=$(detect_plugin_version "$PLUGINS_DIR/$PLUGIN_NAME")
         log_debug "Nova versão: $NEW_VERSION"
 
-        # Count commands and get categories
+        # Count commands and get categories for display
         local cmd_count=$(count_plugin_commands "$PLUGINS_DIR/$PLUGIN_NAME")
-
         local categories=$(get_plugin_categories "$PLUGINS_DIR/$PLUGIN_NAME")
         log_debug "Categorias: $categories"
-
-        # Update registry (remove and add again with metadata)
-        registry_remove_plugin "$REGISTRY_FILE" "$PLUGIN_NAME"
-        registry_add_plugin "$REGISTRY_FILE" "$PLUGIN_NAME" "$SOURCE_URL" "$NEW_VERSION" "false" "$cmd_count" "$categories"
-        log_debug "Registry atualizado"
 
         # Remove backup
         rm -rf "$BACKUP_DIR"
         log_debug "Backup removido"
 
         # Update lock file if it exists
-        update_lock_file
+        if ! update_lock_file; then
+            log_error "Falha ao atualizar o lock"
+            exit 1
+        fi
 
         # Get information from lock file
         local lock_version=$(get_plugin_info_from_lock "$PLUGIN_NAME" "version")
@@ -181,13 +274,7 @@ main() {
 
         log_success "Plugin ${BOLD}$PLUGIN_NAME${NC} atualizado com sucesso!"
         log_output ""
-        log_output "Detalhes da atualização:"
-        log_output "  ${GRAY}Nova versão: $display_version${NC}"
-        log_output "  ${GRAY}Comandos: $display_commands${NC}"
-        if [ -n "$display_categories" ]; then
-            log_output "  ${GRAY}Categorias: $display_categories${NC}"
-        fi
-
+        show_plugin_details "$PLUGIN_NAME" "$display_version" "$display_commands" "$display_categories"
         log_output ""
         log_info "💡 Os comandos atualizados já estão disponíveis!"
     else

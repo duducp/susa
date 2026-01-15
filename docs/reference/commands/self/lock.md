@@ -81,8 +81,8 @@ susa self lock --sync --quiet
 
 ```text
 $ susa self lock --sync
-[INFO] Gerando arquivo susa.lock...
-[SUCCESS] Arquivo susa.lock gerado com sucesso!
+[INFO] Gerando o lock...
+[SUCCESS] Lock gerado com sucesso!
 
 [INFO] Sincronizando instalações...
 [SUCCESS] Sincronizado: docker (29.1.4)
@@ -97,8 +97,8 @@ $ susa self lock --sync
 
 ```text
 $ susa self lock --sync
-[INFO] Gerando arquivo susa.lock...
-[SUCCESS] Arquivo susa.lock gerado com sucesso!
+[INFO] Gerando o lock...
+[SUCCESS] Lock gerado com sucesso!
 
 [INFO] Sincronizando instalações...
 

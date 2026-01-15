@@ -5,6 +5,7 @@ IFS=$'\n\t'
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
+source "$LIB_DIR/internal/lock.sh"
 source "$LIB_DIR/internal/args.sh"
 
 # Help function
@@ -60,6 +61,17 @@ main() {
             log_output "Use ${LIGHT_CYAN}susa self plugin list${NC} para ver plugins instalados"
             exit 1
         fi
+
+        # Verify plugin name matches plugin.json
+        if [ -f "$PLUGINS_DIR/$PLUGIN_NAME/plugin.json" ]; then
+            local actual_name=$(get_plugin_name "$PLUGINS_DIR/$PLUGIN_NAME" 2> /dev/null || echo "")
+            if [ -n "$actual_name" ] && [ "$actual_name" != "$PLUGIN_NAME" ]; then
+                log_warning "Nome do diretório ($PLUGIN_NAME) difere do nome no plugin.json ($actual_name)"
+                log_output ""
+                log_output "${LIGHT_YELLOW}O plugin será removido usando o nome correto: $actual_name${NC}"
+                PLUGIN_NAME="$actual_name"
+            fi
+        fi
     fi
 
     # Confirm removal
@@ -85,7 +97,7 @@ main() {
 
     if [ "$auto_confirm" = false ]; then
         read -p "Deseja continuar? (y/N): " -n 1 -r
-        echo ""
+        log_output ""
 
         if [[ ! $REPLY =~ ^[YySs]$ ]]; then
             log_info "Operação cancelada"
@@ -123,7 +135,10 @@ main() {
         log_success "Plugin ${BOLD}$PLUGIN_NAME${NC} removido com sucesso!"
 
         # Update lock file
-        update_lock_file
+        if ! update_lock_file; then
+            log_error "Falha ao atualizar o lock"
+            exit 1
+        fi
 
         log_output ""
         log_info "💡 Execute 'susa --help' para ver as categorias atualizadas"

@@ -153,11 +153,35 @@ name=$(get_command_config_field "/opt/susa/commands/setup/asdf/config.json" "nam
 
 ### `find_command_config()`
 
-Encontra o arquivo config.json de um comando.
+Encontra o arquivo config.json de um comando, considerando comandos locais e de plugins.
+
+**Para que serve:**
+Localiza onde está o arquivo de configuração de um comando, seja ele um comando nativo do Susa ou de um plugin instalado. Suporta plugins com campo `directory` configurado.
+
+**Onde usar:**
+Esta função é usada internamente pelo sistema ao executar comandos. Você não precisa chamá-la diretamente em seus scripts.
+
+**Como funciona:**
+
+1. Primeiro verifica no lock file se o comando é de um plugin
+2. Se for plugin, busca o `directory` configurado no registro de plugins
+3. Procura em `commands/` para comandos nativos
+4. Procura em `plugins/` para plugins instalados
+
+**Parâmetros:**
+
+- `$1` - Categoria do comando (ex: "setup" ou "install/python")
+- `$2` - ID do comando
+
+**Retorno:** Caminho completo do config.json ou vazio se não encontrado
 
 ```bash
 config=$(find_command_config "setup" "asdf")
 echo "$config"  # /opt/susa/commands/setup/asdf/config.json
+
+# Para plugin com directory configurado:
+config=$(find_command_config "demo" "hello")
+echo "$config"  # /path/to/plugin/src/demo/hello/config.json
 ```
 
 ### `get_command_info()`

@@ -72,7 +72,8 @@ validate_or_create_lock_file() {
     log_info "Gerando arquivo de cache para otimizar o desempenho..."
 
     # Call the lock command bypassing the check to prevent infinite loop
-    if ! SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
+    local lock_output
+    if ! lock_output=$(SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock 2>&1); then
         log_error "Erro ao gerar arquivo de cache"
         exit 1
     fi
@@ -102,19 +103,19 @@ show_help() {
     local description=$(get_config_field "$GLOBAL_CONFIG_FILE" "description")
     local categories=$(get_all_categories "$GLOBAL_CONFIG_FILE")
 
-    echo "$description"
-    echo ""
+    log_output "$description"
+    log_output ""
     show_usage
-    echo ""
-    echo -e "${LIGHT_GREEN}Comandos:${NC}"
+    log_output ""
+    log_output "${LIGHT_GREEN}Comandos:${NC}"
 
     for cat in $categories; do
         local cat_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$cat" "description")
         printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "$cat" "$cat_desc"
     done
 
-    echo ""
-    echo -e "${LIGHT_GREEN}Opções globais:${NC}"
+    log_output ""
+    log_output "${LIGHT_GREEN}Opções globais:${NC}"
     printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "-h, --help" "Mostra esta mensagem de ajuda"
     printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "-V, --version" "Mostra a versão do CLI"
 }
@@ -128,7 +129,7 @@ print_subcategories() {
         return 0
     fi
 
-    echo -e "${LIGHT_GREEN}Subcategories:${NC}"
+    log_output "${LIGHT_GREEN}Subcategories:${NC}"
     for subcat in $subcategories; do
         local subcat_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$category/$subcat" "description")
         printf "  ${LIGHT_MAGENTA}%-15s${NC} %s\n" "$subcat" "$subcat_desc"
@@ -216,8 +217,8 @@ list_grouped_commands() {
     while IFS= read -r group; do
         [ -z "$group" ] && continue
 
-        echo ""
-        echo -e " ${LIGHT_GRAY}$group${NC}"
+        log_output ""
+        log_output " ${LIGHT_GRAY}$group${NC}"
 
         for cmd in $commands; do
             # Check OS compatibility
@@ -276,22 +277,22 @@ list_commands() {
     local commands=$(get_category_commands "$category" "$current_os")
     local subcategories=$(get_category_subcategories "$category")
 
-    echo "$category_desc"
-    echo ""
+    log_output "$category_desc"
+    log_output ""
     show_usage "$category"
-    echo ""
+    log_output ""
 
     # Print subcategories first
     print_subcategories "$category" "$subcategories"
 
     # Add spacing between subcategories and commands if both exist
     if [ -n "$subcategories" ] && [ -n "$commands" ]; then
-        echo ""
+        log_output ""
     fi
 
     # List commands
     if [ -n "$commands" ]; then
-        echo -e "${LIGHT_GREEN}Comandos:${NC}"
+        log_output "${LIGHT_GREEN}Comandos:${NC}"
 
         # List commands without a group
         list_ungrouped_commands "$category" "$commands" "$current_os" || true
@@ -304,7 +305,7 @@ list_commands() {
 
         # Show message if no compatible commands found
         if [ $has_ungrouped -ne 0 ] && [ $has_grouped -ne 0 ] && [ -z "$subcategories" ]; then
-            echo -e "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+            log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
         fi
     fi
 }
@@ -320,7 +321,7 @@ validate_command() {
 
     if [ -z "$config_file" ]; then
         log_error "Comando '$command' não encontrado na categoria '$category'"
-        echo ""
+        log_output ""
         list_commands "$category"
         exit 1
     fi
@@ -369,16 +370,30 @@ execute_command() {
 
     # Check if this is a plugin command (has source in lock)
     local plugin_source=""
+    local plugin_directory=""
+    local plugin_name=""
     if has_valid_lock_file; then
         local lock_file="$CLI_DIR/susa.lock"
         plugin_source=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
+        plugin_name=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\" and .plugin != null) | .plugin.name" "$lock_file" 2> /dev/null | head -1)
+
+        # Get directory from the plugins array using the plugin name
+        if [ -n "$plugin_name" ] && [ "$plugin_name" != "null" ]; then
+            plugin_directory=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .directory // empty" "$lock_file" 2> /dev/null)
+        fi
     fi
 
     # Build script path - use plugin source if available
     local script_path=""
     if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
         # Plugin with source - use source from lock
-        script_path="$plugin_source/$category/$command/$script_name"
+        if [ -n "$plugin_directory" ] && [ "$plugin_directory" != "null" ] && [ "$plugin_directory" != "" ]; then
+            # Plugin has a specific directory configured
+            script_path="$plugin_source/$plugin_directory/$category/$command/$script_name"
+        else
+            # Plugin uses root directory
+            script_path="$plugin_source/$category/$command/$script_name"
+        fi
     else
         # Regular command
         local command_dir=$(dirname "$config_file")

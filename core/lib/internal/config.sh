@@ -292,9 +292,24 @@ find_command_config() {
     if has_valid_lock_file; then
         local lock_file="$cli_dir/susa.lock"
         local plugin_source=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
+        local plugin_name=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.name" "$lock_file" 2> /dev/null | head -1)
+
+        # Get directory from the plugins array using the plugin name
+        local plugin_directory=""
+        if [ -n "$plugin_name" ] && [ "$plugin_name" != "null" ]; then
+            plugin_directory=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .directory // empty" "$lock_file" 2> /dev/null)
+        fi
 
         if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
-            local config_path="$plugin_source/$category/$command_id/config.json"
+            local config_path=""
+            if [ -n "$plugin_directory" ] && [ "$plugin_directory" != "null" ] && [ "$plugin_directory" != "" ]; then
+                # Plugin has a specific directory configured
+                config_path="$plugin_source/$plugin_directory/$category/$command_id/config.json"
+            else
+                # Plugin uses root directory
+                config_path="$plugin_source/$category/$command_id/config.json"
+            fi
+
             if [ -f "$config_path" ]; then
                 echo "$config_path"
                 return 0

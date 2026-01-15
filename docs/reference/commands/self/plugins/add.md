@@ -112,13 +112,34 @@ Isso é especialmente útil durante o desenvolvimento de plugins.
 
 ## Estrutura esperada do plugin
 
+### Estrutura básica (sem campo directory)
+
 ```text
 susa-plugin-name/
-├── commands/
-│   └── categoria/
-│       ├── config.json
-│       └── main.sh
+├── plugin.json          # Obrigatório
+├── README.md
+└── categoria/
+    └── comando/
+        ├── config.json
+        └── main.sh
 ```
+
+### Estrutura com campo directory
+
+Se o plugin usa o campo `directory` no `plugin.json`, os comandos devem estar dentro do subdiretório especificado:
+
+```text
+susa-plugin-name/
+├── plugin.json          # Com "directory": "src"
+├── README.md
+└── src/                 # Comandos aqui dentro
+    └── categoria/
+        └── comando/
+            ├── config.json
+            └── main.sh
+```
+
+O campo `directory` é útil para organizar melhor o plugin, separando comandos de outros arquivos (docs, testes, etc). O sistema detecta automaticamente e busca os comandos no local correto.
 
 ## Modo Desenvolvimento
 
@@ -164,30 +185,34 @@ susa self plugin add .
 
 ### Validação de Estrutura
 
-Plugins locais devem ter a estrutura correta:
+Plugins locais são validados automaticamente. O sistema verifica:
 
+1. **plugin.json** existe e é válido
+2. Comandos estão no local correto (raiz ou dentro do `directory` configurado)
+3. Estrutura de categorias e comandos está correta
+
+**Estrutura sem campo directory:**
 ```text
 meu-plugin/
-  categoria/
-    config.json
-    comando/
-      config.json
-      main.sh
+├── plugin.json
+└── categoria/
+    └── comando/
+        ├── config.json
+        └── main.sh
 ```
 
-Se a estrutura for inválida:
-
+**Estrutura com campo directory:**
 ```text
-✗ Estrutura de plugin inválida
-
-Estrutura esperada:
-  plugin/
-    categoria/
-      config.json
-      comando/
-        config.json
-        main.sh
+meu-plugin/
+├── plugin.json       # "directory": "src"
+└── src/
+    └── categoria/
+        └── comando/
+            ├── config.json
+            └── main.sh
 ```
+
+Se a estrutura for inválida, o comando mostra o formato esperado com base na configuração do plugin.
 
 ## Exemplo de uso
 

@@ -15,6 +15,7 @@ Plugins são **pacotes externos** que adicionam:
 
 ```text
 meu-plugin/
+├── plugin.json           # Metadados do plugin (obrigatório)
 ├── categoria1/
 │   ├── config.json
 │   ├── comando1/
@@ -29,6 +30,30 @@ meu-plugin/
     ├── config.json
     └── ...
 ```
+
+### Arquivo plugin.json
+
+**⚠️ OBRIGATÓRIO**: Todo plugin deve ter um arquivo `plugin.json` na raiz com as seguintes informações:
+
+```json
+{
+  "name": "meu-plugin",
+  "version": "1.0.0",
+  "description": "Descrição do que o plugin faz",
+  "directory": "src"
+}
+```
+
+Campos:
+
+- **name**: Nome do plugin (⚠️ obrigatório)
+- **version**: Versão no formato semver (⚠️ obrigatório)
+- **description**: Descrição do plugin (opcional)
+- **directory**: Subdiretório onde os comandos estão (opcional, útil se comandos estão em `src/`)
+
+**Nota**: Plugins sem `plugin.json` válido não poderão ser instalados.
+
+Veja mais detalhes em [Plugin Configuration](plugin-config.md).
 
 ## 🚀 Comandos de Gerenciamento
 
@@ -56,7 +81,22 @@ Plugins instalados localmente (modo dev) refletem alterações automaticamente -
 
 > **💡 Exemplo completo:** Veja o [susa-plugin-hello-world](https://github.com/duducp/susa-plugin-hello-world) como referência de implementação.
 
-### 1. Estrutura Básica
+### 1. Criar plugin.json (OBRIGATÓRIO)
+
+Todo plugin deve começar com o arquivo `plugin.json` na raiz:
+
+```bash
+mkdir meu-plugin
+cat > meu-plugin/plugin.json << 'EOF'
+{
+  "name": "meu-plugin",
+  "version": "1.0.0",
+  "description": "Ferramentas de deployment"
+}
+EOF
+```
+
+### 2. Estrutura de Comandos
 
 ```bash
 mkdir -p meu-plugin/deploy/{staging,production}
@@ -91,12 +131,6 @@ EOF
 chmod +x meu-plugin/deploy/staging/main.sh
 ```
 
-### 2. Adicionar Versão
-
-```bash
-echo "1.0.0" > meu-plugin/version.txt
-```
-
 ### 3. Publicar no GitHub
 
 ```bash
@@ -108,14 +142,18 @@ git remote add origin https://github.com/user/meu-plugin.git
 git push -u origin main
 ```
 
-### 4. Instalar Localmente para Teste
+### 4. Testar Localmente
 
 ```bash
-# Copie para o diretório de plugins
-cp -r meu-plugin cli/plugins/
+# Modo desenvolvimento (mudanças refletem automaticamente)
+susa self plugin add ./meu-plugin
 
-# Adicione ao registro manualmente
-# Ou use o comando install apontando para o diretório local
+# Ou do diretório do plugin
+cd meu-plugin
+susa self plugin add .
+
+# Testar comandos
+susa deploy staging
 ```
 
 ## 🔧 Funcionalidades de Plugins
@@ -168,12 +206,13 @@ Commands:
 
 ## 📝 Boas Práticas
 
-1. **Versionamento** - Sempre mantenha `version.txt` atualizado
-2. **Documentação** - Adicione README.md ao plugin
-3. **Naming** - Use nomes descritivos e sem espaços
-4. **Testes** - Teste localmente antes de publicar
-5. **Compatibilidade** - Use campo `os:` se específico de plataforma
-6. **Variáveis de Ambiente** - Use `envs:` no config.json para configurações
+1. **plugin.json** - ⚠️ Obrigatório! Sempre inclua com `name` e `version`
+2. **Versionamento** - Use semver no campo `version` do plugin.json (ex: 1.0.0, 1.2.3)
+3. **Documentação** - Adicione README.md ao plugin
+4. **Naming** - Use nomes descritivos e sem espaços
+5. **Testes** - Teste localmente antes de publicar
+6. **Compatibilidade** - Use campo `os:` se específico de plataforma
+7. **Variáveis de Ambiente** - Use `envs:` no config.json para configurações
    - Sempre forneça fallback no script: `${VAR:-default}`
    - Use prefixos únicos: `MYPLUGIN_*`
    - Documente no README quais envs estão disponíveis

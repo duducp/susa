@@ -84,9 +84,19 @@ main() {
         if [ "$categories" = "null" ] || [ -z "$categories" ]; then
             if [ -d "$PLUGINS_DIR/$plugin_name" ]; then
                 categories=$(get_plugin_categories "$PLUGINS_DIR/$plugin_name")
+            elif [ "$is_dev" = "true" ] && [ -d "$source_url" ]; then
+                categories=$(get_plugin_categories "$source_url")
             else
                 categories="${GRAY}(não disponível)${NC}"
             fi
+        fi
+
+        # Try to get plugin description from plugin.json
+        local description=""
+        if [ -d "$PLUGINS_DIR/$plugin_name" ]; then
+            description=$(get_plugin_description "$PLUGINS_DIR/$plugin_name")
+        elif [ "$is_dev" = "true" ] && [ -d "$source_url" ]; then
+            description=$(get_plugin_description "$source_url")
         fi
 
         # Display plugin information
@@ -96,6 +106,7 @@ main() {
             log_output "${LIGHT_CYAN}📦 $plugin_name${NC}"
         fi
 
+        [ -n "$description" ] && log_output "   ${GRAY}$description${NC}"
         [ "$source_url" != "null" ] && log_output "   Origem: ${GRAY}$source_url${NC}"
         [ "$version" != "null" ] && log_output "   Versão: ${GRAY}$version${NC}"
         log_output "   Comandos: ${GRAY}$cmd_count${NC}"

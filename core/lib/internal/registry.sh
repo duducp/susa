@@ -9,6 +9,23 @@ IFS=$'\n\t'
 
 # --- Registry Helper Functions ---
 
+# Ensure registry.json file exists
+ensure_registry_exists() {
+    local registry_file="$1"
+
+    if [ -f "$registry_file" ]; then
+        return 0
+    fi
+
+    log_debug "Creating registry.json file"
+    cat > "$registry_file" << 'EOF'
+{
+  "version": "1.0.0",
+  "plugins": []
+}
+EOF
+}
+
 # Adds a plugin to the registry
 registry_add_plugin() {
     local registry_file="$1"
@@ -18,6 +35,8 @@ registry_add_plugin() {
     local is_dev="${5:-false}"
     local cmd_count="${6:-}"
     local categories="${7:-}"
+    local description="${8:-}"
+    local directory="${9:-}"
 
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -44,6 +63,11 @@ EOF
         --arg installed "$timestamp" \
         '{name: $name, source: $source, version: $version, installed_at: $installed}')
 
+    # Add description if provided
+    if [ -n "$description" ]; then
+        new_plugin=$(echo "$new_plugin" | jq --arg desc "$description" '. + {description: $desc}')
+    fi
+
     # Add commands count if provided
     if [ -n "$cmd_count" ] && [ "$cmd_count" != "0" ]; then
         new_plugin=$(echo "$new_plugin" | jq --argjson cmds "$cmd_count" '. + {commands: $cmds}')
@@ -52,6 +76,11 @@ EOF
     # Add categories if provided
     if [ -n "$categories" ]; then
         new_plugin=$(echo "$new_plugin" | jq --arg cats "$categories" '. + {categories: $cats}')
+    fi
+
+    # Add directory if provided
+    if [ -n "$directory" ]; then
+        new_plugin=$(echo "$new_plugin" | jq --arg dir "$directory" '. + {directory: $dir}')
     fi
 
     # Add dev flag if it's a dev plugin
