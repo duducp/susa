@@ -140,26 +140,28 @@ install_bruno_macos() {
 install_bruno_linux() {
     log_info "Instalando Bruno no Linux..."
 
-    # Get latest release info from GitHub
+    # Get latest version from GitHub
     log_info "Buscando última versão do Bruno..."
-    local latest_release=$(get_latest_github_release "$BRUNO_GITHUB_REPO")
-    local version=$(echo "$latest_release" | jq -r '.tag_name' | sed 's/^v//')
+    local version=$(github_get_latest_version "$BRUNO_GITHUB_REPO")
+
+    if [ -z "$version" ]; then
+        log_error "Não foi possível obter a versão mais recente"
+        return 1
+    fi
 
     log_info "Versão mais recente: $version"
 
-    # Determine architecture
+    # Determine architecture and build download URL
     local arch=$(uname -m)
     local download_url=""
+    local deb_pattern=""
 
     case "$arch" in
         x86_64)
-            download_url=$(echo "$latest_release" | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url' | head -1)
-            if [ -z "$download_url" ]; then
-                download_url=$(echo "$latest_release" | jq -r '.assets[] | select(.name | endswith("_amd64_linux.deb")) | .browser_download_url' | head -1)
-            fi
+            deb_pattern="amd64_linux.deb"
             ;;
         aarch64)
-            download_url=$(echo "$latest_release" | jq -r '.assets[] | select(.name | endswith("_arm64.deb")) | .browser_download_url' | head -1)
+            deb_pattern="arm64_linux.deb"
             ;;
         *)
             log_error "Arquitetura não suportada: $arch"
@@ -167,10 +169,10 @@ install_bruno_linux() {
             ;;
     esac
 
-    if [ -z "$download_url" ]; then
-        log_error "Não foi possível encontrar o arquivo de instalação para sua arquitetura"
-        return 1
-    fi
+    # Construct download URL
+    download_url="https://github.com/${BRUNO_GITHUB_REPO}/releases/download/${version}/bruno_${version#v}_${deb_pattern}"
+
+    log_debug "URL de download: $download_url"
 
     # Create temporary directory
     local temp_dir=$(mktemp -d)
@@ -185,10 +187,10 @@ install_bruno_linux() {
 
     # Install based on package manager
     if command -v apt-get &> /dev/null; then
-        log_info "Instalando via apt-get..."
+        log_info "Instalando pacote .deb..."
         sudo apt-get install -y "$deb_file"
     elif command -v dpkg &> /dev/null; then
-        log_info "Instalando via dpkg..."
+        log_info "Instalando pacote .deb..."
         sudo dpkg -i "$deb_file"
         sudo apt-get install -f -y 2> /dev/null || true
     else
