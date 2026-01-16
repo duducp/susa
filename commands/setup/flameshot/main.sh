@@ -5,6 +5,7 @@ IFS=$'\n\t'
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/os.sh"
+source "$LIB_DIR/github.sh"
 
 # Help function
 show_help() {
@@ -51,7 +52,10 @@ show_help() {
 
 # Get installed Flameshot version
 get_flameshot_version() {
-    if command -v flameshot &> /dev/null; then
+    # Check version file first (for GitHub releases)
+    if [ -f "$FLAMESHOT_INSTALL_DIR/version.txt" ]; then
+        cat "$FLAMESHOT_INSTALL_DIR/version.txt"
+    elif command -v flameshot &> /dev/null; then
         local version=$(flameshot --version 2> /dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "instalada")
         echo "$version"
     else
@@ -115,13 +119,84 @@ install_flameshot_macos() {
 install_flameshot_debian() {
     log_info "Instalando Flameshot no Debian/Ubuntu..."
 
-    # Update package list
-    log_debug "Atualizando lista de pacotes..."
-    sudo apt-get update -qq
+    # Get latest version from GitHub
+    log_info "Buscando última versão do Flameshot..."
+    local version=$(github_get_latest_version "$FLAMESHOT_GITHUB_REPO")
 
-    # Install Flameshot
-    log_info "Instalando pacote flameshot..."
-    sudo apt-get install -y flameshot
+    if [ -z "$version" ]; then
+        log_error "Não foi possível obter a versão mais recente"
+        return 1
+    fi
+
+    log_info "Versão mais recente: $version"
+
+    # Determine architecture and OS version
+    local arch=$(uname -m)
+    local deb_pattern=""
+
+    case "$arch" in
+        x86_64)
+            # Try to detect Ubuntu/Debian version for best compatibility
+            if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                if [ "$ID" = "ubuntu" ]; then
+                    # Use Ubuntu 22.04 build as it's compatible with most versions
+                    deb_pattern="ubuntu-22.04.amd64.deb"
+                else
+                    # Use Debian 12 build for Debian-based systems
+                    deb_pattern="debian-12.amd64.deb"
+                fi
+            else
+                deb_pattern="ubuntu-22.04.amd64.deb"
+            fi
+            ;;
+        aarch64)
+            log_error "Arquitetura ARM64 não tem builds .deb pré-compilados disponíveis"
+            log_info "Recomendado: use Flatpak ou compile do código-fonte"
+            return 1
+            ;;
+        *)
+            log_error "Arquitetura não suportada: $arch"
+            return 1
+            ;;
+    esac
+
+    # Construct download URL
+    local download_url="https://github.com/${FLAMESHOT_GITHUB_REPO}/releases/download/${version}/flameshot-${version#v}-1.${deb_pattern}"
+
+    log_debug "URL de download: $download_url"
+
+    # Create temporary directory
+    local temp_dir=$(mktemp -d)
+    local deb_file="$temp_dir/flameshot.deb"
+
+    # Download Flameshot
+    if ! github_download_release "$download_url" "$deb_file" "Flameshot"; then
+        log_error "Falha ao baixar Flameshot"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Install based on package manager
+    if command -v apt-get &> /dev/null; then
+        log_info "Instalando pacote .deb..."
+        sudo apt-get install -y "$deb_file"
+    elif command -v dpkg &> /dev/null; then
+        log_info "Instalando pacote .deb..."
+        sudo dpkg -i "$deb_file"
+        sudo apt-get install -f -y 2> /dev/null || true
+    else
+        log_error "Sistema não suporta pacotes .deb"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Save version info
+    sudo mkdir -p "$FLAMESHOT_INSTALL_DIR"
+    echo "$version" | sudo tee "$FLAMESHOT_INSTALL_DIR/version.txt" > /dev/null 2>&1 || true
+
+    # Cleanup
+    rm -rf "$temp_dir"
 
     log_success "Flameshot instalado com sucesso!"
     log_output ""
@@ -138,24 +213,91 @@ install_flameshot_debian() {
 install_flameshot_rhel() {
     log_info "Instalando Flameshot no RHEL/Fedora..."
 
-    # Install Flameshot
-    if command -v dnf &> /dev/null; then
-        log_info "Instalando via dnf..."
-        sudo dnf install -y flameshot
-    else
-        log_info "Instalando via yum..."
-        sudo yum install -y flameshot
+    # Get latest version from GitHub
+    log_info "Buscando última versão do Flameshot..."
+    local version=$(github_get_latest_version "$FLAMESHOT_GITHUB_REPO")
+
+    if [ -z "$version" ]; then
+        log_error "Não foi possível obter a versão mais recente"
+        return 1
     fi
+
+    log_info "Versão mais recente: $version"
+
+    # Determine architecture and Fedora version
+    local arch=$(uname -m)
+    local rpm_pattern=""
+
+    case "$arch" in
+        x86_64)
+            # Try to detect Fedora version for best compatibility
+            if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                # Use fc41 or fc42 based on detected version, default to fc41
+                if [ ! -z "$VERSION_ID" ] && [ "$VERSION_ID" -ge 42 ]; then
+                    rpm_pattern="fc42.x86_64.rpm"
+                else
+                    rpm_pattern="fc41.x86_64.rpm"
+                fi
+            else
+                rpm_pattern="fc41.x86_64.rpm"
+            fi
+            ;;
+        aarch64)
+            log_error "Arquitetura ARM64 não tem builds .rpm pré-compilados disponíveis"
+            log_info "Recomendado: use Flatpak ou compile do código-fonte"
+            return 1
+            ;;
+        *)
+            log_error "Arquitetura não suportada: $arch"
+            return 1
+            ;;
+    esac
+
+    # Construct download URL
+    local download_url="https://github.com/${FLAMESHOT_GITHUB_REPO}/releases/download/${version}/flameshot-${version#v}-1.${rpm_pattern}"
+
+    log_debug "URL de download: $download_url"
+
+    # Create temporary directory
+    local temp_dir=$(mktemp -d)
+    local rpm_file="$temp_dir/flameshot.rpm"
+
+    # Download Flameshot
+    if ! github_download_release "$download_url" "$rpm_file" "Flameshot"; then
+        log_error "Falha ao baixar Flameshot"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Install based on package manager
+    if command -v dnf &> /dev/null; then
+        log_info "Instalando pacote .rpm via dnf..."
+        sudo dnf install -y "$rpm_file"
+    elif command -v yum &> /dev/null; then
+        log_info "Instalando pacote .rpm via yum..."
+        sudo yum install -y "$rpm_file"
+    elif command -v rpm &> /dev/null; then
+        log_info "Instalando pacote .rpm..."
+        sudo rpm -i "$rpm_file"
+    else
+        log_error "Sistema não suporta pacotes .rpm"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Save version info
+    sudo mkdir -p "$FLAMESHOT_INSTALL_DIR"
+    echo "$version" | sudo tee "$FLAMESHOT_INSTALL_DIR/version.txt" > /dev/null 2>&1 || true
+
+    # Cleanup
+    rm -rf "$temp_dir"
 
     log_success "Flameshot instalado com sucesso!"
     log_output ""
     log_output "${LIGHT_CYAN}Para usar o Flameshot:${NC}"
     log_output "  • Via menu de aplicativos"
     log_output "  • Via terminal: ${LIGHT_GREEN}flameshot gui${NC}"
-    log_output ""
-    log_output "${LIGHT_CYAN}Configure atalho de teclado:${NC}"
-    log_output "  Settings → Keyboard → Shortcuts → Custom Shortcuts"
-    log_output "  Adicione: flameshot gui (recomendado: Print Screen)"
 }
 
 # Install Flameshot on Arch Linux
