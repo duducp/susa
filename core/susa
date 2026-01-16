@@ -440,9 +440,9 @@ execute_command() {
     # Check if help was requested for the command
     check_and_show_command_help "$script_path" "$@"
 
-    # Check if sudo is required and notify user
+    # Check if sudo is required (bypass logic handled internally)
     if requires_sudo "$GLOBAL_CONFIG_FILE" "$category" "$command"; then
-        required_sudo
+        required_sudo "$@"
     fi
 
     # Load environment variables from command config
