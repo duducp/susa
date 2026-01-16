@@ -50,7 +50,17 @@ get_latest_version() {
 # Get installed Tilix version
 get_current_version() {
     if check_installation; then
-        tilix --version 2> /dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida"
+        # Try to get version from package manager instead of executing binary
+        if command -v dpkg &> /dev/null && dpkg -l tilix 2> /dev/null | grep -q '^ii'; then
+            dpkg -l tilix 2> /dev/null | grep '^ii' | awk '{print $3}' | cut -d'-' -f1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida"
+        elif command -v rpm &> /dev/null && rpm -q tilix &> /dev/null; then
+            rpm -q --queryformat '%{VERSION}' tilix 2> /dev/null || echo "desconhecida"
+        elif command -v pacman &> /dev/null && pacman -Q tilix &> /dev/null; then
+            pacman -Q tilix 2> /dev/null | awk '{print $2}' | cut -d'-' -f1 || echo "desconhecida"
+        else
+            # Fallback: try executing binary (may fail)
+            tilix --version 2> /dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida"
+        fi
     else
         echo "desconhecida"
     fi
