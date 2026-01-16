@@ -454,6 +454,23 @@ generate_lock_file() {
         rm -f "$temp_installations"
     fi
 
+    # Sort categories, plugins, and commands alphabetically
+    # Keep "self" category always at the end
+    log_debug "Ordenando categorias, plugins e comandos alfabeticamente..."
+    json_data=$(echo "$json_data" | jq '
+        .categories |= (
+            map(select(.name != "self")) | sort_by(.name)
+        ) + (
+            map(select(.name == "self"))
+        ) |
+        .plugins |= sort_by(.name) |
+        .commands |= (
+            map(select(.category != "self")) | sort_by(.category, .name)
+        ) + (
+            map(select(.category == "self")) | sort_by(.name)
+        )
+    ')
+
     # Write JSON to lock file with pretty printing
     echo "$json_data" | jq '.' > "$lock_file"
 
