@@ -32,6 +32,10 @@ Instala e configura o Podman, um motor de container open-source para desenvolvim
 
 Instala e configura o Poetry, um gerenciador de dependências e empacotamento para Python. Facilita o gerenciamento de bibliotecas, criação de ambientes virtuais e publicação de pacotes Python. **Disponível para Linux e macOS.**
 
+### [Sublime Text](sublime-text.md)
+
+Instala e configura o Sublime Text, um editor de texto sofisticado para código, markup e prosa. Conhecido por sua velocidade, interface limpa e recursos poderosos como múltiplos cursores, busca avançada e extensa biblioteca de plugins. **Disponível para Linux e macOS.**
+
 ### [Tilix](tilix.md)
 
 Instala e configura o Tilix, um emulador de terminal avançado para Linux usando GTK+ 3, com suporte a tiles (painéis lado a lado), notificações, transparência e temas personalizáveis. **Disponível apenas para Linux.**
