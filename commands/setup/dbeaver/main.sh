@@ -56,9 +56,27 @@ get_current_version() {
     if [ -f "$DBEAVER_INSTALL_DIR/version.txt" ]; then
         cat "$DBEAVER_INSTALL_DIR/version.txt"
     elif check_installation; then
-        local version=$(dbeaver -version 2>&1 | grep -i "Version" | awk '{print $2}' || echo "desconhecida")
-        if [ "$version" != "desconhecida" ] && [ -n "$version" ]; then
-            echo "$version"
+        # Don't execute dbeaver directly as it may open the GUI
+        # Try to get version from package manager or files
+        if [ "$(uname)" = "Darwin" ]; then
+            # macOS - get from app bundle
+            local app_path="/Applications/DBeaver.app/Contents/Info.plist"
+            if [ -f "$app_path" ]; then
+                defaults read /Applications/DBeaver.app/Contents/Info.plist CFBundleShortVersionString 2> /dev/null || echo "desconhecida"
+            else
+                echo "desconhecida"
+            fi
+        elif [ "$(uname)" = "Linux" ]; then
+            # Linux - get from dpkg or rpm
+            if command -v dpkg &> /dev/null; then
+                dpkg -l dbeaver-ce 2> /dev/null | grep '^ii' | awk '{print $3}' | cut -d'-' -f1 || echo "desconhecida"
+            elif command -v rpm &> /dev/null; then
+                rpm -q --queryformat '%{VERSION}' dbeaver-ce 2> /dev/null || echo "desconhecida"
+            else
+                echo "desconhecida"
+            fi
+        else
+            echo "desconhecida"
         fi
     else
         echo "desconhecida"
