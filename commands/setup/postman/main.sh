@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/os.sh"
 
 # Help function
 show_help() {
@@ -157,7 +158,7 @@ EOF
 
 # Main installation function
 install_postman() {
-    local os_type=$(get_os)
+    local os_type=$(get_simple_os)
 
     if [ "$os_type" = "mac" ]; then
         install_postman_macos
@@ -185,7 +186,7 @@ update_postman() {
     local current_version=$(get_postman_version)
     log_info "Versão atual: $current_version"
 
-    local os_type=$(get_os)
+    local os_type=$(get_simple_os)
 
     if [ "$os_type" = "mac" ]; then
         log_info "Atualizando via Homebrew..."
@@ -213,7 +214,7 @@ uninstall_postman() {
         return 0
     fi
 
-    local os_type=$(get_os)
+    local os_type=$(get_simple_os)
 
     if [ "$os_type" = "mac" ]; then
         log_info "Desinstalando via Homebrew..."

@@ -5,6 +5,7 @@ IFS=$'\n\t'
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/github.sh"
+source "$LIB_DIR/os.sh"
 
 # Help function
 show_help() {
@@ -226,7 +227,7 @@ install_dbeaver_arch() {
 
 # Main installation function
 install_dbeaver() {
-    local os_type=$(get_os)
+    local os_type=$(get_simple_os)
 
     if [ "$os_type" = "mac" ]; then
         install_dbeaver_macos
@@ -272,7 +273,7 @@ update_dbeaver() {
     local current_version=$(get_dbeaver_version)
     log_info "Versão atual: $current_version"
 
-    local os_type=$(get_os)
+    local os_type=$(get_simple_os)
 
     if [ "$os_type" = "mac" ]; then
         log_info "Atualizando via Homebrew..."
@@ -319,7 +320,7 @@ uninstall_dbeaver() {
         return 0
     fi
 
-    local os_type=$(get_os)
+    local os_type=$(get_simple_os)
 
     if [ "$os_type" = "mac" ]; then
         log_info "Desinstalando via Homebrew..."
