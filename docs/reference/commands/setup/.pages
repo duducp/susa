@@ -6,6 +6,7 @@ nav:
   - Docker: docker.md
   - Podman: podman.md
   - Poetry: poetry.md
+  - Postman: postman.md
   - UV: uv.md
   - Mise: mise.md
   - iTerm: iterm.md
