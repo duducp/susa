@@ -8,6 +8,10 @@ Comandos para configuração e instalação de ferramentas e ambientes de desenv
 
 Instala e configura o ASDF, um gerenciador de versões para múltiplas linguagens de programação.
 
+### [Bruno](bruno.md)
+
+Instala e configura o Bruno, um cliente de API open-source rápido e amigável para Git. Alternativa ao Postman/Insomnia, armazena coleções diretamente em uma pasta no seu sistema de arquivos usando linguagem de marcação própria (Bru). **Disponível para Linux e macOS.**
+
 ### [DBeaver](dbeaver.md)
 
 Instala e configura o DBeaver Community, uma ferramenta universal de gerenciamento de banco de dados gratuita e open-source. Suporta mais de 80 tipos diferentes de bancos de dados incluindo MySQL, PostgreSQL, SQLite, Oracle, SQL Server e muitos outros. **Disponível para Linux e macOS.**
