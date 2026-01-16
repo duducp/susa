@@ -2,6 +2,169 @@
 
 Comandos para configuração e instalação de ferramentas e ambientes de desenvolvimento.
 
+## Opções da Categoria
+
+O comando `susa setup` oferece opções especiais para gerenciar todos os softwares instalados:
+
+### Listar Instalações
+
+```bash
+susa setup --list
+```
+
+Lista todos os softwares instalados através do Susa, mostrando:
+
+- Nome do software
+- Versão instalada
+
+**Exemplo de saída:**
+
+```text
+⏳ Sincronizando instalações...
+
+✓ Softwares instalados (10):
+
+  asdf                 v0.18.0
+  docker               29.1.4
+  mise                 2026.1.2
+  poetry               2.2.1
+  vscode               1.107.1
+```
+
+### Verificar Atualizações
+
+```bash
+susa setup --check-updates
+```
+
+Lista todos os softwares instalados e verifica se há atualizações disponíveis:
+
+- Nome do software
+- Versão atual
+- Versão mais recente (se disponível)
+- Indicador visual para atualizações pendentes
+
+**Exemplo de saída:**
+
+```text
+⏳ Sincronizando instalações...
+
+✓ Softwares instalados (10) - Verificando atualizações...
+
+  asdf                 v0.18.0
+  docker               29.1.4 → 29.2.0 ⚠
+  mise                 2026.1.2 → 2026.1.5 ⚠
+  poetry               2.2.1
+  vscode               1.107.1
+```
+
+O ícone ⚠ em amarelo indica que há uma atualização disponível.
+
+### Atualizar Todos os Softwares
+
+```bash
+susa setup --upgrade
+```
+
+ou
+
+```bash
+susa setup -u
+```
+
+Atualiza automaticamente todos os softwares instalados para suas versões mais recentes.
+
+**Características:**
+
+- Solicita permissões de sudo no início
+- Atualiza cada software sequencialmente
+- Mostra progresso em tempo real
+- Exibe resumo final com sucessos e falhas
+
+**Exemplo de saída:**
+
+```text
+🔄 Iniciando atualização de 10 software(s)...
+
+[1/10] Atualizando asdf...
+  ✓ asdf atualizado com sucesso
+
+[2/10] Atualizando docker...
+  ✓ docker atualizado com sucesso
+
+...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Atualização concluída!
+
+  Total processado: 10
+  ✓ Sucesso: 9
+  ✗ Falhas: 1
+    Softwares com falha: podman
+```
+
+### Atualizar Sistema Operacional
+
+```bash
+susa setup --upgrade --update-system
+```
+
+ou
+
+```bash
+susa setup -u -us
+```
+
+Atualiza primeiro as dependências do sistema operacional e depois todos os softwares instalados.
+
+**Gerenciadores de Pacotes Suportados:**
+
+- **Linux**: APT (Ubuntu/Debian), DNF (Fedora), YUM (CentOS/RHEL), Pacman (Arch)
+- **macOS**: Homebrew
+
+**Características:**
+
+- Detecta automaticamente o gerenciador de pacotes
+- Atualiza repositórios e pacotes do sistema
+- Continua mesmo se a atualização do sistema falhar
+- Mostra output indentado para melhor legibilidade
+
+**Exemplo de saída:**
+
+```text
+📦 Atualizando dependências do sistema operacional...
+
+Atualizando pacotes APT...
+    Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease
+    Get:2 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
+    ...
+✓ Pacotes APT atualizados
+
+🔄 Iniciando atualização de 10 software(s)...
+
+[1/10] Atualizando asdf...
+  ✓ asdf atualizado com sucesso
+...
+```
+
+### Combinar Opções
+
+Você pode combinar as opções para diferentes fluxos de trabalho:
+
+```bash
+# Verificar atualizações disponíveis
+susa setup --check-updates
+
+# Atualizar apenas softwares
+susa setup -u
+
+# Atualizar sistema e softwares
+susa setup -u -us
+
+# A ordem dos flags não importa
+susa setup -us -u
+```
+
 ## Comandos Disponíveis
 
 ### [ASDF](asdf.md)

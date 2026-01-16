@@ -207,16 +207,89 @@ get_installation_info() {
 }
 
 # Lists all software marked as installed in lock file
-# Returns: 0 with newline-separated names, 1 if lock not found
-# Usage: list_installed
+# Always syncs installations before listing
+# Args: --check-updates (optional) - checks for available updates
+# Displays: - name <version> with update indicator if --check-updates is provided
+# Returns: 0 with formatted list, 1 if lock not found
+# Usage: list_installed [--check-updates]
 list_installed() {
     local lock_file=$(get_lock_file_path)
+    local check_updates=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --check-updates)
+                check_updates=true
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     if [ ! -f "$lock_file" ]; then
         return 1
     fi
 
-    jq -r '.installations[] | select(.installed == true) | .name' "$lock_file" 2> /dev/null
+    # Show loading message to user (without timestamp for cleaner output)
+    log_output "${CYAN}⏳ Sincronizando instalações...${NC}"
+
+    # Sync installations (hide output)
+    sync_installations > /dev/null 2>&1
+
+    # Get installed software and format output
+    local installed=$(jq -r '.installations[] | select(.installed == true) | .name' "$lock_file" 2> /dev/null)
+
+    if [ -z "$installed" ]; then
+        echo ""
+        log_warning "Nenhum software instalado encontrado."
+        echo ""
+        return 0
+    fi
+
+    # Count total
+    local total=$(echo "$installed" | wc -l | tr -d ' ')
+
+    # Display header
+    echo ""
+    if [ "$check_updates" = true ]; then
+        log_output "${LIGHT_GREEN}✓ Softwares instalados (${total}) - Verificando atualizações...${NC}"
+    else
+        log_output "${LIGHT_GREEN}✓ Softwares instalados (${total}):${NC}"
+    fi
+    echo ""
+
+    # Format and display list with optional version check
+    while IFS= read -r name; do
+        [ -z "$name" ] && continue
+
+        # Get current version from lock file
+        local current_version=$(jq -r ".installations[] | select(.name == \"$name\") | .version // \"unknown\"" "$lock_file" 2> /dev/null)
+
+        # Check for updates if requested
+        if [ "$check_updates" = true ]; then
+            # Get latest version
+            local latest_version=$(get_latest_software_version "$name" 2> /dev/null)
+            [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] && latest_version="N/A"
+
+            # Normalize versions for comparison (remove 'v' prefix if present)
+            local current_normalized="${current_version#v}"
+            local latest_normalized="${latest_version#v}"
+
+            # Display with update indicator
+            if [ "$latest_version" != "N/A" ] && [ "$current_version" != "unknown" ] && [ "$latest_normalized" != "$current_normalized" ]; then
+                printf "  ${LIGHT_CYAN}%-20s${NC} ${GRAY}%s${NC} ${YELLOW}→ %s ⚠${NC}\n" "$name" "$current_version" "$latest_version"
+            else
+                printf "  ${LIGHT_CYAN}%-20s${NC} ${GRAY}%s${NC}\n" "$name" "$current_version"
+            fi
+        else
+            # Display without checking for updates
+            printf "  ${LIGHT_CYAN}%-20s${NC} ${GRAY}%s${NC}\n" "$name" "$current_version"
+        fi
+    done <<< "$installed"
+
     return 0
 }
 
