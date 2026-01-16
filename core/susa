@@ -111,6 +111,27 @@ main() {
         exit 0
     fi
 
+    # Check for global flags before processing
+    local args=("$@")
+    local filtered_args=()
+
+    for arg in "${args[@]}"; do
+        if [ "$arg" = "--group" ]; then
+            export SUSA_GROUP=1
+        else
+            filtered_args+=("$arg")
+        fi
+    done
+
+    # Reset arguments with filtered list
+    set -- "${filtered_args[@]}"
+
+    # No arguments after filtering - show help
+    if [ $# -eq 0 ]; then
+        show_help
+        exit 0
+    fi
+
     # Global options
     case "$1" in
         -h | --help | help)

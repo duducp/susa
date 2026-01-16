@@ -907,7 +907,6 @@ handle_install() {
     # Se não especificou shell, instala em todos disponíveis
     if [ -z "$shell_type" ]; then
         log_info "Detectando shells disponíveis no sistema..."
-        log_output ""
 
         local installed_count=0
         local shells_to_install=()

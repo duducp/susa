@@ -216,18 +216,38 @@ display_category_help() {
     if [ -n "$commands" ]; then
         log_output "${LIGHT_GREEN}Comandos:${NC}"
 
-        # List commands without a group
-        list_ungrouped_commands "$category" "$commands" "$current_os" || true
-        local has_ungrouped=$?
+        # Check if grouping is enabled (default is no grouping)
+        if [ "${SUSA_GROUP:-0}" = "1" ]; then
+            # List commands without a group
+            list_ungrouped_commands "$category" "$commands" "$current_os" || true
+            local has_ungrouped=$?
 
-        # List grouped commands
-        local groups=$(get_category_groups "$GLOBAL_CONFIG_FILE" "$category" "$current_os")
-        list_grouped_commands "$category" "$commands" "$current_os" "$groups" || true
-        local has_grouped=$?
+            # List grouped commands
+            local groups=$(get_category_groups "$GLOBAL_CONFIG_FILE" "$category" "$current_os")
+            list_grouped_commands "$category" "$commands" "$current_os" "$groups" || true
+            local has_grouped=$?
 
-        # Show message if no compatible commands found
-        if [ $has_ungrouped -ne 0 ] && [ $has_grouped -ne 0 ] && [ -z "$subcategories" ]; then
-            log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+            # Show message if no compatible commands found
+            if [ $has_ungrouped -ne 0 ] && [ $has_grouped -ne 0 ] && [ -z "$subcategories" ]; then
+                log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+            fi
+        else
+            # List all commands without grouping (default behavior)
+            local has_compatible=false
+            for cmd in $commands; do
+                # Check OS compatibility
+                if ! is_command_compatible "$GLOBAL_CONFIG_FILE" "$category" "$cmd" "$current_os"; then
+                    continue
+                fi
+
+                has_compatible=true
+                local cmd_desc=$(get_command_info "$GLOBAL_CONFIG_FILE" "$category" "$cmd" "description")
+                print_command_line "$category" "$cmd" "$cmd_desc"
+            done
+
+            if [ "$has_compatible" = false ] && [ -z "$subcategories" ]; then
+                log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+            fi
         fi
     fi
 

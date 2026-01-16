@@ -12,6 +12,7 @@ source "$LIB_DIR/sudo.sh"
 show_complement_help() {
     echo ""
     log_output "${LIGHT_GREEN}Opções da categoria:${NC}"
+    log_output "  --group 			  Agrupa a saída por status de atualização"
     log_output "  --list                 Lista todos os softwares instalados"
     log_output "  --check-updates        Lista e verifica atualizações disponíveis dos softwares"
     log_output "  -u, --upgrade          Atualiza todos os softwares instalados ${YELLOW}[sudo]${NC}"
