@@ -47,7 +47,10 @@ show_help() {
 
 # Get installed DBeaver version
 get_dbeaver_version() {
-    if command -v dbeaver &> /dev/null; then
+    # Check version file first (for GitHub releases)
+    if [ -f "$DBEAVER_INSTALL_DIR/version.txt" ]; then
+        cat "$DBEAVER_INSTALL_DIR/version.txt"
+    elif command -v dbeaver &> /dev/null; then
         local version=$(dbeaver -version 2>&1 | grep -i "Version" | awk '{print $2}' || echo "desconhecida")
         if [ "$version" != "desconhecida" ] && [ -n "$version" ]; then
             echo "$version"
@@ -118,26 +121,73 @@ install_dbeaver_macos() {
     log_output "  • Via terminal: ${LIGHT_GREEN}dbeaver${NC}"
 }
 
-# Install DBeaver on Debian/Ubuntu
-install_dbeaver_debian() {
-    log_info "Instalando DBeaver no Debian/Ubuntu..."
+# Install DBeaver on Debian/Ubuntu from GitHub .deb
+install_dbeaver_debian_from_github() {
+    log_info "Instalando DBeaver via GitHub releases..."
 
-    # Add DBeaver repository key
-    log_debug "Adicionando chave GPG do repositório DBeaver..."
-    curl -fsSL "$DBEAVER_APT_KEY_URL" | sudo gpg --dearmor -o /usr/share/keyrings/dbeaver.gpg
+    # Get latest version from GitHub
+    local version=$(github_get_latest_version "$DBEAVER_GITHUB_REPO")
 
-    # Add DBeaver repository
-    log_debug "Adicionando repositório DBeaver..."
-    echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] $DBEAVER_APT_REPO /" |
-        sudo tee /etc/apt/sources.list.d/dbeaver.list > /dev/null
+    if [ -z "$version" ]; then
+        log_error "Não foi possível obter a versão mais recente"
+        return 1
+    fi
 
-    # Update package list
-    log_debug "Atualizando lista de pacotes..."
-    sudo apt-get update -qq
+    log_info "Versão mais recente: $version"
 
-    # Install DBeaver
-    log_info "Instalando pacote $DBEAVER_PACKAGE_NAME..."
-    sudo apt-get install -y "$DBEAVER_PACKAGE_NAME"
+    # Determine architecture
+    local arch=$(uname -m)
+    local deb_arch=""
+
+    case "$arch" in
+        x86_64)
+            deb_arch="amd64"
+            ;;
+        aarch64)
+            deb_arch="arm64"
+            ;;
+        *)
+            log_error "Arquitetura não suportada: $arch"
+            return 1
+            ;;
+    esac
+
+    # Construct download URL
+    local download_url="https://github.com/${DBEAVER_GITHUB_REPO}/releases/download/${version}/${DBEAVER_PACKAGE_NAME}_${version}_${deb_arch}.deb"
+
+    log_debug "URL de download: $download_url"
+
+    # Create temporary directory
+    local temp_dir=$(mktemp -d)
+    local deb_file="$temp_dir/dbeaver.deb"
+
+    # Download DBeaver
+    if ! github_download_release "$download_url" "$deb_file" "DBeaver"; then
+        log_error "Falha ao baixar DBeaver"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Install based on package manager
+    if command -v apt-get &> /dev/null; then
+        log_info "Instalando pacote .deb..."
+        sudo apt-get install -y "$deb_file"
+    elif command -v dpkg &> /dev/null; then
+        log_info "Instalando pacote .deb..."
+        sudo dpkg -i "$deb_file"
+        sudo apt-get install -f -y 2> /dev/null || true
+    else
+        log_error "Sistema não suporta pacotes .deb"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Save version info
+    sudo mkdir -p "$DBEAVER_INSTALL_DIR"
+    echo "$version" | sudo tee "$DBEAVER_INSTALL_DIR/version.txt" > /dev/null 2>&1 || true
+
+    # Cleanup
+    rm -rf "$temp_dir"
 
     log_success "DBeaver instalado com sucesso!"
     log_output ""
@@ -146,58 +196,103 @@ install_dbeaver_debian() {
     log_output "  • Via terminal: ${LIGHT_GREEN}dbeaver${NC}"
 }
 
+# Install DBeaver on Debian/Ubuntu
+install_dbeaver_debian() {
+    log_info "Instalando DBeaver no Debian/Ubuntu..."
+
+    # Try repository installation first
+    log_info "Tentando instalação via repositório oficial..."
+
+    if curl -fsSL "$DBEAVER_APT_KEY_URL" | sudo gpg --dearmor -o /usr/share/keyrings/dbeaver.gpg 2> /dev/null; then
+        echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] $DBEAVER_APT_REPO /" |
+            sudo tee /etc/apt/sources.list.d/dbeaver.list > /dev/null
+
+        if sudo apt-get update -qq 2> /dev/null && sudo apt-get install -y "$DBEAVER_PACKAGE_NAME" 2> /dev/null; then
+            log_success "DBeaver instalado com sucesso via repositório!"
+            log_output ""
+            log_output "${LIGHT_CYAN}Para abrir o DBeaver:${NC}"
+            log_output "  • Via menu de aplicativos"
+            log_output "  • Via terminal: ${LIGHT_GREEN}dbeaver${NC}"
+            return 0
+        fi
+    fi
+
+    # Fallback to GitHub tar.gz
+    log_warning "Repositório não disponível, usando instalação via GitHub..."
+    install_dbeaver_debian_from_github
+}
+
 # Install DBeaver on RHEL/Fedora
 install_dbeaver_rhel() {
     log_info "Instalando DBeaver no RHEL/Fedora..."
 
     # Get latest version from GitHub
-    log_info "Obtendo informações da versão mais recente..."
-    local latest_version=$(github_get_latest_version "$DBEAVER_GITHUB_REPO")
+    log_info "Buscando última versão do DBeaver..."
+    local version=$(github_get_latest_version "$DBEAVER_GITHUB_REPO")
 
-    if [ -z "$latest_version" ]; then
-        log_error "Não foi possível determinar a versão mais recente"
+    if [ -z "$version" ]; then
+        log_error "Não foi possível obter a versão mais recente"
         return 1
     fi
 
-    log_info "Versão mais recente: $latest_version"
+    log_info "Versão mais recente: $version"
 
     # Determine architecture
     local arch=$(uname -m)
     local rpm_arch=""
 
-    if [ "$arch" = "x86_64" ]; then
-        rpm_arch="x86_64"
-    elif [ "$arch" = "aarch64" ]; then
-        rpm_arch="aarch64"
-    else
-        log_error "Arquitetura não suportada: $arch"
-        return 1
-    fi
+    case "$arch" in
+        x86_64)
+            rpm_arch="x86_64"
+            ;;
+        aarch64)
+            rpm_arch="aarch64"
+            ;;
+        *)
+            log_error "Arquitetura não suportada: $arch"
+            return 1
+            ;;
+    esac
 
     # Construct download URL
-    local rpm_file="${DBEAVER_PACKAGE_NAME}-${latest_version}-stable.${rpm_arch}.rpm"
-    local download_url="https://github.com/${DBEAVER_GITHUB_REPO}/releases/download/${latest_version}/${rpm_file}"
+    local rpm_file="${DBEAVER_PACKAGE_NAME}-${version}-stable.${rpm_arch}.rpm"
+    local download_url="https://github.com/${DBEAVER_GITHUB_REPO}/releases/download/${version}/${rpm_file}"
 
-    log_info "Baixando DBeaver..."
-    log_debug "URL: $download_url"
+    log_debug "URL de download: $download_url"
 
-    # Download and install
-    local temp_file="/tmp/${rpm_file}"
-    if ! curl -L --progress-bar \
-        --connect-timeout 30 \
-        --max-time 300 \
-        --retry 3 \
-        --retry-delay 2 \
-        "$download_url" -o "$temp_file"; then
+    # Create temporary directory
+    local temp_dir=$(mktemp -d)
+    local temp_file="$temp_dir/${rpm_file}"
+
+    # Download DBeaver
+    if ! github_download_release "$download_url" "$temp_file" "DBeaver"; then
         log_error "Falha ao baixar DBeaver"
+        rm -rf "$temp_dir"
         return 1
     fi
 
-    log_info "Instalando DBeaver..."
-    sudo rpm -i "$temp_file" || sudo dnf install -y "$temp_file"
+    # Install based on package manager
+    if command -v dnf &> /dev/null; then
+        log_info "Instalando pacote .rpm via dnf..."
+        sudo dnf install -y "$temp_file"
+    elif command -v yum &> /dev/null; then
+        log_info "Instalando pacote .rpm via yum..."
+        sudo yum install -y "$temp_file"
+    elif command -v rpm &> /dev/null; then
+        log_info "Instalando pacote .rpm..."
+        sudo rpm -i "$temp_file"
+    else
+        log_error "Sistema não suporta pacotes .rpm"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    # Save version info
+    sudo mkdir -p "$DBEAVER_INSTALL_DIR"
+    echo "$version" | sudo tee "$DBEAVER_INSTALL_DIR/version.txt" > /dev/null 2>&1 || true
 
     # Cleanup
-    rm -f "$temp_file"
+    rm -rf "$temp_dir"
 
     log_success "DBeaver instalado com sucesso!"
     log_output ""
