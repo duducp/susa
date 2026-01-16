@@ -183,7 +183,15 @@ install_dbeaver_rhel() {
 
     # Download and install
     local temp_file="/tmp/${rpm_file}"
-    curl -L -o "$temp_file" "$download_url"
+    if ! curl -L --progress-bar \
+        --connect-timeout 30 \
+        --max-time 300 \
+        --retry 3 \
+        --retry-delay 2 \
+        "$download_url" -o "$temp_file"; then
+        log_error "Falha ao baixar DBeaver"
+        return 1
+    fi
 
     log_info "Instalando DBeaver..."
     sudo rpm -i "$temp_file" || sudo dnf install -y "$temp_file"

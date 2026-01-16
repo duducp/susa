@@ -113,7 +113,16 @@ install_postman_linux() {
     # Download Postman
     log_info "Baixando Postman..."
     log_debug "URL: $POSTMAN_DOWNLOAD_URL"
-    curl -L -o "$tarball" "$POSTMAN_DOWNLOAD_URL"
+    if ! curl -L --progress-bar \
+        --connect-timeout 30 \
+        --max-time 300 \
+        --retry 3 \
+        --retry-delay 2 \
+        "$POSTMAN_DOWNLOAD_URL" -o "$tarball"; then
+        log_error "Falha ao baixar Postman"
+        rm -rf "$temp_dir"
+        return 1
+    fi
 
     # Remove old installation if exists
     if [ -d "$POSTMAN_INSTALL_DIR" ]; then

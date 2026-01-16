@@ -177,9 +177,11 @@ install_bruno_linux() {
     local deb_file="$temp_dir/bruno.deb"
 
     # Download Bruno
-    log_info "Baixando Bruno..."
-    log_debug "URL: $download_url"
-    curl -L -o "$deb_file" "$download_url"
+    if ! github_download_release "$download_url" "$deb_file" "Bruno"; then
+        log_error "Falha ao baixar Bruno"
+        rm -rf "$temp_dir"
+        return 1
+    fi
 
     # Install based on package manager
     if command -v apt-get &> /dev/null; then
