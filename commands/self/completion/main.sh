@@ -169,9 +169,17 @@ _susa_completion() {
         if [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/ ; do
                 if [ -d "$plugin_dir" ] && [ -f "$plugin_dir/plugin.json" ]; then
-                    # Plugin pode ter suas próprias categorias
-                    for cat_dir in "$plugin_dir"/*/ ; do
-                        if [ -d "$cat_dir" ]; then
+                    # Determina o diretório de comandos do plugin (via "directory" no plugin.json)
+                    local plugin_commands_dir="$plugin_dir"
+                    if command -v jq >/dev/null 2>&1; then
+                        local configured_dir=$(jq -r '.directory // ""' "$plugin_dir/plugin.json" 2>/dev/null)
+                        if [ -n "$configured_dir" ] && [ -d "$plugin_dir/$configured_dir" ]; then
+                            plugin_commands_dir="$plugin_dir/$configured_dir"
+                        fi
+                    fi
+                    # Lista apenas diretórios que contêm category.json
+                    for cat_dir in "$plugin_commands_dir"/*/ ; do
+                        if [ -d "$cat_dir" ] && [ -f "$cat_dir/category.json" ]; then
                             categories="$categories $(basename "$cat_dir")"
                         fi
                     done
@@ -343,9 +351,13 @@ _susa() {
         local all_items=()
         local category="${path%%/*}"
         local is_command_level=false
+        local is_category_level=false
 
         # Detecta se está no nível de comandos (categoria/comando)
         [[ "$path" =~ ^[^/]+$ ]] && is_command_level=true
+
+        # Detecta se está no nível de categorias (path vazio)
+        [[ -z "$path" ]] && is_category_level=true
 
         # Lista de commands/path/
         if [ -d "$susa_dir/commands/$path" ]; then
@@ -360,7 +372,23 @@ _susa() {
         # Lista de plugins/*/path/
         if [ -d "$susa_dir/plugins" ]; then
             for plugin_dir in "$susa_dir/plugins"/*/; do
-                if [ -d "$plugin_dir/$path" ]; then
+                # Se estiver listando categorias, precisa ler o plugin.json e aplicar o "directory"
+                if [ "$is_category_level" = true ] && [ -f "$plugin_dir/plugin.json" ]; then
+                    local plugin_commands_dir="$plugin_dir"
+                    if command -v jq >/dev/null 2>&1; then
+                        local configured_dir=$(jq -r '.directory // ""' "$plugin_dir/plugin.json" 2>/dev/null)
+                        if [ -n "$configured_dir" ] && [ -d "$plugin_dir/$configured_dir" ]; then
+                            plugin_commands_dir="$plugin_dir/$configured_dir"
+                        fi
+                    fi
+                    # Lista apenas diretórios que contêm category.json
+                    for item in "$plugin_commands_dir"/*/; do
+                        if [ -d "$item" ] && [ -f "$item/category.json" ]; then
+                            local name="${item:t}"
+                            all_items+=("$name")
+                        fi
+                    done
+                elif [ -d "$plugin_dir/$path" ]; then
                     for item in "$plugin_dir/$path"/*/; do
                         if [ -d "$item" ]; then
                             local name="${item:t}"
@@ -542,9 +570,20 @@ function __susa_categories
     # Lista de plugins/
     if test -d "$susa_dir/plugins"
         for plugin_dir in $susa_dir/plugins/*/
-            if test -d $plugin_dir
-                for cat_dir in $plugin_dir*/
-                    test -d $cat_dir; and set -a categories (basename $cat_dir)
+            if test -d $plugin_dir; and test -f "$plugin_dir/plugin.json"
+                # Determina o diretório de comandos do plugin (via "directory" no plugin.json)
+                set -l plugin_commands_dir $plugin_dir
+                if command -v jq >/dev/null 2>&1
+                    set -l configured_dir (jq -r '.directory // ""' "$plugin_dir/plugin.json" 2>/dev/null)
+                    if test -n "$configured_dir"; and test -d "$plugin_dir/$configured_dir"
+                        set plugin_commands_dir "$plugin_dir/$configured_dir"
+                    end
+                end
+                # Lista apenas diretórios que contêm category.json
+                for cat_dir in $plugin_commands_dir*/
+                    if test -d $cat_dir; and test -f "$cat_dir/category.json"
+                        set -a categories (basename $cat_dir)
+                    end
                 end
             end
         end

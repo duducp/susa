@@ -206,8 +206,11 @@ if [ -t 0 ]; then
     if [[ $REPLY =~ ^[SsYy]$ ]]; then
         echo ""
         echo "→ Instalando autocompletar..."
-        if "$CLI_SOURCE_DIR/core/susa" self completion --install 2>&1 | grep -q "instalado em:"; then
-            echo "  ✓ Autocompletar instalado"
+        echo ""
+        # Captura a saída e exibe
+        if "$CLI_SOURCE_DIR/core/susa" self completion --install; then
+            echo ""
+            echo "  ✓ Autocompletar instalado com sucesso"
             echo ""
             echo "  Nota: Reinicie o terminal ou execute 'source' no seu shell config"
         fi
