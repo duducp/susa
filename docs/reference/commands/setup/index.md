@@ -36,6 +36,10 @@ Instala e configura o Poetry, um gerenciador de dependências e empacotamento pa
 
 Instala e configura o Sublime Text, um editor de texto sofisticado para código, markup e prosa. Conhecido por sua velocidade, interface limpa e recursos poderosos como múltiplos cursores, busca avançada e extensa biblioteca de plugins. **Disponível para Linux e macOS.**
 
+### [Visual Studio Code](vscode.md)
+
+Instala e configura o Visual Studio Code, editor de código-fonte desenvolvido pela Microsoft. Gratuito e open-source, oferece depuração integrada, controle Git, IntelliSense, extensões e Remote Development. **Disponível para Linux e macOS.**
+
 ### [Tilix](tilix.md)
 
 Instala e configura o Tilix, um emulador de terminal avançado para Linux usando GTK+ 3, com suporte a tiles (painéis lado a lado), notificações, transparência e temas personalizáveis. **Disponível apenas para Linux.**
