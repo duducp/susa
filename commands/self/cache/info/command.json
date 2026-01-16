@@ -1,0 +1,6 @@
+{
+  "name": "Info",
+  "description": "Mostra informações sobre o cache",
+  "entrypoint": "main.sh",
+  "sudo": false
+}

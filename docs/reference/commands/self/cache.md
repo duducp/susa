@@ -65,8 +65,8 @@ susa self cache refresh
 
 ```bash
 $ susa self cache refresh
-[INFO] Atualizando cache...
-[SUCCESS] Cache atualizado com sucesso!
+[INFO] 2026-01-16 16:15:27 - Atualizando cache...
+[SUCCESS] 2026-01-16 16:15:27 - Cache atualizado com sucesso!
 ```
 
 ### clear
@@ -87,8 +87,8 @@ susa self cache clear
 
 ```bash
 $ susa self cache clear
-[INFO] Limpando cache...
-[SUCCESS] Cache removido com sucesso!
+[INFO] 2026-01-16 16:15:45 - Limpando cache...
+[SUCCESS] 2026-01-16 16:15:45 - Cache removido com sucesso!
 ```
 
 ## Opções

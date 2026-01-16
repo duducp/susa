@@ -1,0 +1,6 @@
+{
+  "name": "Clear",
+  "description": "Limpa o cache",
+  "entrypoint": "main.sh",
+  "sudo": false
+}

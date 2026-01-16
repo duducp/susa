@@ -1,6 +1,0 @@
-{
-  "name": "cache",
-  "description": "Gerencia o cache do CLI para melhorar a performance",
-  "entrypoint": "main.sh",
-  "sudo": false
-}
