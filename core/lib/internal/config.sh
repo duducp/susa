@@ -10,6 +10,7 @@ IFS=$'\n\t'
 # Source registry lib
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/json.sh"
+source "$LIB_DIR/internal/cache.sh"
 
 # ============================================================
 # Lock File Functions
@@ -26,57 +27,31 @@ has_valid_lock_file() {
 
 # Get categories from lock file
 get_categories_from_lock() {
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local lock_file="$cli_dir/susa.lock"
-
-    if [ ! -f "$lock_file" ]; then
-        return 1
-    fi
-
-    jq -r '.categories[].name' "$lock_file" 2> /dev/null
+    cache_get_categories
 }
 
 # Get category info from lock file
 get_category_info_from_lock() {
     local category="$1"
     local field="$2" # name, description, source
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local lock_file="$cli_dir/susa.lock"
 
-    if [ ! -f "$lock_file" ]; then
-        return 1
-    fi
-
-    jq -r ".categories[] | select(.name == \"$category\") | .$field" "$lock_file" 2> /dev/null
+    cache_get_category_info "$category" "$field"
 }
 
 # Get commands from a category from lock file
 get_category_commands_from_lock() {
     local category="$1"
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local lock_file="$cli_dir/susa.lock"
 
-    if [ ! -f "$lock_file" ]; then
-        return 1
-    fi
-
-    # Get commands that match the exact category path
-    jq -r ".commands[] | select(.category == \"$category\") | .name" "$lock_file" 2> /dev/null
+    cache_get_category_commands "$category"
 }
 
 # Get subcategories from a category from lock file
 get_category_subcategories_from_lock() {
     local category="$1"
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local lock_file="$cli_dir/susa.lock"
-
-    if [ ! -f "$lock_file" ]; then
-        return 1
-    fi
 
     # Find all commands that start with "category/"
     # Extract the next level subcategory name
-    local subcats=$(jq -r '.commands[].category' "$lock_file" 2> /dev/null |
+    local subcats=$(cache_query '.commands[].category' |
         grep "^${category}/" |
         sed "s|^${category}/||" |
         cut -d'/' -f1 |
@@ -90,14 +65,8 @@ get_command_info_from_lock() {
     local category="$1"
     local command="$2"
     local field="$3" # description, os, sudo, group
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local lock_file="$cli_dir/susa.lock"
 
-    if [ ! -f "$lock_file" ]; then
-        return 1
-    fi
-
-    jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .$field" "$lock_file" 2> /dev/null
+    cache_get_command_info "$category" "$command" "$field"
 }
 
 # Check if command is compatible with current OS from lock file
@@ -105,36 +74,9 @@ is_command_compatible_from_lock() {
     local category="$1"
     local command="$2"
     local current_os="$3" # linux or mac
-    local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-    local lock_file="$cli_dir/susa.lock"
 
-    if [ ! -f "$lock_file" ]; then
-        # Fallback: check command.json directly if lock file doesn't exist
-        local command_dir="$cli_dir/commands/$category/$command"
-        local config_file="$command_dir/command.json"
-
-        if [ -f "$config_file" ]; then
-            local supported_os=$(jq -r '.os[]? // empty' "$config_file" 2> /dev/null)
-
-            # If there's no OS restriction, it's compatible
-            if [ -z "$supported_os" ]; then
-                return 0
-            fi
-
-            # Check if current OS is in the list
-            if echo "$supported_os" | grep -qw "$current_os"; then
-                return 0
-            fi
-
-            return 1
-        fi
-
-        # If no config file found, assume incompatible
-        return 1
-    fi
-
-    # Get the OS array for this command
-    local supported_os=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .os[]" "$lock_file" 2> /dev/null)
+    # Get the OS array for this command from cache
+    local supported_os=$(cache_query ".commands[] | select(.category == \"$category\" and .name == \"$command\") | .os[]" 2> /dev/null)
 
     # If there's no OS restriction, it's compatible
     if [ -z "$supported_os" ]; then
@@ -290,14 +232,13 @@ find_command_config() {
 
     # First check if it's a plugin command in lock (has source)
     if has_valid_lock_file; then
-        local lock_file="$cli_dir/susa.lock"
-        local plugin_source=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.source" "$lock_file" 2> /dev/null | head -1)
-        local plugin_name=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.name" "$lock_file" 2> /dev/null | head -1)
+        local plugin_source=$(cache_query ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.source" 2> /dev/null | head -1)
+        local plugin_name=$(cache_query ".commands[] | select(.category == \"$category\" and .name == \"$command_id\" and .plugin != null) | .plugin.name" 2> /dev/null | head -1)
 
         # Get directory from the plugins array using the plugin name
         local plugin_directory=""
         if [ -n "$plugin_name" ] && [ "$plugin_name" != "null" ]; then
-            plugin_directory=$(jq -r ".plugins[] | select(.name == \"$plugin_name\") | .directory // empty" "$lock_file" 2> /dev/null)
+            plugin_directory=$(cache_get_plugin_info "$plugin_name" "directory")
         fi
 
         if [ -n "$plugin_source" ] && [ "$plugin_source" != "null" ]; then
@@ -352,10 +293,7 @@ is_plugin_command() {
 
     # First, try to check via lock file (faster)
     if has_valid_lock_file; then
-        local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-        local lock_file="$cli_dir/susa.lock"
-
-        local plugin_name=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .plugin.name" "$lock_file" 2> /dev/null)
+        local plugin_name=$(cache_query ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .plugin.name" 2> /dev/null)
 
         if [ -n "$plugin_name" ] && [ "$plugin_name" != "null" ]; then
             return 0
@@ -379,10 +317,7 @@ is_dev_plugin_command() {
 
     # Check via lock file only (dev flag is only in lock)
     if has_valid_lock_file; then
-        local cli_dir="${CLI_DIR:-$(dirname "$GLOBAL_CONFIG_FILE")}"
-        local lock_file="$cli_dir/susa.lock"
-
-        local is_dev=$(jq -r ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .dev" "$lock_file" 2> /dev/null)
+        local is_dev=$(cache_query ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .dev" 2> /dev/null)
 
         if [ "$is_dev" = "true" ]; then
             return 0

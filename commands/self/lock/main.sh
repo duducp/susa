@@ -450,6 +450,9 @@ generate_lock_file() {
 
     log_success "Lock gerado com sucesso!"
 
+    # Refresh cache after updating lock file
+    cache_refresh 2> /dev/null || true
+
     # Return to original directory
     cd "$original_dir" || true
 }

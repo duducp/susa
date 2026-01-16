@@ -44,6 +44,9 @@ source "$LIB_DIR/dependencies.sh"
 
 [ -f "$CLI_DIR/config/settings.conf" ] && source "$CLI_DIR/config/settings.conf"
 
+# Load cache for fast startup
+cache_load 2> /dev/null || true
+
 # Validate if the configuration file exists
 if [ ! -f "$GLOBAL_CONFIG_FILE" ]; then
     echo "Erro: Arquivo de configuração '$GLOBAL_CONFIG_FILE' não encontrado" >&2

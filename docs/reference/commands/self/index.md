@@ -38,6 +38,16 @@ Atualiza o arquivo `susa.lock` para acelerar a inicialização do CLI (~38% mais
 susa self lock
 ```
 
+### [Cache](cache.md)
+
+Gerencia o sistema de cache do CLI para melhorar a performance de inicialização.
+
+```bash
+susa self cache info      # Informações do cache
+susa self cache refresh   # Atualiza o cache
+susa self cache clear     # Limpa o cache
+```
+
 ### [Version](version.md)
 
 Mostra a versão atual do Susa CLI.
@@ -73,6 +83,7 @@ susa self plugin remove nome-plugin
 | `completion` | Configura autocompletar no shell |
 | `info` | Informações da instalação |
 | `lock` | Atualiza cache de comandos (susa.lock) |
+| `cache` | Gerencia o sistema de cache do CLI |
 | `version` | Versão atual do CLI |
 | `update` | Atualiza o Susa CLI |
 | `plugin add` | Instala novo plugin |

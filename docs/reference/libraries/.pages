@@ -15,3 +15,4 @@ nav:
   - Git: git.md
   - Plugins: plugin.md
   - Registry: registry.md
+  - Cache: cache.md

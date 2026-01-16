@@ -65,6 +65,10 @@ Estas bibliotecas são usadas internamente pelo core do Susa CLI. Não devem ser
 
 Parser JSON interno usando jq. Funções auxiliares para leitura e manipulação de arquivos JSON. Usado internamente por config.sh, lock.sh e registry.sh.
 
+#### [cache.sh](cache.md)
+
+Sistema de cache em memória para acelerar o carregamento do CLI. Mantém uma cópia pré-processada do `susa.lock` em memória e disco, eliminando a necessidade de múltiplas chamadas ao jq durante a execução.
+
 #### [args.sh](args.md)
 
 Parsing consistente de argumentos de linha de comando. Valida argumentos obrigatórios, processa flags e elimina código duplicado.
@@ -128,7 +132,12 @@ BIBLIOTECAS INTERNAS:
 
 internal/config.sh
 ├── internal/registry.sh
-└── internal/json.sh
+├── internal/json.sh
+└── internal/cache.sh
+
+internal/cache.sh
+└── logger.sh (opcional)
+    └── color.sh
 
 internal/args.sh
 └── logger.sh
@@ -148,7 +157,8 @@ internal/registry.sh
 └── internal/json.sh
 
 internal/lock.sh
-└── internal/json.sh
+├── internal/json.sh
+└── internal/cache.sh
 
 internal/installations.sh
 ├── internal/json.sh
