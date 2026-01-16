@@ -19,13 +19,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o Sublime Text do sistema"
-    log_output "  --update          Atualiza o Sublime Text para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o Sublime Text para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup sublime-text              # Instala o Sublime Text"
-    log_output "  susa setup sublime-text --update     # Atualiza o Sublime Text"
+    log_output "  susa setup sublime-text --upgrade    # Atualiza o Sublime Text"
     log_output "  susa setup sublime-text --uninstall  # Desinstala o Sublime Text"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -82,7 +82,7 @@ check_existing_installation() {
     mark_installed "sublime-text" "$current_version"
 
     log_output ""
-    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup sublime-text --update${NC}"
+    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup sublime-text --upgrade${NC}"
 
     return 1
 }

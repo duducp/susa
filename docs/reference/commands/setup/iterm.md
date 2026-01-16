@@ -43,7 +43,7 @@ Depois de instalar, você encontrará o iTerm2 na pasta Aplicativos. Para config
 ### Atualizar
 
 ```bash
-susa setup iterm --update
+susa setup iterm --upgrade
 ```
 
 Atualiza o iTerm2 para a versão mais recente disponível no Homebrew. Todas as suas configurações e preferências serão preservadas.
@@ -61,7 +61,7 @@ Remove o iTerm2 do sistema. Você terá a opção de também remover as configur
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o iTerm2 para a versão mais recente |
+| `-u, --upgrade` | Atualiza o iTerm2 para a versão mais recente |
 | `--uninstall` | Remove o iTerm2 do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

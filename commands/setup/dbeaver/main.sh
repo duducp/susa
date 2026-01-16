@@ -21,13 +21,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o DBeaver do sistema"
-    log_output "  --update          Atualiza o DBeaver para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o DBeaver para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup dbeaver              # Instala o DBeaver"
-    log_output "  susa setup dbeaver --update     # Atualiza o DBeaver"
+    log_output "  susa setup dbeaver --upgrade    # Atualiza o DBeaver"
     log_output "  susa setup dbeaver --uninstall  # Desinstala o DBeaver"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -82,7 +82,7 @@ check_existing_installation() {
     mark_installed "dbeaver" "$current_version"
 
     log_output ""
-    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup dbeaver --update${NC}"
+    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup dbeaver --upgrade${NC}"
 
     return 1
 }
@@ -265,7 +265,7 @@ update_dbeaver() {
     log_info "Atualizando DBeaver..."
 
     if ! command -v dbeaver &> /dev/null; then
-        log_warning "DBeaver não está instalado. Execute sem --update para instalar."
+        log_warning "DBeaver não está instalado. Execute sem --upgrade para instalar."
         return 1
     fi
 
@@ -367,7 +367,7 @@ main() {
                 show_help
                 exit 0
                 ;;
-            --update)
+            -u | --upgrade)
                 should_update=true
                 ;;
             --uninstall)

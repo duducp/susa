@@ -20,13 +20,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o Mise do sistema"
-    log_output "  --update          Atualiza o Mise para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o Mise para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup mise              # Instala o Mise"
-    log_output "  susa setup mise --update     # Atualiza o Mise"
+    log_output "  susa setup mise --upgrade    # Atualiza o Mise"
     log_output "  susa setup mise --uninstall  # Desinstala o Mise"
     echo ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -88,7 +88,7 @@ check_existing_installation() {
         if [ "$current_version" != "$latest_clean" ]; then
             echo ""
             log_output "${YELLOW}Nova versão disponível ($latest_clean).${NC}"
-            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup mise --update${NC}"
+            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup mise --upgrade${NC}"
         fi
     else
         log_warning "Não foi possível verificar atualizações"

@@ -64,7 +64,7 @@ postman              # Abre o Postman
 ### Atualizar
 
 ```bash
-susa setup postman --update
+susa setup postman --upgrade
 ```
 
 Atualiza o Postman para a versão mais recente disponível. O comando usa:
@@ -94,7 +94,7 @@ Remove o Postman do sistema. O comando vai:
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o Postman para a versão mais recente |
+| `-u, --upgrade` | Atualiza o Postman para a versão mais recente |
 | `--uninstall` | Remove o Postman do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

@@ -36,7 +36,7 @@ susa setup docker [opções]
 | --- | --- |
 | `-h, --help` | Mostra mensagem de ajuda |
 | `--uninstall` | Desinstala o Docker |
-| `--update` | Atualiza para a versão mais recente |
+| `-u, --upgrade` | Atualiza para a versão mais recente |
 | `-v, --verbose` | Modo detalhado com logs de debug |
 | `-q, --quiet` | Modo silencioso |
 
@@ -77,10 +77,10 @@ docker info
 
 ```bash
 # Atualizar Docker
-susa setup docker --update
+susa setup docker --upgrade
 
 # Atualizar com logs detalhados
-susa setup docker --update -v
+susa setup docker --upgrade -v
 ```
 
 ### Desinstalação

@@ -50,7 +50,7 @@ sudo update-alternatives --config x-terminal-emulator
 ### Atualizar
 
 ```bash
-susa setup tilix --update
+susa setup tilix --upgrade
 ```
 
 Atualiza o Tilix para a versão mais recente disponível nos repositórios do seu sistema. Todas as suas configurações e preferências serão preservadas.
@@ -68,7 +68,7 @@ Remove o Tilix do sistema. Você terá a opção de também remover as configura
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o Tilix para a versão mais recente |
+| `-u, --upgrade` | Atualiza o Tilix para a versão mais recente |
 | `--uninstall` | Remove o Tilix do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
@@ -389,7 +389,7 @@ tilix --version
 journalctl -xe | grep tilix
 
 # Reinstalar
-susa setup tilix --update
+susa setup tilix --upgrade
 ```
 
 ### VTE integration não funciona

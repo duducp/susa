@@ -64,7 +64,7 @@ dbeaver              # Abre o DBeaver
 ### Atualizar
 
 ```bash
-susa setup dbeaver --update
+susa setup dbeaver --upgrade
 ```
 
 Atualiza o DBeaver para a versão mais recente disponível. O comando usa:
@@ -95,7 +95,7 @@ Remove o DBeaver do sistema. O comando vai:
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o DBeaver para a versão mais recente |
+| `-u, --upgrade` | Atualiza o DBeaver para a versão mais recente |
 | `--uninstall` | Remove o DBeaver do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

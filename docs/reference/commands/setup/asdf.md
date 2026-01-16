@@ -20,14 +20,14 @@ Imagine que você precisa trabalhar com diferentes projetos que usam versões di
 susa setup asdf
 ```
 
-Se o ASDF já estiver instalado, você receberá uma mensagem informando a versão atual. Para atualizar, use o comando `--update`.
+Se o ASDF já estiver instalado, você receberá uma mensagem informando a versão atual. Para atualizar, use o comando `--upgrade`.
 
 Depois de instalar, reinicie o terminal e pronto! 🎉
 
 ### Atualizar
 
 ```bash
-susa setup asdf --update
+susa setup asdf --upgrade
 ```
 
 Atualiza o ASDF para a versão mais recente. Seus plugins e versões de ferramentas instaladas serão preservados.
@@ -43,8 +43,9 @@ susa setup asdf --uninstall
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda |
-| `--update` | Atualiza para a versão mais recente |
-| `--uninstall` | Remove o ASDF || `-v, --verbose` | Habilita saída detalhada para depuração |
+| `-u, --upgrade` | Atualiza para a versão mais recente |
+| `--uninstall` | Remove o ASDF |
+| `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 
 ## Guia Rápido de Uso

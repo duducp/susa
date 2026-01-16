@@ -19,13 +19,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o Tilix do sistema"
-    log_output "  --update          Atualiza o Tilix para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o Tilix para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup tilix              # Instala o Tilix"
-    log_output "  susa setup tilix --update     # Atualiza o Tilix"
+    log_output "  susa setup tilix --upgrade    # Atualiza o Tilix"
     log_output "  susa setup tilix --uninstall  # Desinstala o Tilix"
     echo ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -99,7 +99,7 @@ check_existing_installation() {
         if [ "$current_version" != "$latest_version" ]; then
             echo ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
-            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup tilix --update${NC}"
+            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup tilix --upgrade${NC}"
         fi
     else
         log_warning "Não foi possível verificar atualizações"

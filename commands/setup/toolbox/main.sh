@@ -19,13 +19,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o JetBrains Toolbox do sistema"
-    log_output "  --update          Atualiza o JetBrains Toolbox para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o JetBrains Toolbox para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup jetbrains-toolbox              # Instala o JetBrains Toolbox"
-    log_output "  susa setup jetbrains-toolbox --update     # Atualiza o JetBrains Toolbox"
+    log_output "  susa setup jetbrains-toolbox --upgrade    # Atualiza o JetBrains Toolbox"
     log_output "  susa setup jetbrains-toolbox --uninstall  # Desinstala o JetBrains Toolbox"
     echo ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -159,7 +159,7 @@ check_existing_installation() {
         if [ "$current_version" != "$latest_version" ] && [ "$current_version" != "desconhecida" ]; then
             echo ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
-            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup jetbrains-toolbox --update${NC}"
+            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup jetbrains-toolbox --upgrade${NC}"
         fi
     else
         log_warning "Não foi possível verificar atualizações"

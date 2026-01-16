@@ -20,13 +20,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o ASDF do sistema"
-    log_output "  --update          Atualiza o ASDF para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o ASDF para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup asdf              # Instala o ASDF"
-    log_output "  susa setup asdf --update     # Atualiza o ASDF"
+    log_output "  susa setup asdf --upgrade    # Atualiza o ASDF"
     log_output "  susa setup asdf --uninstall  # Desinstala o ASDF"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -98,7 +98,7 @@ check_existing_installation() {
         if [ "$current_version" != "$latest_version" ]; then
             log_output ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
-            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup asdf --update${NC}"
+            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup asdf --upgrade${NC}"
         fi
     else
         log_warning "Não foi possível verificar atualizações"

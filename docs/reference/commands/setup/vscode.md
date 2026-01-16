@@ -60,7 +60,7 @@ code -r arquivo.txt   # Reutiliza janela existente
 ### Atualizar
 
 ```bash
-susa setup vscode --update
+susa setup vscode --upgrade
 ```
 
 Atualiza o VS Code para a versão mais recente disponível. O comando usa:
@@ -92,7 +92,7 @@ Remove o VS Code do sistema. O comando vai:
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o VS Code para a versão mais recente |
+| `-u, --upgrade` | Atualiza o VS Code para a versão mais recente |
 | `--uninstall` | Remove o VS Code do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

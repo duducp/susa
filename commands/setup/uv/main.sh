@@ -20,13 +20,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o UV do sistema"
-    log_output "  --update          Atualiza o UV para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o UV para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup uv              # Instala o UV"
-    log_output "  susa setup uv --update     # Atualiza o UV"
+    log_output "  susa setup uv --upgrade    # Atualiza o UV"
     log_output "  susa setup uv --uninstall  # Desinstala o UV"
     echo ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -108,7 +108,7 @@ check_existing_installation() {
         if [ "$current_version" != "$latest_version" ]; then
             echo ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
-            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup uv --update${NC}"
+            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup uv --upgrade${NC}"
         fi
     else
         log_warning "Não foi possível verificar atualizações"

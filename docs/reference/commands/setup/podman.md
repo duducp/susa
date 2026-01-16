@@ -45,7 +45,7 @@ source ~/.zshrc    # Para Zsh
 ### Atualizar
 
 ```bash
-susa setup podman --update
+susa setup podman --upgrade
 ```
 
 O comando vai:
@@ -67,7 +67,7 @@ susa setup podman --uninstall
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o Podman para a versão mais recente |
+| `-u, --upgrade` | Atualiza o Podman para a versão mais recente |
 | `--uninstall` | Remove o Podman do sistema || `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
 
@@ -377,7 +377,7 @@ docker-compose up -d  # Use podman-compose
 podman --version
 
 # Atualizar Podman
-susa setup podman --update
+susa setup podman --upgrade
 
 # Limpar containers parados
 podman container prune
@@ -425,7 +425,7 @@ podman exec -it <container> bash
 - **macOS**: Requer máquina virtual (criada automaticamente)
 - **Rootless**: Por padrão, não precisa de sudo
 - **Compose**: Instalado automaticamente (apt/dnf/yum ou pip)
-- **Atualizações**: Use `susa setup podman --update` para atualizar para a versão mais recente
+- **Atualizações**: Use `susa setup podman --upgrade` para atualizar para a versão mais recente
 
 ## Suporte
 

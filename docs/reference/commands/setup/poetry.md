@@ -50,7 +50,7 @@ source ~/.bashrc  # ou ~/.zshrc
 ### Atualizar
 
 ```bash
-susa setup poetry --update
+susa setup poetry --upgrade
 ```
 
 Atualiza o Poetry para a versão mais recente usando o comando `poetry self update`. Todas as suas configurações serão preservadas.
@@ -68,7 +68,7 @@ Remove o Poetry do sistema. Você terá a opção de também remover o cache e c
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o Poetry para a versão mais recente |
+| `-u, --upgrade` | Atualiza o Poetry para a versão mais recente |
 | `--uninstall` | Remove o Poetry do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

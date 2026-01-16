@@ -62,7 +62,7 @@ subl pasta/           # Abre pasta como projeto
 ### Atualizar
 
 ```bash
-susa setup sublime-text --update
+susa setup sublime-text --upgrade
 ```
 
 Atualiza o Sublime Text para a versão mais recente disponível. O comando usa:
@@ -93,7 +93,7 @@ Remove o Sublime Text do sistema. O comando vai:
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o Sublime Text para a versão mais recente |
+| `-u, --upgrade` | Atualiza o Sublime Text para a versão mais recente |
 | `--uninstall` | Remove o Sublime Text do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

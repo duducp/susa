@@ -19,13 +19,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o Postman do sistema"
-    log_output "  --update          Atualiza o Postman para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o Postman para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup postman              # Instala o Postman"
-    log_output "  susa setup postman --update     # Atualiza o Postman"
+    log_output "  susa setup postman --upgrade    # Atualiza o Postman"
     log_output "  susa setup postman --uninstall  # Desinstala o Postman"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -66,7 +66,7 @@ check_existing_installation() {
     mark_installed "postman" "$current_version"
 
     log_output ""
-    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup postman --update${NC}"
+    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup postman --upgrade${NC}"
 
     return 1
 }
@@ -178,7 +178,7 @@ update_postman() {
     log_info "Atualizando Postman..."
 
     if ! command -v postman &> /dev/null; then
-        log_warning "Postman não está instalado. Execute sem --update para instalar."
+        log_warning "Postman não está instalado. Execute sem --upgrade para instalar."
         return 1
     fi
 
@@ -243,7 +243,7 @@ main() {
                 show_help
                 exit 0
                 ;;
-            --update)
+            -u | --upgrade)
                 should_update=true
                 ;;
             --uninstall)

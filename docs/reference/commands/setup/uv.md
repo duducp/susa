@@ -49,7 +49,7 @@ source ~/.bashrc  # ou ~/.zshrc
 ### Atualizar
 
 ```bash
-susa setup uv --update
+susa setup uv --upgrade
 ```
 
 Atualiza o UV para a versão mais recente usando o comando `uv self update`.
@@ -67,7 +67,7 @@ Remove o UV do sistema. Você terá a opção de também remover o cache salvo e
 | Opção | O que faz |
 |-------|-----------|
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o UV para a versão mais recente |
+| `-u, --upgrade` | Atualiza o UV para a versão mais recente |
 | `--uninstall` | Remove o UV do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

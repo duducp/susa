@@ -49,7 +49,7 @@ source ~/.bashrc  # ou ~/.zshrc
 ### Atualizar
 
 ```bash
-susa setup mise --update
+susa setup mise --upgrade
 ```
 
 Atualiza o Mise para a versão mais recente.
@@ -67,7 +67,7 @@ Remove o Mise do sistema. Você terá a opção de também remover o cache salvo
 | Opção | O que faz |
 | --- | --- |
 | `-h, --help` | Mostra ajuda detalhada |
-| `--update` | Atualiza o Mise para a versão mais recente |
+| `-u, --upgrade` | Atualiza o Mise para a versão mais recente |
 | `--uninstall` | Remove o Mise do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |

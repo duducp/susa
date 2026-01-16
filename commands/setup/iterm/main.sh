@@ -19,13 +19,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o iTerm2 do sistema"
-    log_output "  --update          Atualiza o iTerm2 para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o iTerm2 para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup iterm              # Instala o iTerm2"
-    log_output "  susa setup iterm --update     # Atualiza o iTerm2"
+    log_output "  susa setup iterm --upgrade    # Atualiza o iTerm2"
     log_output "  susa setup iterm --uninstall  # Desinstala o iTerm2"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -112,7 +112,7 @@ check_existing_installation() {
         if [ "$current_version" != "$latest_version" ]; then
             echo ""
             log_output "${YELLOW}Nova versão disponível ($latest_version).${NC}"
-            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup iterm --update${NC}"
+            log_output "Para atualizar, execute: ${LIGHT_CYAN}susa setup iterm --upgrade${NC}"
         fi
     else
         log_warning "Não foi possível verificar atualizações"

@@ -43,7 +43,7 @@ susa setup jetbrains-toolbox [opções]
 |---|---|
 | `-h, --help` | Mostra mensagem de ajuda |
 | `--uninstall` | Desinstala o JetBrains Toolbox |
-| `--update` | Atualiza para a versão mais recente |
+| `-u, --upgrade` | Atualiza para a versão mais recente |
 | `-v, --verbose` | Modo detalhado com logs de debug |
 | `-q, --quiet` | Modo silencioso |
 
@@ -71,10 +71,10 @@ O Toolbox será iniciado automaticamente após a instalação.
 
 ```bash
 # Atualizar JetBrains Toolbox
-susa setup jetbrains-toolbox --update
+susa setup jetbrains-toolbox --upgrade
 
 # Atualizar com logs detalhados
-susa setup jetbrains-toolbox --update -v
+susa setup jetbrains-toolbox --upgrade -v
 ```
 
 ### Desinstalação

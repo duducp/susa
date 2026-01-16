@@ -19,13 +19,13 @@ show_help() {
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output "  --uninstall       Desinstala o VS Code do sistema"
-    log_output "  --update          Atualiza o VS Code para a versão mais recente"
+    log_output "  -u, --upgrade     Atualiza o VS Code para a versão mais recente"
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup vscode              # Instala o VS Code"
-    log_output "  susa setup vscode --update     # Atualiza o VS Code"
+    log_output "  susa setup vscode --upgrade    # Atualiza o VS Code"
     log_output "  susa setup vscode --uninstall  # Desinstala o VS Code"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
@@ -81,7 +81,7 @@ check_existing_installation() {
     mark_installed "vscode" "$current_version"
 
     log_output ""
-    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup vscode --update${NC}"
+    log_output "${YELLOW}Para atualizar, execute:${NC} ${LIGHT_CYAN}susa setup vscode --upgrade${NC}"
 
     return 1
 }
