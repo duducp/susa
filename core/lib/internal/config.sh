@@ -207,7 +207,7 @@ category_has_entrypoint() {
         return 1
     fi
 
-    local entrypoint=$(jq -r ".categories[] | select(.name == \"$category\") | .entrypoint // empty" "$CLI_DIR/susa.lock" 2> /dev/null)
+    local entrypoint=$(cache_query ".categories[] | select(.name == \"$category\") | .entrypoint // empty" 2> /dev/null)
 
     if [ -n "$entrypoint" ] && [ "$entrypoint" != "null" ]; then
         return 0
@@ -224,19 +224,18 @@ get_category_entrypoint_path() {
         return 1
     fi
 
-    local lock_file="$CLI_DIR/susa.lock"
-    local entrypoint=$(jq -r ".categories[] | select(.name == \"$category\") | .entrypoint // empty" "$lock_file" 2> /dev/null)
+    local entrypoint=$(cache_query ".categories[] | select(.name == \"$category\") | .entrypoint // empty" 2> /dev/null)
 
     if [ -z "$entrypoint" ] || [ "$entrypoint" = "null" ]; then
         return 1
     fi
 
     # Check if category belongs to a plugin by looking at commands in that category
-    local plugin_name=$(jq -r ".commands[] | select(.category == \"$category\" or (.category | startswith(\"$category/\"))) | .plugin.name // empty" "$lock_file" 2> /dev/null | head -1)
+    local plugin_name=$(cache_query ".commands[] | select(.category == \"$category\" or (.category | startswith(\"$category/\"))) | .plugin.name // empty" 2> /dev/null | head -1)
 
     if [ -n "$plugin_name" ] && [ "$plugin_name" != "null" ]; then
         # Category is from a plugin
-        local plugin_source=$(jq -r ".commands[] | select(.category == \"$category\" or (.category | startswith(\"$category/\"))) | .plugin.source // empty" "$lock_file" 2> /dev/null | head -1)
+        local plugin_source=$(cache_query ".commands[] | select(.category == \"$category\" or (.category | startswith(\"$category/\"))) | .plugin.source // empty" 2> /dev/null | head -1)
 
         # Determine plugin directory
         local plugin_dir=""

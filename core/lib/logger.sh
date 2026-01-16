@@ -2,6 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+source "$LIB_DIR/string.sh"
+
 # --- Log Helper Functions ---
 
 log_output() {

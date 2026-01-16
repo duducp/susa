@@ -486,53 +486,66 @@ show_software_info() {
     local display_name=$(jq -r ".commands[] | select(.name == \"$software_name\") | .displayName // \"$software_name\"" "$lock_file" 2> /dev/null)
     [ -z "$display_name" ] || [ "$display_name" = "null" ] && display_name="$software_name"
 
-    # Get installation location
-    local install_location=$(which "$software_name" 2> /dev/null || echo "N/A")
-
-    # Get current version
+    # Get versions
     local current_version=$(get_current_software_version "$software_name" 2> /dev/null)
     [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ] && current_version="N/A"
 
-    # Get latest version
     local latest_version=$(get_latest_software_version "$software_name" 2> /dev/null)
-    [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] && latest_version="N/A"
+    [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] || [ "$latest_version" = "N/A" ] && latest_version=""
 
-    # Display information
+    # Display header
     log_output "${LIGHT_GREEN}Informações do $display_name:${NC}"
     log_output ""
     log_output "  ${CYAN}Nome:${NC} $display_name"
 
-    if check_software_installed "$software_name"; then
+    # Check installation status and display accordingly
+    local is_installed=$(check_software_installed "$software_name" && echo "true" || echo "false")
+
+    if [ "$is_installed" = "true" ]; then
+        local install_location=$(which "$software_name" 2> /dev/null || echo "N/A")
         log_output "  ${CYAN}Status:${NC} ${GREEN}Instalado${NC}"
         log_output "  ${CYAN}Local:${NC} $install_location"
         log_output "  ${CYAN}Versão atual:${NC} $current_version"
 
-        if [ -n "$latest_version" ] && [ "$latest_version" != "N/A" ] && [ "$current_version" != "N/A" ]; then
-            # Normalize versions for comparison (remove 'v' prefix if present)
-            local current_normalized="${current_version#v}"
-            local latest_normalized="${latest_version#v}"
-
-            if [ "$latest_normalized" != "$current_normalized" ]; then
-                log_output "  ${CYAN}Última versão:${NC} ${YELLOW}$latest_version (atualização disponível)${NC}"
-            else
-                log_output "  ${CYAN}Última versão:${NC} $latest_version"
-            fi
-        elif [ -n "$latest_version" ] && [ "$latest_version" != "N/A" ]; then
-            log_output "  ${CYAN}Última versão:${NC} $latest_version"
-        fi
+        # Display latest version with comparison
+        _display_latest_version_info "$current_version" "$latest_version"
 
         # Call custom additional info function if it exists
-        if declare -f show_additional_info > /dev/null 2>&1; then
-            show_additional_info
-        fi
+        declare -f show_additional_info > /dev/null 2>&1 && show_additional_info
     else
         log_output "  ${CYAN}Status:${NC} ${RED}Não instalado${NC}"
-        if [ -n "$latest_version" ] && [ "$latest_version" != "N/A" ]; then
-            log_output "  ${CYAN}Última versão disponível:${NC} $latest_version"
-        fi
+        _display_latest_version_info "" "$latest_version"
     fi
 
     log_output ""
+}
+
+# Internal helper: Displays latest version information with appropriate formatting
+# Args: current_version latest_version
+# Usage: _display_latest_version_info "24.0.5" "24.0.6"
+_display_latest_version_info() {
+    local current="$1"
+    local latest="$2"
+
+    # Handle unavailable latest version
+    if [ -z "$latest" ]; then
+        log_output "  ${CYAN}Última versão:${NC} ${GRAY}indisponível${NC}"
+        return
+    fi
+
+    # If current version is available, check for updates
+    if [ -n "$current" ] && [ "$current" != "N/A" ]; then
+        local current_normalized="${current#v}"
+        local latest_normalized="${latest#v}"
+
+        if [ "$latest_normalized" != "$current_normalized" ]; then
+            log_output "  ${CYAN}Última versão:${NC} ${YELLOW}$latest (atualização disponível)${NC}"
+        else
+            log_output "  ${CYAN}Última versão:${NC} $latest"
+        fi
+    else
+        log_output "  ${CYAN}Última versão:${NC} $latest"
+    fi
 }
 
 # Syncs system state with lock file: adds new installations, marks removed ones
