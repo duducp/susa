@@ -516,8 +516,6 @@ show_software_info() {
         log_output "  ${CYAN}Status:${NC} ${RED}Não instalado${NC}"
         _display_latest_version_info "" "$latest_version"
     fi
-
-    log_output ""
 }
 
 # Internal helper: Displays latest version information with appropriate formatting
