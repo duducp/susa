@@ -44,18 +44,7 @@ show_help() {
 
 # Get latest version from PostgreSQL official repository
 get_latest_version() {
-    local version
-
-    # Try to get from PostgreSQL official version endpoint
-    version=$(curl -s https://www.postgresql.org/versions.json 2> /dev/null | grep -oP '"latestMinor":\s*\K[0-9]+' | head -1)
-
-    if [ -z "$version" ]; then
-        log_debug "Não foi possível obter a versão mais recente"
-        echo "16" # Fallback to current stable version
-        return 0
-    fi
-
-    echo "$version"
+    echo "N/A"
 }
 
 # Get installed PostgreSQL client version
@@ -118,7 +107,9 @@ install_postgres_macos() {
     fi
 
     # Get latest major version
+    log_debug "Obtendo versão mais recente do PostgreSQL Client para macOS..."
     local major_version=$(get_latest_version)
+    log_debug "Versão mais recente para macOS: $major_version"
 
     # Install or upgrade postgresql client
     if brew list libpq &> /dev/null 2>&1; then
@@ -147,19 +138,21 @@ install_postgres_debian() {
     log_info "Instalando PostgreSQL Client no Debian/Ubuntu..."
 
     # Update package list
-    log_debug "Atualizando lista de pacotes..."
+    log_debug "Atualizando lista de pacotes (apt)..."
     sudo apt-get update -qq || {
         log_error "Falha ao atualizar lista de pacotes"
         return 1
     }
 
     # Install PostgreSQL client
+    log_debug "Instalando postgresql-client via apt..."
     log_info "Instalando postgresql-client..."
     sudo apt-get install -y postgresql-client || {
         log_error "Falha ao instalar PostgreSQL Client"
         return 1
     }
 
+    log_debug "Instalação via apt finalizada."
     return 0
 }
 
@@ -174,6 +167,7 @@ install_postgres_redhat() {
         pkg_manager="yum"
     fi
 
+    log_debug "Instalando postgresql via $pkg_manager..."
     # Install PostgreSQL client
     log_info "Instalando postgresql via $pkg_manager..."
     sudo $pkg_manager install -y postgresql || {
@@ -181,6 +175,7 @@ install_postgres_redhat() {
         return 1
     }
 
+    log_debug "Instalação via $pkg_manager finalizada."
     return 0
 }
 
@@ -188,6 +183,7 @@ install_postgres_redhat() {
 install_postgres_arch() {
     log_info "Instalando PostgreSQL Client no Arch Linux..."
 
+    log_debug "Instalando postgresql-libs via pacman..."
     # Install PostgreSQL client
     log_info "Instalando postgresql-libs via pacman..."
     sudo pacman -S --noconfirm postgresql-libs || {
@@ -195,6 +191,7 @@ install_postgres_arch() {
         return 1
     }
 
+    log_debug "Instalação via pacman finalizada."
     return 0
 }
 
@@ -286,6 +283,7 @@ update_postgres() {
     fi
 
     local current_version=$(get_current_version)
+    log_debug "Versão atual detectada: $current_version"
     log_info "Atualizando PostgreSQL Client (versão atual: $current_version)..."
 
     # Detect OS
@@ -370,6 +368,7 @@ uninstall_postgres() {
     fi
 
     local current_version=$(get_current_version)
+    log_debug "Versão instalada detectada para remoção: $current_version"
 
     log_output ""
     log_output "${YELLOW}Deseja realmente desinstalar o PostgreSQL Client $current_version? (s/N)${NC}"
@@ -475,7 +474,7 @@ main() {
                 shift
                 ;;
             --info)
-                show_software_info
+                show_software_info "psql"
                 exit 0
                 ;;
             --get-current-version)
