@@ -7,6 +7,7 @@ nav:
   - Shell: shell.md
   - Sudo: sudo.md
   - Strings: string.md
+  - Tabelas: table.md
   - Dependências: dependencies.md
   - Instaladores: installations.md
   - Kubernetes: kubernetes.md

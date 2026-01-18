@@ -1,24 +1,24 @@
 #!/bin/bash
 #
-# context.sh - Sistema de contexto para execução de comandos
+# context.sh - Command execution context system
 #
-# Provê funções para gerenciar um contexto de execução que persiste
-# durante a vida de um comando e é automaticamente limpo após.
+# Provides functions to manage an execution context that persists
+# during a command's lifetime and is automatically cleaned up after.
 #
-# Utiliza o sistema de cache nomeado para performance otimizada.
+# Uses the named cache system for optimized performance.
 #
-# Dependências:
-#   - core/lib/internal/cache.sh (obrigatório)
-#   - core/lib/logger.sh (opcional - para logs)
+# Dependencies:
+#   - core/lib/internal/cache.sh (required)
+#   - core/lib/logger.sh (optional - for logging)
 #
 
 set -euo pipefail
 IFS=$'\n\t'
 
-# Nome do cache usado para contexto
+# Name of the cache used for context
 CONTEXT_CACHE_NAME="context"
 
-# Helper para log compatível (funciona mesmo sem logger.sh)
+# Helper for compatible logging (works even without logger.sh)
 _context_log_debug() {
     if command -v log_debug &> /dev/null; then
         log_debug "$@"
@@ -33,100 +33,100 @@ _context_log_error() {
     fi
 }
 
-# Inicializa o contexto (limpa se existir)
-# Deve ser chamado no início da execução de cada comando
+# Initialize context (clears if exists)
+# Should be called at the beginning of each command execution
 context_init() {
     cache_named_clear "$CONTEXT_CACHE_NAME"
     cache_named_load "$CONTEXT_CACHE_NAME"
-    _context_log_debug "Contexto inicializado"
+    _context_log_debug "Context initialized"
 }
 
-# Define um valor no contexto
-# Uso: context_set "chave" "valor"
+# Set a value in the context
+# Usage: context_set "key" "value"
 context_set() {
     local key="$1"
     local value="$2"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_set: chave não pode ser vazia"
+        _context_log_error "context_set: key cannot be empty"
         return 1
     fi
 
     cache_named_set "$CONTEXT_CACHE_NAME" "$key" "$value"
 }
 
-# Obtém um valor do contexto
-# Uso: context_get "chave"
-# Retorna: valor da chave ou string vazia se não existir
+# Get a value from the context
+# Usage: context_get "key"
+# Returns: key value or empty string if not exists
 context_get() {
     local key="$1"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_get: chave não pode ser vazia"
+        _context_log_error "context_get: key cannot be empty"
         return 1
     fi
 
     cache_named_get "$CONTEXT_CACHE_NAME" "$key"
 }
 
-# Verifica se uma chave existe no contexto
-# Uso: context_has "chave"
-# Retorna: 0 se existe, 1 se não existe
+# Check if a key exists in the context
+# Usage: context_has "key"
+# Returns: 0 if exists, 1 if not exists
 context_has() {
     local key="$1"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_has: chave não pode ser vazia"
+        _context_log_error "context_has: key cannot be empty"
         return 1
     fi
 
     cache_named_has "$CONTEXT_CACHE_NAME" "$key"
 }
 
-# Obtém todo o contexto como JSON
-# Uso: context_get_all
-# Retorna: JSON com todo o contexto
+# Get entire context as JSON
+# Usage: context_get_all
+# Returns: JSON with entire context
 context_get_all() {
     cache_named_get_all "$CONTEXT_CACHE_NAME"
 }
 
-# Remove uma chave do contexto
-# Uso: context_remove "chave"
+# Remove a key from the context
+# Usage: context_remove "key"
 context_remove() {
     local key="$1"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_remove: chave não pode ser vazia"
+        _context_log_error "context_remove: key cannot be empty"
         return 1
     fi
 
     cache_named_remove "$CONTEXT_CACHE_NAME" "$key"
 }
 
-# Salva o contexto em disco (opcional - útil para debug)
-# Uso: context_save
+# Save context to disk (optional - useful for debugging)
+# Usage: context_save
 context_save() {
     cache_named_save "$CONTEXT_CACHE_NAME"
-    _context_log_debug "Contexto salvo em disco"
+    _context_log_debug "Context saved to disk"
 }
 
-# Limpa todo o contexto
-# Deve ser chamado no final da execução de cada comando
+# Clear entire context
+# Should be called at the end of each command execution
 context_clear() {
     cache_named_clear "$CONTEXT_CACHE_NAME"
-    _context_log_debug "Contexto limpo"
+    _context_log_debug "Context cleared"
 }
 
-# Lista todas as chaves do contexto
-# Uso: context_keys
-# Retorna: Array de chaves (uma por linha)
+# List all context keys
+# Usage: context_keys
+# Returns: Array of keys (one per line)
 context_keys() {
     cache_named_keys "$CONTEXT_CACHE_NAME"
 }
 
-# Conta quantas chaves existem no contexto
-# Uso: context_count
-# Retorna: Número de chaves
+# Count how many keys exist in the context
+# Usage: context_count
+# Returns: Number of keys
 context_count() {
     cache_named_count "$CONTEXT_CACHE_NAME"
 }

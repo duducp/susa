@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Setup command environment
 # Bibliotecas essenciais já carregadas automaticamente
+source "$LIB_DIR/table.sh"
 
 # ============================================================
 # Help Function
@@ -73,10 +74,10 @@ main() {
     # List all caches
     local found=0
     local total_size=0
-    local table_data=""
 
-    # Add table header
-    table_data="  ${BOLD}${GRAY}Nome\tTamanho\tChaves\tModificado\tLocalização${NC}\n"
+    # Initialize table
+    table_init
+    table_add_header "Nome" "Tamanho" "Chaves" "Modificado" "Localização"
 
     # Build table data
     for cache_file in "$cache_dir"/*.cache; do
@@ -114,8 +115,8 @@ main() {
             cache_date=$(stat -c "%y" "$cache_file" 2> /dev/null | cut -d'.' -f1 || echo "N/A")
         fi
 
-        # Add to table data
-        table_data+="  ${CYAN}${name}${NC}\t${size_human}\t${key_count}\t${cache_date}\t${GRAY}${cache_file}${NC}\n"
+        # Add row to table
+        table_add_row "${CYAN}${name}${NC}" "$size_human" "$key_count" "$cache_date" "${GRAY}${cache_file}${NC}"
 
         found=$((found + 1))
         total_size=$((total_size + size_bytes))
@@ -126,8 +127,8 @@ main() {
         exit 0
     fi
 
-    # Display table with column formatting
-    echo -e "$table_data" | column -t -s $'\t'
+    # Render table
+    table_render
 
     # Show summary
     echo ""

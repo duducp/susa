@@ -43,6 +43,10 @@ Gerenciamento de privilégios de superusuário. Verifica e solicita permissões 
 
 Manipulação de strings e arrays. Inclui funções para conversão de case, limpeza de espaços e parsing de listas separadas por vírgula.
 
+#### [table.sh](table.md)
+
+Sistema genérico de renderização de tabelas com alinhamento automático. Fornece API simples para criar tabelas formatadas usando o comando `column`.
+
 #### [dependencies.sh](dependencies.md)
 
 Gerenciamento automático de dependências externas. Auto-instala ferramentas como `curl`, `jq` e `fzf` quando necessário.
