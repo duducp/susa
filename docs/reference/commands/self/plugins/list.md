@@ -1,11 +1,15 @@
 # Self Plugin List
 
-Lista todos os plugins instalados no Susa CLI, mostrando suas informações e estatísticas.
+Lista todos os plugins instalados no Susa CLI em formato de tabela compacta.
 
 ## Como usar
 
 ```bash
+# Listar todos os plugins
 susa self plugin list
+
+# Ver detalhes de um plugin específico
+susa self plugin list --detail <nome>
 ```
 
 ## Como funciona
@@ -19,35 +23,55 @@ O comando lê as informações diretamente do arquivo `registry.json`, evitando 
 
 ## O que mostra?
 
-Para cada plugin instalado, exibe:
+### Listagem geral
 
-- **Nome** do plugin
-- **Origem** (URL do repositório Git)
-- **Versão** instalada
-- **Número de comandos** disponíveis
-- **Categorias** de comandos
-- **Data de instalação**
+Exibe uma tabela com todos os plugins instalados:
+
+- **#** - Número sequencial
+- **Nome** - Nome do plugin (com indicador `[DEV]` se for local)
+- **Versão** - Versão instalada
+- **Comandos** - Quantidade de comandos disponíveis
+- **Categorias** - Quantidade de categorias
+- **Origem** - "Local" (dev) ou "Remoto" (GitHub)
+
+### Detalhes de um plugin
+
+Ao usar `--detail <nome>`, mostra informações completas:
+
+- Descrição do plugin
+- Versão instalada
+- URL de origem completa
+- Tipo (Local/Remoto)
+- Quantidade de comandos
+- Lista completa de categorias
+- Data de instalação
 
 ## Exemplo de saída
+
+### Listagem geral
 
 ```text
 Plugins Instalados
 
+  #  Nome           Versão  Comandos  Categorias  Origem
+  1  backup-tools   1.2.0   4         2           Remoto
+  2  dev-plugin     0.1.0   2         1           Local
+
+Total: 2 plugin(s)
+```
+
+### Detalhes de um plugin
+
+```text
 📦 backup-tools
-   Origem: https://github.com/usuario/susa-backup-tools
-   Versão: 1.2.0
-   Comandos: 4
-   Categorias: backup, restore
-   Instalado: 2026-01-10 14:30:00
 
-📦 deploy-helpers
-   Origem: https://github.com/usuario/susa-deploy-helpers
-   Versão: 2.0.1
-   Comandos: 6
-   Categorias: deploy, rollback, status
-   Instalado: 2026-01-08 09:15:30
-
-Total: 2 plugins instalados
+Descrição: Ferramentas de backup e restore
+Versão: 1.2.0
+Origem: https://github.com/usuario/susa-backup-tools
+Tipo: Remoto
+Comandos: 4
+Categorias: backup, restore
+Instalado em: 2026-01-10T14:30:00Z
 ```
 
 ## Se não houver plugins
@@ -55,21 +79,30 @@ Total: 2 plugins instalados
 ```text
 ℹ Nenhum plugin instalado
 
-Para instalar um plugin, use:
-  susa self plugin add <git-url>
-
-Exemplos:
-  susa self plugin add https://github.com/usuario/plugin-name
-  susa self plugin add usuario/plugin-name
+Para instalar plugins, use: susa self plugin add <url>
 ```
 
 ## Opções
 
 | Opção | O que faz |
 |-------|-----------|
+| `--detail <plugin>` | Exibe detalhes completos de um plugin específico |
 | `-v, --verbose` | Modo verbose (exibe logs de debug) |
 | `-q, --quiet` | Modo silencioso (mínimo de output) |
 | `-h, --help` | Mostra ajuda |
+
+## Exemplos
+
+```bash
+# Listar todos os plugins
+susa self plugin list
+
+# Ver detalhes do plugin "backup-tools"
+susa self plugin list --detail backup-tools
+
+# Modo verbose
+susa self plugin list --verbose
+```
 
 ## Veja também
 
