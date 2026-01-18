@@ -6,6 +6,7 @@ IFS=$'\n\t'
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
+source "$LIB_DIR/flatpak.sh"
 
 # Constants
 APP_NAME="Podman Desktop"
@@ -55,21 +56,7 @@ get_latest_version() {
             ;;
         *)
             # Get from Flathub for Linux
-            if ! command -v flatpak &> /dev/null; then
-                log_error "Flatpak não está instalado"
-                return 1
-            fi
-
-            # Check if flathub remote exists
-            if ! flatpak remotes --user 2> /dev/null | grep -q flathub; then
-                log_error "Repositório Flathub não configurado"
-                return 1
-            fi
-
-            # Get version from remote info (update remotes first)
-            flatpak remote-ls --updates --user flathub 2> /dev/null | grep "$FLATPAK_APP_ID" | awk '{print $2}' ||
-                flatpak remote-info flathub --user "$FLATPAK_APP_ID" 2> /dev/null | grep "Version:" | head -1 | awk '{print $2}' ||
-                echo "desconhecida"
+            flatpak_get_latest_version "$FLATPAK_APP_ID"
             ;;
     esac
 }
@@ -89,11 +76,7 @@ get_current_version() {
                 ;;
             *)
                 # Get version from Flatpak
-                if flatpak info --user "$FLATPAK_APP_ID" &> /dev/null; then
-                    flatpak info --user "$FLATPAK_APP_ID" 2> /dev/null | grep "Version:" | head -1 | awk '{print $2}' || echo "desconhecida"
-                else
-                    echo "desconhecida"
-                fi
+                flatpak_get_installed_version "$FLATPAK_APP_ID"
                 ;;
         esac
     else
@@ -119,7 +102,7 @@ check_installation() {
             [ -d "$APP_MACOS" ]
             ;;
         *)
-            [ -f "$BIN_LINUX" ] && [ -x "$BIN_LINUX" ]
+            flatpak_is_installed "$FLATPAK_APP_ID"
             ;;
     esac
 }
@@ -174,36 +157,7 @@ install_macos() {
 
 # Install on Linux using Flatpak
 install_linux() {
-    log_info "Instalando $APP_NAME via Flatpak..."
-
-    # Check if flatpak is installed
-    if ! command -v flatpak &> /dev/null; then
-        log_error "Flatpak não está instalado. Por favor, instale o Flatpak primeiro."
-        log_info "Veja: https://flatpak.org/setup/"
-        return 1
-    fi
-
-    # Check if flathub is added for user
-    if ! flatpak remotes --user 2> /dev/null | grep -q flathub; then
-        log_info "Adicionando repositório Flathub..."
-        if ! flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo; then
-            log_error "Falha ao adicionar o repositório Flathub"
-            return 1
-        fi
-    fi
-
-    # Update remote metadata
-    log_debug "Atualizando metadados do Flathub..."
-    flatpak update --appstream --user 2> /dev/null || log_debug "Metadados já estão atualizados"
-
-    # Install from Flathub
-    log_debug "Instalando $FLATPAK_APP_ID..."
-    if ! flatpak install -y --user flathub "$FLATPAK_APP_ID"; then
-        log_error "Falha ao instalar o $APP_NAME via Flatpak"
-        return 1
-    fi
-
-    return 0
+    flatpak_install "$FLATPAK_APP_ID" "$APP_NAME"
 }
 
 # Main installation function
@@ -299,9 +253,7 @@ update_podman_desktop() {
             ;;
         *)
             # Use flatpak update
-            log_debug "Atualizando via Flatpak..."
-            if ! flatpak update -y --user "$FLATPAK_APP_ID"; then
-                log_error "Falha ao atualizar o $APP_NAME via Flatpak"
+            if ! flatpak_update "$FLATPAK_APP_ID" "$APP_NAME"; then
                 return 1
             fi
             ;;
@@ -330,9 +282,7 @@ remove_podman_desktop_internal() {
             fi
             ;;
         *)
-            if flatpak list --user 2> /dev/null | grep -q "$FLATPAK_APP_ID"; then
-                flatpak uninstall -y --user "$FLATPAK_APP_ID" 2> /dev/null || true
-            fi
+            flatpak_uninstall "$FLATPAK_APP_ID" "$APP_NAME" > /dev/null 2>&1 || true
             ;;
     esac
 }

@@ -1,0 +1,323 @@
+#!/bin/bash
+# flatpak.sh - Library for managing applications via Flatpak
+#
+# Functions to install, update, remove and query applications
+# distributed via Flatpak from the Flathub repository.
+#
+# Usage:
+#   source "$LIB_DIR/flatpak.sh"
+#
+# Public functions:
+#   flatpak_is_available           - Check if Flatpak is installed
+#   flatpak_ensure_flathub         - Ensure Flathub is configured
+#   flatpak_is_installed           - Check if an app is installed
+#   flatpak_get_installed_version  - Get installed version of an app
+#   flatpak_get_latest_version     - Get latest available version
+#   flatpak_install                - Install an application from Flathub
+#   flatpak_update                 - Update an installed application
+#   flatpak_uninstall              - Remove an installed application
+#   flatpak_update_metadata        - Update Flathub metadata
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# Check if Flatpak is installed on the system
+#
+# Returns:
+#   0 if Flatpak is available
+#   1 if Flatpak is not installed
+flatpak_is_available() {
+    command -v flatpak &> /dev/null
+}
+
+# Ensure the Flathub repository is configured
+#
+# Adds Flathub as a remote if not already configured.
+# Uses user-level installation (--user).
+#
+# Returns:
+#   0 if Flathub is configured or was successfully added
+#   1 on error
+flatpak_ensure_flathub() {
+    if ! flatpak_is_available; then
+        log_error "Flatpak is not installed. Please install Flatpak first."
+        log_info "See: https://flatpak.org/setup/"
+        return 1
+    fi
+
+    # Check if flathub is already added
+    if flatpak remotes --user 2> /dev/null | grep -q "^flathub"; then
+        log_debug "Flathub repository is already configured"
+        return 0
+    fi
+
+    log_info "Adding Flathub repository..."
+    if ! flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo; then
+        log_error "Failed to add Flathub repository"
+        return 1
+    fi
+
+    log_success "Flathub repository added successfully"
+    return 0
+}
+
+# Update Flathub repository metadata
+#
+# Useful to ensure that the latest version information
+# is available before querying or installing applications.
+#
+# Returns:
+#   0 always (metadata update is not critical)
+flatpak_update_metadata() {
+    if ! flatpak_is_available; then
+        log_debug "Flatpak not available, skipping metadata update"
+        return 0
+    fi
+
+    log_debug "Updating Flathub metadata..."
+    flatpak update --appstream --user 2> /dev/null || log_debug "Metadata is already up to date"
+    return 0
+}
+
+# Check if a Flatpak application is installed
+#
+# Arguments:
+#   $1 - Application ID (e.g.: io.podman_desktop.PodmanDesktop)
+#
+# Returns:
+#   0 if the application is installed
+#   1 if the application is not installed or error
+flatpak_is_installed() {
+    local app_id="${1:-}"
+
+    if [ -z "$app_id" ]; then
+        log_error "Application ID is required"
+        return 1
+    fi
+
+    if ! flatpak_is_available; then
+        return 1
+    fi
+
+    flatpak list --user 2> /dev/null | grep -q "^${app_id}"
+}
+
+# Get the installed version of a Flatpak application
+#
+# Arguments:
+#   $1 - Application ID (e.g.: io.podman_desktop.PodmanDesktop)
+#
+# Output:
+#   Installed version or "unknown" if not installed/not found
+#
+# Returns:
+#   0 always
+flatpak_get_installed_version() {
+    local app_id="${1:-}"
+
+    if [ -z "$app_id" ]; then
+        echo "unknown"
+        return 0
+    fi
+
+    if ! flatpak_is_installed "$app_id"; then
+        echo "unknown"
+        return 0
+    fi
+
+    local version=$(flatpak info --user "$app_id" 2> /dev/null | grep "^Version:" | head -1 | awk '{print $2}' || echo "unknown")
+    echo "$version"
+}
+
+# Get the latest available version of an application from Flathub
+#
+# Arguments:
+#   $1 - Application ID (e.g.: io.podman_desktop.PodmanDesktop)
+#
+# Output:
+#   Latest version or "unknown" if not found
+#
+# Returns:
+#   0 if version was found
+#   1 on error
+flatpak_get_latest_version() {
+    local app_id="${1:-}"
+
+    if [ -z "$app_id" ]; then
+        log_error "Application ID is required"
+        echo "unknown"
+        return 1
+    fi
+
+    if ! flatpak_is_available; then
+        log_error "Flatpak is not installed"
+        echo "unknown"
+        return 1
+    fi
+
+    # Check if Flathub is configured
+    if ! flatpak remotes --user 2> /dev/null | grep -q "^flathub"; then
+        log_error "Flathub repository not configured"
+        echo "unknown"
+        return 1
+    fi
+
+    # Try to get from pending updates first
+    local version=$(flatpak remote-ls --updates --user flathub 2> /dev/null | grep "^${app_id}" | awk '{print $2}')
+
+    # If not found in updates, search in remote-info
+    if [ -z "$version" ]; then
+        version=$(flatpak remote-info flathub --user "$app_id" 2> /dev/null | grep "^Version:" | head -1 | awk '{print $2}')
+    fi
+
+    # If still not found, return unknown
+    if [ -z "$version" ]; then
+        echo "unknown"
+        return 1
+    fi
+
+    echo "$version"
+    return 0
+}
+
+# Install an application from Flathub
+#
+# Arguments:
+#   $1 - Application ID (e.g.: io.podman_desktop.PodmanDesktop)
+#   $2 - (Optional) Friendly name for logs (default: use ID)
+#
+# Returns:
+#   0 if installation was successful
+#   1 on error
+flatpak_install() {
+    local app_id="${1:-}"
+    local app_name="${2:-$app_id}"
+
+    if [ -z "$app_id" ]; then
+        log_error "Application ID is required"
+        return 1
+    fi
+
+    # Ensure Flathub is configured
+    if ! flatpak_ensure_flathub; then
+        return 1
+    fi
+
+    # Check if already installed
+    if flatpak_is_installed "$app_id"; then
+        local version=$(flatpak_get_installed_version "$app_id")
+        log_info "$app_name $version is already installed"
+        return 0
+    fi
+
+    # Update metadata
+    flatpak_update_metadata
+
+    # Install the application
+    log_info "Installing $app_name via Flatpak..."
+    log_debug "Application ID: $app_id"
+
+    if ! flatpak install -y --user flathub "$app_id"; then
+        log_error "Failed to install $app_name via Flatpak"
+        return 1
+    fi
+
+    # Verify installation
+    if flatpak_is_installed "$app_id"; then
+        local version=$(flatpak_get_installed_version "$app_id")
+        log_success "$app_name $version installed successfully!"
+        return 0
+    else
+        log_error "$app_name was installed but is not available"
+        return 1
+    fi
+}
+
+# Update an installed Flatpak application
+#
+# Arguments:
+#   $1 - Application ID (e.g.: io.podman_desktop.PodmanDesktop)
+#   $2 - (Optional) Friendly name for logs (default: use ID)
+#
+# Returns:
+#   0 if update was successful or already up to date
+#   1 on error
+flatpak_update() {
+    local app_id="${1:-}"
+    local app_name="${2:-$app_id}"
+
+    if [ -z "$app_id" ]; then
+        log_error "Application ID is required"
+        return 1
+    fi
+
+    # Check if installed
+    if ! flatpak_is_installed "$app_id"; then
+        log_error "$app_name is not installed"
+        return 1
+    fi
+
+    local current_version=$(flatpak_get_installed_version "$app_id")
+    log_debug "Current version: $current_version"
+
+    # Update the application
+    log_info "Updating $app_name via Flatpak..."
+
+    if ! flatpak update -y --user "$app_id"; then
+        log_error "Failed to update $app_name via Flatpak"
+        return 1
+    fi
+
+    # Check new version
+    local new_version=$(flatpak_get_installed_version "$app_id")
+
+    if [ "$current_version" = "$new_version" ]; then
+        log_info "$app_name was already at the latest version ($new_version)"
+    else
+        log_success "$app_name successfully updated to version $new_version!"
+    fi
+
+    return 0
+}
+
+# Remove an installed Flatpak application
+#
+# Arguments:
+#   $1 - Application ID (e.g.: io.podman_desktop.PodmanDesktop)
+#   $2 - (Optional) Friendly name for logs (default: use ID)
+#
+# Returns:
+#   0 if removal was successful or app was not installed
+#   1 on error
+flatpak_uninstall() {
+    local app_id="${1:-}"
+    local app_name="${2:-$app_id}"
+
+    if [ -z "$app_id" ]; then
+        log_error "Application ID is required"
+        return 1
+    fi
+
+    # Check if installed
+    if ! flatpak_is_installed "$app_id"; then
+        log_debug "$app_name is not installed"
+        return 0
+    fi
+
+    log_info "Removing $app_name..."
+    log_debug "Application ID: $app_id"
+
+    if ! flatpak uninstall -y --user "$app_id" 2> /dev/null; then
+        log_error "Failed to remove $app_name via Flatpak"
+        return 1
+    fi
+
+    # Verify removal
+    if ! flatpak_is_installed "$app_id"; then
+        log_success "$app_name removed successfully!"
+        return 0
+    else
+        log_error "Failed to remove $app_name completely"
+        return 1
+    fi
+}

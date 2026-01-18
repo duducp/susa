@@ -110,9 +110,83 @@ install_podman_macos() {
     return 0
 }
 
+# Try to install Podman via system package manager
+install_podman_via_package_manager() {
+    log_info "Tentando instalar Podman via gerenciador de pacotes..."
+
+    local installed=false
+
+    if command -v apt-get &> /dev/null; then
+        log_debug "Instalando via apt-get..."
+        if sudo apt-get update > /dev/null 2>&1 && sudo apt-get install -y podman; then
+            installed=true
+        fi
+    elif command -v dnf &> /dev/null; then
+        log_debug "Instalando via dnf..."
+        if sudo dnf install -y podman; then
+            installed=true
+        fi
+    elif command -v yum &> /dev/null; then
+        log_debug "Instalando via yum..."
+        if sudo yum install -y podman; then
+            installed=true
+        fi
+    elif command -v pacman &> /dev/null; then
+        log_debug "Instalando via pacman..."
+        if sudo pacman -S --noconfirm podman; then
+            installed=true
+        fi
+    fi
+
+    if [ "$installed" = true ]; then
+        log_success "Podman instalado via gerenciador de pacotes"
+        return 0
+    fi
+
+    return 1
+}
+
+# Enable and start Podman socket for rootless mode
+enable_podman_service() {
+    log_info "Configurando serviço Podman para usuário..."
+
+    # Enable user lingering (allows user services to run without login)
+    if command -v loginctl &> /dev/null; then
+        loginctl enable-linger "$USER" 2> /dev/null || log_debug "Linger já habilitado"
+    fi
+
+    # Enable and start Podman socket
+    if command -v systemctl &> /dev/null; then
+        systemctl --user enable podman.socket 2> /dev/null || log_debug "Socket já habilitado"
+        systemctl --user start podman.socket 2> /dev/null || log_debug "Socket já iniciado"
+
+        # Verify socket is running
+        if systemctl --user is-active podman.socket > /dev/null 2>&1; then
+            log_debug "Serviço Podman iniciado com sucesso"
+            return 0
+        else
+            log_warning "Não foi possível iniciar o serviço Podman automaticamente"
+            log_info "Execute manualmente: systemctl --user start podman.socket"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
 # Install Podman on Linux using package manager
 install_podman_linux() {
     log_info "Instalando Podman no Linux..."
+
+    # Try package manager first (recommended)
+    if install_podman_via_package_manager; then
+        # Enable and start Podman service
+        enable_podman_service
+        return 0
+    fi
+
+    log_warning "Instalação via gerenciador de pacotes falhou"
+    log_info "Tentando instalação via binário estático..."
 
     # Get latest version
     local podman_version=$(get_latest_version)
@@ -210,6 +284,11 @@ install_podman_linux() {
     # Update current session PATH
     export PATH="$LOCAL_BIN_DIR:$PATH"
 
+    # Warning about static binary limitations
+    log_warning "Binário estático instalado - algumas funcionalidades podem ser limitadas"
+    log_info "Para melhor experiência, considere instalar via gerenciador de pacotes"
+    log_info "Você precisará configurar o serviço Podman manualmente"
+
     # Install podman-compose
     log_info "Instalando podman-compose..."
 
@@ -291,10 +370,13 @@ install_podman() {
                 log_output "  2. Execute: ${LIGHT_CYAN}podman run hello-world${NC}"
             else
                 log_output "  1. Reinicie o terminal ou execute: ${LIGHT_CYAN}source $(detect_shell_config)${NC}"
-                log_output "  2. Execute: ${LIGHT_CYAN}$PODMAN_BIN_NAME --version${NC}"
+                log_output "  2. Verifique o serviço: ${LIGHT_CYAN}systemctl --user status podman.socket${NC}"
+                log_output "  3. Se necessário, inicie: ${LIGHT_CYAN}systemctl --user start podman.socket${NC}"
+                log_output "  4. Teste a instalação: ${LIGHT_CYAN}$PODMAN_BIN_NAME run hello-world${NC}"
             fi
 
-            log_output "  3. Use ${LIGHT_CYAN}susa setup $PODMAN_BIN_NAME --help${NC} para mais informações"
+            log_output ""
+            log_output "  💡 Use ${LIGHT_CYAN}susa setup $PODMAN_BIN_NAME --help${NC} para mais informações"
         else
             log_error "Podman foi instalado mas não está disponível no PATH"
             return 1

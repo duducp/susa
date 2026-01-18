@@ -55,6 +55,10 @@ Gerenciamento automático de dependências externas. Auto-instala ferramentas co
 
 Funções auxiliares para trabalhar com Kubernetes. Valida instalação do `kubectl`, verifica namespaces e contextos.
 
+#### [flatpak.sh](flatpak.md)
+
+Gerenciamento de aplicativos via Flatpak. Instala, atualiza e remove apps do Flathub com configuração automática do repositório. Todas operações em nível de usuário (--user).
+
 #### [github.sh](github.md)
 
 Gerenciamento de releases do GitHub. Baixa releases com verificação de checksum, detecta sistema/arquitetura e automatiza instalação de binários de projetos hospedados no GitHub.

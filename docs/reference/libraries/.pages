@@ -9,6 +9,7 @@ nav:
   - Strings: string.md
   - Tabelas: table.md
   - Dependências: dependencies.md
+  - Flatpak: flatpak.md
   - Instaladores: installations.md
   - Kubernetes: kubernetes.md
   - CLI: cli.md
