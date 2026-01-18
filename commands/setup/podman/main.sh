@@ -286,7 +286,7 @@ install_podman() {
             echo ""
             echo "Próximos passos:"
 
-            if [ "$os_name" = "darwin" ]; then
+            if is_mac; then
                 log_output "  1. A máquina virtual do Podman foi iniciada"
                 log_output "  2. Execute: ${LIGHT_CYAN}podman run hello-world${NC}"
             else
@@ -294,7 +294,7 @@ install_podman() {
                 log_output "  2. Execute: ${LIGHT_CYAN}$PODMAN_BIN_NAME --version${NC}"
             fi
 
-            log_output "  2. Use ${LIGHT_CYAN}susa setup $PODMAN_BIN_NAME --help${NC} para mais informações"
+            log_output "  3. Use ${LIGHT_CYAN}susa setup $PODMAN_BIN_NAME --help${NC} para mais informações"
         else
             log_error "Podman foi instalado mas não está disponível no PATH"
             return 1
