@@ -1,0 +1,11 @@
+{
+  "name": "List",
+  "description": "Lista backups disponíveis das configurações do VS Code",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": null,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

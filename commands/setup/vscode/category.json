@@ -1,0 +1,5 @@
+{
+  "name": "Visual Studio Code",
+  "description": "Gerenciar instalação e configurações do VS Code",
+  "entrypoint": "main.sh"
+}

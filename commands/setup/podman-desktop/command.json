@@ -1,0 +1,9 @@
+{
+  "name": "Podman Desktop",
+  "description": "Podman Desktop no Linux e macOS.",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "group": "container",
+  "os": ["linux", "mac"],
+  "envs": {}
+}

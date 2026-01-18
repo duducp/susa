@@ -1,6 +1,19 @@
 # Setup VS Code
 
-Instala o Visual Studio Code, um editor de código-fonte desenvolvido pela Microsoft, gratuito e open-source, com depuração integrada, controle Git, IntelliSense e extenso marketplace de extensões.
+Gerencia a instalação e configurações do Visual Studio Code, um editor de código-fonte desenvolvido pela Microsoft, gratuito e open-source, com depuração integrada, controle Git, IntelliSense e extenso marketplace de extensões.
+
+## Estrutura de Comandos
+
+O VS Code no SUSA possui uma estrutura hierárquica:
+
+```
+susa setup vscode
+├── install          # Instala, atualiza ou desinstala o VS Code
+└── backup           # Gerencia backups de configurações
+    ├── create       # Cria um novo backup
+    ├── list         # Lista backups disponíveis
+    └── restore      # Restaura um backup
+```
 
 ## O que é VS Code?
 
@@ -29,7 +42,7 @@ function calculateTotal(items: Item[]): number {
 ### Instalar
 
 ```bash
-susa setup vscode
+susa setup vscode install
 ```
 
 O comando vai:
@@ -60,7 +73,7 @@ code -r arquivo.txt   # Reutiliza janela existente
 ### Atualizar
 
 ```bash
-susa setup vscode --upgrade
+susa setup vscode install --upgrade
 ```
 
 Atualiza o VS Code para a versão mais recente disponível. O comando usa:
@@ -75,7 +88,7 @@ Todas as suas configurações, extensões e temas serão preservados.
 ### Desinstalar
 
 ```bash
-susa setup vscode --uninstall
+susa setup vscode install --uninstall
 ```
 
 Remove o VS Code do sistema. O comando vai:
@@ -87,7 +100,7 @@ Remove o VS Code do sistema. O comando vai:
    - `~/Library/Application Support/Code` (macOS)
    - `~/.vscode`
 
-## Opções
+## Opções (Install)
 
 | Opção | O que faz |
 |-------|-----------|
@@ -96,6 +109,133 @@ Remove o VS Code do sistema. O comando vai:
 | `--uninstall` | Remove o VS Code do sistema |
 | `-v, --verbose` | Habilita saída detalhada para depuração |
 | `-q, --quiet` | Minimiza a saída, desabilita mensagens de depuração |
+
+## Backup e Restore
+
+O SUSA CLI oferece comandos dedicados para gerenciar backups das configurações do VS Code, incluindo perfis, extensões, snippets e keybindings.
+
+### Criar Backup
+
+```bash
+# Backup com nome automático
+susa setup vscode backup create
+
+# Backup com nome específico
+susa setup vscode backup create --name meu-backup-2026
+
+# Backup sem incluir extensões
+susa setup vscode backup create --no-extensions
+```
+
+**Opções:**
+
+| Opção | O que faz |
+|-------|-----------|
+| `--name <nome>` | Nome do backup (padrão: vscode-backup-YYYYMMDD-HHMMSS) |
+| `--no-extensions` | Não incluir extensões no backup |
+| `--dir <dir>` | Diretório onde salvar o backup |
+| `-v, --verbose` | Habilita saída detalhada |
+
+**O que é incluído no backup:**
+
+- ✅ Configurações do usuário (`settings.json`)
+- ✅ Perfis personalizados (profiles)
+- ✅ Snippets personalizados
+- ✅ Keybindings (atalhos de teclado)
+- ✅ Lista de extensões instaladas
+- ✅ Metadados do backup (data, versão do VS Code, OS)
+
+### Listar Backups
+
+```bash
+susa setup vscode backup list
+```
+
+Lista todos os backups disponíveis com informações de tamanho e data de criação.
+
+**Opções:**
+
+| Opção | O que faz |
+|-------|-----------|
+| `--dir <dir>` | Diretório de backups (padrão: ~/.susa/backups/vscode) |
+
+### Restaurar Backup
+
+```bash
+# Restaurar backup específico
+susa setup vscode backup restore meu-backup-2026
+
+# Restaurar sem reinstalar extensões
+susa setup vscode backup restore meu-backup-2026 --no-extensions
+
+# Restaurar sem confirmação
+susa setup vscode backup restore meu-backup-2026 -y
+
+# Ver informações do backup antes de restaurar
+susa setup vscode backup restore meu-backup-2026 --info
+```
+
+**Opções:**
+
+| Opção | O que faz |
+|-------|-----------|
+| `--no-extensions` | Não reinstalar extensões |
+| `-y, --yes` | Pubackup create --name pre-upgrade-backup
+susa setup vscode install --upgrade
+```
+
+**2. Sincronizar configurações entre máquinas:**
+
+```bash
+# Na máquina de origem
+susa setup vscode backup create --name work-config
+scp ~/.susa/backups/vscode/work-config.tar.gz user@home-machine:~/
+
+# Na máquina de destino
+mv ~/work-config.tar.gz ~/.susa/backups/vscode/
+susa setup vscode backup restore work-config
+```
+
+**3. Testar novas configurações:**
+
+```bash
+# Backup atual
+susa setup vscode backup create --name stable-config
+
+# Testar novas configurações...
+# Se não gostar, restaurar
+susa setup vscode backup restore stable-config
+```
+
+**4. Migrar para novo sistema:**
+
+```bash
+# Sistema antigo
+susa setup vscode backup create --name full-config
+
+# Copiar backup para novo sistema
+# Sistema novo (após instalar VS Code)
+susa setup vscode backup nfigurações:**
+
+```bash
+# Backup atual
+susa setup vscode --backup --name stable-config
+
+# Testar novas configurações...
+# Se não gostar, restaurar
+susa setup vscode --restore stable-config
+```
+
+**4. Migrar para novo sistema:**
+
+```bash
+# Sistema antigo
+susa setup vscode --backup --name full-config
+
+# Copiar backup para novo sistema
+# Sistema novo (após instalar VS Code)
+susa setup vscode --restore full-config
+```
 
 ## Guia Rápido de Uso
 
@@ -565,8 +705,8 @@ which code
 code --version
 
 # Reinstalar se necessário
-susa setup vscode --uninstall
-susa setup vscode
+susa setup vscode install --uninstall
+susa setup vscode install
 ```
 
 ### Extensões não carregam

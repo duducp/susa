@@ -119,8 +119,9 @@ execute_command() {
     # Load environment variables from command config
     load_command_envs "$config_file"
 
-    # Export command name for use in scripts
+    # Export command name and category for use in scripts
     export COMMAND_NAME="$command"
+    export COMMAND_CATEGORY="$category"
 
     source "$script_path" "$@"
 }

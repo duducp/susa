@@ -1,0 +1,11 @@
+{
+  "name": "Uninstall",
+  "description": "Remove o VS Code do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "group": "editor",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

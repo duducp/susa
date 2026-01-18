@@ -479,9 +479,10 @@ get_latest_software_version() {
 # Usage: show_software_info "docker"
 show_software_info() {
     local command_name="${COMMAND_NAME:-}"
+    local command_category="${COMMAND_CATEGORY:-}"
     local software_name="${1:-${command_name}}"
 
-    if [ -z "$command_name" ]; then
+    if [ -z "$software_name" ]; then
         log_error "Nome do software não especificado e COMMAND_NAME não definida"
         return 1
     fi
@@ -489,8 +490,8 @@ show_software_info() {
     local lock_file="${CLI_DIR}/susa.lock"
 
     # Get display name from lock file
-    local display_name=$(jq -r ".commands[] | select(.name == \"$command_name\") | .displayName // \"$software_name\"" "$lock_file" 2> /dev/null)
-    [ -z "$display_name" ] || [ "$display_name" = "null" ] && display_name="$command_name"
+    local display_name=$(jq -r ".commands[] | select(.name == \"$software_name\") | .displayName // \"$software_name\"" "$lock_file" 2> /dev/null)
+    [ -z "$display_name" ] || [ "$display_name" = "null" ] && display_name="$software_name"
 
     # Get versions
     local current_version=$(get_current_software_version "$software_name" 2> /dev/null)
