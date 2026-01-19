@@ -172,8 +172,10 @@ source "$LIB_DIR/internal/executor.sh"
 # Check dependencies before proceeding
 check_dependencies
 
-# Load cache for fast startup
-cache_load 2> /dev/null || true
+# Load cache for fast startup (only if lock exists)
+if [ -f "$CLI_DIR/susa.lock" ]; then
+    cache_load 2> /dev/null || true
+fi
 
 # Validate if the configuration file exists
 if [ ! -f "$GLOBAL_CONFIG_FILE" ]; then
@@ -206,6 +208,7 @@ validate_or_create_lock_file() {
     local lock_output
     if ! lock_output=$(SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock 2>&1); then
         log_error "Erro ao gerar arquivo de cache"
+        echo "$lock_output" >&2
         exit 1
     fi
 
@@ -363,12 +366,23 @@ main() {
     esac
 
     # Resolve category path and remaining arguments
-    local result=$(resolve_category_path "${filtered_args[@]}")
+    local result_output
+    result_output=$(resolve_category_path "${filtered_args[@]}")
+
+    # Read result into array
+    local result=()
+    while IFS= read -r line; do
+        result+=("$line")
+    done <<< "$result_output"
+
     local category="${result[0]}"
     local remaining_args=("${result[@]:1}")
 
     # No command specified - list category commands
-    [ ${#remaining_args[@]} -eq 0 ] && list_commands "$category" && exit 0
+    if [ ${#remaining_args[@]} -eq 0 ]; then
+        list_commands "$category"
+        exit 0
+    fi
 
     # Handle --help flag for command-specific help
     if [ "$show_command_help" = true ]; then
@@ -377,7 +391,14 @@ main() {
     fi
 
     # Extract command and its arguments
-    local command="${remaining_args[0]}"
+    local command="${remaining_args[0]:-}"
+
+    # If no command was extracted, show help
+    if [ -z "$command" ]; then
+        list_commands "$category"
+        exit 0
+    fi
+
     local command_args=("${remaining_args[@]:1}")
 
     # Execute the command

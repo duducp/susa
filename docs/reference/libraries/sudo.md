@@ -43,9 +43,6 @@ Verifica se algum argumento permite bypass da verificação de sudo. Útil para 
 - `-h`, `--help`, `help` - Comandos de ajuda
 - `-v`, `--version`, `version` - Informações de versão
 - `--info` - Informações do software
-- `--get-current-version` - Obter versão instalada
-- `--get-latest-version` - Obter versão mais recente
-- `--check-installation` - Verificar instalação
 
 **Parâmetros:**
 
@@ -225,9 +222,6 @@ A lista completa de argumentos que não requerem sudo:
 | `-h`, `--help`, `help` | Exibe ajuda do comando |
 | `-v`, `--version`, `version` | Mostra versão |
 | `--info` | Informações do software |
-| `--get-current-version` | Versão instalada |
-| `--get-latest-version` | Versão disponível |
-| `--check-installation` | Verifica instalação |
 
 ## Fluxo de Execução
 

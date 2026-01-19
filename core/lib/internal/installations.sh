@@ -1,6 +1,4 @@
 #!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
 
 # ============================================================
 # Installation Tracking Library
@@ -366,7 +364,6 @@ get_available_setup_commands() {
 }
 
 # Checks if software is actually installed on system (not lock file)
-# Uses custom --check-installation if implemented, falls back to command -v
 # Returns: 0 if installed, 1 if not
 # Usage: if check_software_installed "docker"; then ...
 check_software_installed() {

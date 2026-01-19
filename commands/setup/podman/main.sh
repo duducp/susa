@@ -55,6 +55,12 @@ show_help() {
     log_output "  podman --version                   # Verifica a instalação"
     log_output "  podman run hello-world             # Teste com container simples"
     log_output "  podman images                      # Lista imagens disponíveis"
+    log_output "  podman ps                          # Lista containers em execução"
+    log_output "  podman compose                     # Gerencia aplicações multi-container"
+    log_output ""
+    log_output "${LIGHT_GREEN}Interface Gráfica:${NC}"
+    log_output "  Se preferir gerenciar containers com interface gráfica:"
+    log_output "    ${LIGHT_CYAN}susa setup podman-desktop${NC}     # Instala Podman Desktop"
 }
 
 get_latest_version() {
@@ -665,32 +671,9 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                ;;
             --info)
-                show_software_info $PODMAN_BIN_NAME
+                show_software_info "podman" "$PODMAN_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             --uninstall)
                 action="uninstall"

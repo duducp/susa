@@ -36,22 +36,6 @@ show_help() {
 # ============================================================
 
 main() {
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            *)
-                log_error "Opção inválida: $1"
-                log_output ""
-                log_output "Use ${LIGHT_CYAN}susa self cache list --help${NC} para ver opções disponíveis"
-                exit 1
-                ;;
-        esac
-    done
-
     log_info "Listando caches disponíveis..."
     echo ""
 

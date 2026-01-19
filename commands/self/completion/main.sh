@@ -1033,18 +1033,6 @@ main() {
     # Parse arguments
     while [ $# -gt 0 ]; do
         case "$1" in
-            -h | --help)
-                show_help
-                return 0
-                ;;
-            -v | --verbose)
-                export DEBUG=1
-                shift
-                ;;
-            -q | --quiet)
-                export SILENT=1
-                shift
-                ;;
             -i | --install)
                 action="install"
                 shift

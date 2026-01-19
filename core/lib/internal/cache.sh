@@ -30,9 +30,9 @@ fi
 # Associative arrays for named caches (bash 4+)
 # Only declare if not already declared (prevent reset on re-source)
 if [ -z "${_SUSA_NAMED_CACHES_INITIALIZED+x}" ]; then
-    declare -A _SUSA_NAMED_CACHES
-    declare -A _SUSA_NAMED_CACHES_LOADED
-    export _SUSA_NAMED_CACHES_INITIALIZED=1
+    declare -gA _SUSA_NAMED_CACHES
+    declare -gA _SUSA_NAMED_CACHES_LOADED
+    _SUSA_NAMED_CACHES_INITIALIZED=1
 fi
 
 # ============================================================

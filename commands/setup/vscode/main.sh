@@ -2,14 +2,15 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Source libraries
-source "$LIB_DIR/internal/installations.sh"
-source "$LIB_DIR/github.sh"
+# Source libraries only if not just showing complement help
+if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
+    source "$LIB_DIR/internal/installations.sh"
+    source "$LIB_DIR/github.sh"
 
-# Source utils
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
-
-source "$UTILS_DIR/common.sh"
+    # Source utils
+    UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+    source "$UTILS_DIR/common.sh"
+fi
 
 # Constants
 VSCODE_NAME="Visual Studio Code"
@@ -19,11 +20,8 @@ VSCODE_BIN_NAME="code"
 # Show additional info in category listing
 show_complement_help() {
     log_output ""
-    log_output "${LIGHT_GREEN}Comandos de informação:${NC}"
-    log_output "  ${LIGHT_CYAN}susa setup vscode --info${NC}                    Mostra informações do VS Code instalado"
-    log_output "  ${LIGHT_CYAN}susa setup vscode --check-installation${NC}      Verifica se VS Code está instalado"
-    log_output "  ${LIGHT_CYAN}susa setup vscode --get-current-version${NC}     Exibe versão instalada"
-    log_output "  ${LIGHT_CYAN}susa setup vscode --get-latest-version${NC}      Exibe versão mais recente disponível"
+    log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  --info                    Mostra informações do VS Code instalado"
 }
 
 # Help function
@@ -42,11 +40,8 @@ show_help() {
     log_output "  uninstall    Remove o VS Code do sistema"
     log_output "  backup       Gerencia backups das configurações"
     log_output ""
-    log_output "${LIGHT_GREEN}Opções de informação:${NC}"
+    log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  --info                    Mostra informações do VS Code instalado"
-    log_output "  --check-installation      Verifica se VS Code está instalado"
-    log_output "  --get-current-version     Exibe versão instalada"
-    log_output "  --get-latest-version      Exibe versão mais recente disponível"
     log_output "  -h, --help                Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
@@ -61,25 +56,9 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
             --info)
-                show_software_info "$VSCODE_BIN_NAME"
+                show_software_info "code" "$VSCODE_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             *)
                 log_error "Opção desconhecida: $1"
@@ -94,5 +73,7 @@ main() {
     show_help
 }
 
-# Execute main function
-main "$@"
+# Execute main function only if not skipped (for show_complement_help)
+if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
+    main "$@"
+fi

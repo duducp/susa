@@ -11,7 +11,7 @@ source "$LIB_DIR/flatpak.sh"
 # Constants
 APP_NAME="Podman Desktop"
 REPO="podman-desktop/podman-desktop"
-BIN_NAME="podman-desktop"
+PODMAN_BIN_NAME="podman-desktop"
 FLATPAK_APP_ID="io.podman_desktop.PodmanDesktop"
 APP_MACOS="/Applications/Podman Desktop.app"
 SKIP_CONFIRM=false
@@ -82,17 +82,6 @@ get_current_version() {
     else
         echo "desconhecida"
     fi
-}
-
-get_installation() {
-    case "$OS_TYPE" in
-        macos)
-            echo "$APP_MACOS"
-            ;;
-        *)
-            echo "Flatpak: $FLATPAK_APP_ID"
-            ;;
-    esac
 }
 
 # Check if Podman Desktop is installed
@@ -331,37 +320,8 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                shift
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                shift
-                ;;
             --info)
-                show_software_info "$BIN_NAME"
-                exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
-                ;;
-            --get-installation)
-                get_installation
+                show_software_info "podman-desktop" "$PODMAN_BIN_NAME"
                 exit 0
                 ;;
             --uninstall)

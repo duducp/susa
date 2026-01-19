@@ -457,46 +457,13 @@ uninstall_mysql() {
 # Main function
 main() {
     local action="install"
-    # First parse for global flags
-    for arg in "$@"; do
-        case "$arg" in
-            -v | --verbose)
-                export DEBUG=true
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                ;;
-        esac
-    done
 
     # Parse dos argumentos e ações
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                shift
-                ;;
-            -q | --quiet)
-                shift
-                ;;
             --info)
-                show_software_info $MYSQL_BIN_NAME
+                show_software_info "mysql" "$MYSQL_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             --uninstall)
                 action="uninstall"

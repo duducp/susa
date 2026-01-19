@@ -67,16 +67,42 @@ show_help() {
     log_output "  antes da restauração, permitindo reverter se necessário."
 }
 
+# Find backup file
+find_backup_file() {
+    local backup_name="$1"
+    local backup_archive=""
+
+    # First, try the default backup directory
+    if [ -f "$BACKUP_DIR/$backup_name.tar.gz" ]; then
+        backup_archive="$BACKUP_DIR/$backup_name.tar.gz"
+    # Then, try the current directory
+    elif [ -f "$PWD/$backup_name.tar.gz" ]; then
+        backup_archive="$PWD/$backup_name.tar.gz"
+    # Also try without .tar.gz extension in both locations
+    elif [ -f "$BACKUP_DIR/$backup_name" ]; then
+        backup_archive="$BACKUP_DIR/$backup_name"
+    elif [ -f "$PWD/$backup_name" ]; then
+        backup_archive="$PWD/$backup_name"
+    fi
+
+    echo "$backup_archive"
+}
+
 # Show backup information
 show_backup_info() {
     local backup_name="$1"
-    local backup_archive="$BACKUP_DIR/$backup_name.tar.gz"
+    local backup_archive=$(find_backup_file "$backup_name")
 
-    if [ ! -f "$backup_archive" ]; then
+    if [ -z "$backup_archive" ] || [ ! -f "$backup_archive" ]; then
         log_error "Backup não encontrado: $backup_name"
+        log_info "Locais verificados:"
+        log_info "  - $BACKUP_DIR/$backup_name.tar.gz"
+        log_info "  - $PWD/$backup_name.tar.gz"
         log_info "Use: susa setup vscode backup list"
         return 1
     fi
+
+    log_debug "Backup encontrado em: $backup_archive"
 
     log_info "Informações do backup: $backup_name"
     log_output ""
@@ -122,14 +148,19 @@ restore_backup() {
         return 1
     fi
 
-    local backup_archive="$BACKUP_DIR/$backup_name.tar.gz"
+    local backup_archive=$(find_backup_file "$backup_name")
 
     # Check if backup exists
-    if [ ! -f "$backup_archive" ]; then
+    if [ -z "$backup_archive" ] || [ ! -f "$backup_archive" ]; then
         log_error "Backup não encontrado: $backup_name"
+        log_info "Locais verificados:"
+        log_info "  - $BACKUP_DIR/$backup_name.tar.gz"
+        log_info "  - $PWD/$backup_name.tar.gz"
         log_info "Use: susa setup vscode backup list"
         return 1
     fi
+
+    log_debug "Backup encontrado em: $backup_archive"
 
     # Show backup info
     show_backup_info "$backup_name"
@@ -209,26 +240,55 @@ restore_backup() {
 
         local extension_count=$(wc -l < "$backup_content_dir/extensions.txt")
         log_info "Instalando $extension_count extensões..."
+        log_output ""
 
         local installed=0
         local failed=0
+        local timeout_count=0
+        local current=0
+        local timeout_seconds=10
 
         while IFS= read -r extension; do
             if [ -n "$extension" ]; then
-                log_debug "Instalando extensão: $extension"
-                if code --install-extension "$extension" --force > /dev/null 2>&1; then
-                    installed=$((installed + 1))
+                current=$((current + 1))
+
+                # Show progress
+                log_info "[$current/$extension_count] Instalando: $extension"
+
+                if is_debug_enabled; then
+                    # In debug mode, show command output
+                    if timeout "$timeout_seconds" code --install-extension "$extension" --force; then
+                        installed=$((installed + 1))
+                    elif [ $? -eq 124 ]; then
+                        timeout_count=$((timeout_count + 1))
+                        log_warning "  ⏱ Timeout (>${timeout_seconds}s) - Ignorando"
+                    else
+                        failed=$((failed + 1))
+                        log_error "  ✗ Falha ao instalar"
+                    fi
                 else
-                    failed=$((failed + 1))
-                    log_warning "Falha ao instalar: $extension"
+                    # In normal mode, suppress output but show result
+                    if timeout "$timeout_seconds" code --install-extension "$extension" --force > /dev/null 2>&1; then
+                        installed=$((installed + 1))
+                    elif [ $? -eq 124 ]; then
+                        timeout_count=$((timeout_count + 1))
+                        log_warning "  ⏱ Timeout (>${timeout_seconds}s)"
+                    else
+                        failed=$((failed + 1))
+                        log_warning "  ✗ Falha"
+                    fi
                 fi
             fi
         done < "$backup_content_dir/extensions.txt"
 
         log_output ""
-        log_info "Extensões instaladas: $installed"
+        log_success "Processo de instalação concluído!"
+        log_info "Extensões instaladas com sucesso: $installed"
         if [ $failed -gt 0 ]; then
             log_warning "Extensões com falha: $failed"
+        fi
+        if [ $timeout_count -gt 0 ]; then
+            log_warning "Extensões ignoradas por timeout: $timeout_count"
         fi
     fi
 
@@ -260,10 +320,6 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
             --no-extensions)
                 install_extensions="false"
                 shift

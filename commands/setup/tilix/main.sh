@@ -395,34 +395,9 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                logger_debug "Modo verbose ativado"
-                export DEBUG=1
-                shift
-                ;;
-            -q | --quiet)
-                export SILENT=1
-                shift
-                ;;
             --info)
-                show_software_info "$TILIX_BIN_NAME"
+                show_software_info "tilix" "$TILIX_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             --uninstall)
                 action="uninstall"

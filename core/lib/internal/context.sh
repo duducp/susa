@@ -12,9 +12,6 @@
 #   - core/lib/logger.sh (optional - for logging)
 #
 
-set -euo pipefail
-IFS=$'\n\t'
-
 # Name of the cache used for context
 CONTEXT_CACHE_NAME="context"
 

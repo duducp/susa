@@ -92,25 +92,5 @@ main() {
     fi
 }
 
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -h | --help)
-            show_help
-            exit 0
-            ;;
-        -v | --verbose)
-            export DEBUG=1
-            shift
-            ;;
-        *)
-            log_error "Argumento inválido: $1"
-            log_output ""
-            show_help
-            exit 1
-            ;;
-    esac
-done
-
 # Execute main function
 main

@@ -32,9 +32,6 @@ should_bypass_sudo() {
         "--version"
         "version"
         "--info"
-        "--get-current-version"
-        "--get-latest-version"
-        "--check-installation"
     )
 
     for arg in "$@"; do

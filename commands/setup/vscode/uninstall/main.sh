@@ -126,19 +126,6 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                shift
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                shift
-                ;;
             -y | --yes)
                 SKIP_CONFIRM=true
                 shift

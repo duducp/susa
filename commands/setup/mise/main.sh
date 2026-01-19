@@ -50,12 +50,23 @@ show_help() {
     echo "    source ~/.bashrc   (para Bash)"
     echo "    source ~/.zshrc    (para Zsh)"
     echo ""
+    log_output "${LIGHT_GREEN}Suporte ao Legado:${NC}"
+    log_output "  Durante a instalação, você pode habilitar suporte a arquivos legados"
+    log_output "  de outros gerenciadores (.tool-versions, .python-version, .node-version, .nvmrc, .go-version)."
+    echo ""
     log_output "${LIGHT_GREEN}Próximos passos:${NC}"
+    log_output "  mise list                    	# Listar ferramentas instaladas"
+    log_output "  mise doctor    				# Verificar instalação do Mise"
     log_output "  mise use --global node@20    	# Instalar e usar Node.js 20"
     log_output "  mise use --global python@3.12 # Instalar e usar Python 3.12"
     log_output "  mise use --global go@latest   # Instalar e usar Go (latest)"
-    log_output "  mise list                    	# Listar ferramentas instaladas"
-    log_output "  mise install                  # Instalar ferramentas do .mise.toml"
+    log_output "  mise ls go                    # Listar versões do Go instaladas"
+    log_output "  mise ls-remote go             # Listar todas as versões de Go disponíveis"
+    log_output "  mise uninstall go@1.25.6      # Desinstalar Go 1.25.6"
+    log_output ""
+    log_output "  Para o GO funcionar corretamente, adicione os dados abaixo ao seu shell:"
+    log_output "    export GOPATH=\"\$HOME/go\""
+    log_output "    export PATH=\"\$GOPATH/bin:\$PATH\""
 }
 
 # Get latest Mise version from GitHub
@@ -185,6 +196,24 @@ setup_mise_environment() {
     log_debug "PATH atualizado com: $bin_dir"
 }
 
+# Configure legacy version file support
+configure_legacy_support() {
+    local enable_legacy="$1"
+
+    if [ "$enable_legacy" = "true" ]; then
+        log_debug "Habilitando suporte a arquivos legados (.tool-versions, .node-version, etc)"
+        if $MISE_BIN_NAME settings set legacy_version_file true 2>&1 | while read -r line; do log_debug "mise: $line"; done; then
+            log_info "Suporte ao legado habilitado"
+        else
+            log_warning "Não foi possível habilitar o suporte ao legado automaticamente"
+            log_info "Execute manualmente: mise settings set legacy_version_file true"
+        fi
+    else
+        log_debug "Suporte a arquivos legados não habilitado"
+        $MISE_BIN_NAME settings set legacy_version_file false 2>&1 | while read -r line; do log_debug "mise: $line"; done || true
+    fi
+}
+
 # Main installation function
 install_mise_release() {
     local bin_dir="$LOCAL_BIN_DIR"
@@ -220,7 +249,29 @@ install_mise() {
         exit 0
     fi
     log_info "Iniciando instalação do Mise..."
+
+    # Ask about legacy version file support
+    local enable_legacy="false"
+    if [ "$SKIP_CONFIRM" = false ]; then
+        echo ""
+        log_output "${YELLOW}Deseja habilitar suporte a arquivos legados?${NC}"
+        log_output "${DIM}(Permite ler .tool-versions, .node-version, .python-version, etc)${NC}"
+        log_output "${YELLOW}Recomendado se você já trabalha com projetos existentes (S/n)${NC}"
+        read -r legacy_response
+
+        # Default to yes if empty or starts with s/S/y/Y
+        if [[ -z "$legacy_response" ]] || [[ "$legacy_response" =~ ^[sSyY] ]]; then
+            enable_legacy="true"
+        fi
+    else
+        # In auto mode, enable legacy support by default
+        enable_legacy="true"
+        log_info "Suporte ao legado habilitado automaticamente (modo --yes)"
+    fi
+
     install_mise_release
+    configure_legacy_support "$enable_legacy"
+
     # Verify installation
     local shell_config=$(detect_shell_config)
     if check_installation; then
@@ -393,25 +444,9 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
             --info)
                 show_software_info "mise" "$MISE_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             --uninstall)
                 action="uninstall"

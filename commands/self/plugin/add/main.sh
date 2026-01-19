@@ -539,18 +539,6 @@ PLUGIN_ARG=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h | --help)
-            show_help
-            exit 0
-            ;;
-        -v | --verbose)
-            export DEBUG=1
-            shift
-            ;;
-        -q | --quiet)
-            export SILENT=1
-            shift
-            ;;
         --ssh)
             USE_SSH="true"
             shift

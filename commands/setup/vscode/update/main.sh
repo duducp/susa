@@ -113,30 +113,6 @@ update_vscode() {
 
 # Main function
 main() {
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                shift
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                shift
-                ;;
-            *)
-                log_error "Opção desconhecida: $1"
-                show_usage
-                exit 1
-                ;;
-        esac
-    done
-
     update_vscode
 }
 

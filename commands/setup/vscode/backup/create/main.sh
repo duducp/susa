@@ -199,10 +199,6 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
             --name)
                 backup_name="$2"
                 shift 2
@@ -214,10 +210,6 @@ main() {
             --dir)
                 BACKUP_DIR="$2"
                 shift 2
-                ;;
-            -v | --verbose)
-                export DEBUG=true
-                shift
                 ;;
             *)
                 log_error "Opção desconhecida: $1"

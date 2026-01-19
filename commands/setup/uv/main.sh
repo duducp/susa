@@ -70,7 +70,22 @@ get_current_version() {
     fi
 }
 
-# Check if UV is installed
+# Check if is installed on the system.
+#
+# This function verifies the availability of the 'uv' command in the system's PATH
+# by using the 'command -v' builtin, which is POSIX-compliant and works across
+# different shells.
+#
+# Returns:
+#   0 - If UV is installed and available in PATH
+#   1 - If UV is not found in the system
+#
+# Example:
+#   if check_installation; then
+#       echo "UV is installed"
+#   else
+#       echo "UV is not installed"
+#   fi
 check_installation() {
     command -v uv &> /dev/null
 }
@@ -412,32 +427,9 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                ;;
             --info)
                 show_software_info "$UV_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             --uninstall)
                 action="uninstall"

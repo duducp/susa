@@ -188,10 +188,6 @@ DETAIL_PLUGIN=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -h | --help)
-            show_help
-            exit 0
-            ;;
         --detail)
             if [ -z "${2:-}" ]; then
                 log_error "O argumento --detail requer um nome de plugin"
@@ -199,14 +195,6 @@ while [[ $# -gt 0 ]]; do
             fi
             DETAIL_PLUGIN="$2"
             shift 2
-            ;;
-        -v | --verbose)
-            export DEBUG=1
-            shift
-            ;;
-        -q | --quiet)
-            export SILENT=1
-            shift
             ;;
         *)
             log_error "Argumento inválido: $1"

@@ -48,9 +48,10 @@ show_help() {
     log_output "    gcloud auth login"
     log_output ""
     log_output "${LIGHT_GREEN}Próximos passos:${NC}"
-    log_output "  gcloud --version               # Verifica a instalação"
-    log_output "  gcloud init                    # Inicializa configuração"
-    log_output "  gcloud projects list           # Lista projetos GCP"
+    log_output "  gcloud --version               	# Verifica a instalação"
+    log_output "  gcloud projects list           	# Lista projetos GCP"
+    log_output "  gcloud config set project <ID> 	# Define o projeto GCP ativo"
+    log_output "  gcloud components install kubectl # Instala o kubectl via gcloud"
 }
 
 # Get latest version from Google Cloud SDK
@@ -488,34 +489,9 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                shift
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                shift
-                ;;
             --info)
-                show_software_info "$GCLOUD_BIN_NAME"
+                show_software_info "gcloud" "$GCLOUD_BIN_NAME"
                 exit 0
-                ;;
-            --get-current-version)
-                get_current_version
-                exit 0
-                ;;
-            --get-latest-version)
-                get_latest_version
-                exit 0
-                ;;
-            --check-installation)
-                check_installation
-                exit $?
                 ;;
             --uninstall)
                 action="uninstall"

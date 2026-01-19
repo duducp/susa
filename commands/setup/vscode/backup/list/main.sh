@@ -74,10 +74,6 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                show_help
-                exit 0
-                ;;
             --dir)
                 BACKUP_DIR="$2"
                 shift 2
