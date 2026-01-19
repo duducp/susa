@@ -44,14 +44,14 @@ get_installed_from_cache() {
 # Returns: 0 if installed, 1 otherwise
 # Usage: if is_installed_cached "docker"; then ...
 is_installed_cached() {
-    local software_name="$1"
+    local installation_command_name="$1"
 
-    if [ -z "$software_name" ]; then
+    if [ -z "$installation_command_name" ]; then
         return 1
     fi
 
     # Use cache for fast lookup
-    local installed=$(cache_query ".installations[]? | select(.name == \"$software_name\") | .installed" 2> /dev/null)
+    local installed=$(cache_query ".installations[]? | select(.name == \"$installation_command_name\") | .installed" 2> /dev/null)
 
     [ "$installed" = "true" ] && return 0
     return 1
@@ -347,174 +347,160 @@ list_installed() {
 }
 
 # Scans commands/setup directory and lists available setup commands
-# Returns: 0 with newline-separated command names, 1 if dir not found
+# Uses cache for performance (reads from susa.lock instead of disk)
+# Returns: 0 with newline-separated command names, 1 if unavailable
 # Usage: get_available_setup_commands
 get_available_setup_commands() {
-    local cli_dir="${CLI_DIR}"
-    local setup_dir="${cli_dir}/commands/setup"
+    # Extract rootPath: first directory after category in path (e.g., "setup/vscode/main.sh" -> "docker")
+    # Collect all results in array, apply unique to remove duplicates, then iterate
+    local commands=$(cache_query '[.commands[]? | select(.category == "setup") | ((.category + "/" + .name) | split("/") | .[1])] | unique | .[]' 2> /dev/null)
 
-    if [ ! -d "$setup_dir" ]; then
-        return 1
+    if [ -n "$commands" ]; then
+        log_debug "Comandos de setup obtidos do cache"
+        echo "$commands"
+        return 0
     fi
 
-    for cmd_dir in "$setup_dir"/*; do
-        [ ! -d "$cmd_dir" ] && continue
-        local cmd_name=$(basename "$cmd_dir")
-        [ -f "$cmd_dir/main.sh" ] && echo "$cmd_name"
-    done
+    log_error "Falha ao obter os cocomandos de setup do cache"
+    return 1
 }
 
 # Checks if software is actually installed on system (not lock file)
 # Uses custom --check-installation if implemented, falls back to command -v
-# Args: software_name (optional, defaults to $COMMAND_NAME)
 # Returns: 0 if installed, 1 if not
 # Usage: if check_software_installed "docker"; then ...
 check_software_installed() {
-    local command_name="${COMMAND_NAME:-}"
-    local software_name="${1:-${command_name}}"
+    local current_command=$(context_get "command.name" 2> /dev/null || echo "")
 
-    if [ -z "$command_name" ]; then
-        return 1
-    fi
+    if declare -f check_installation > /dev/null 2>&1; then
+        log_debug "Verificando se o software está instalado via check_installation()"
 
-    local setup_command_file="${CLI_DIR}/commands/setup/${command_name}/main.sh"
-    # Check if setup command exists
-    if [ -f "$setup_command_file" ]; then
-        # Try to execute custom check via susa CLI
-        "${CORE_DIR}/susa" setup "$command_name" --check-installation &> /dev/null
-        local custom_check_result=$?
+        check_installation &> /dev/null
+        local exit_code=$?
 
-        # If command supports --check-installation, use its result
-        # Exit code 0 = installed, 1 = not installed, 2 = flag not supported
-        if [ $custom_check_result -ne 2 ]; then
-            return $custom_check_result
+        if [ $exit_code -eq 0 ]; then
+            log_debug "Comando '$current_command' encontra se instalado (exit code: $exit_code)"
+            return 0
         fi
+
+        # Flag not supported - unable to verify installation status
+        log_debug "Comando '$current_command' não esta instalado (exit code: $exit_code)"
+        return 1
+    else
+        log_debug "Função check_installation() não implementada em $current_command"
     fi
 
-    # Fallback to generic check: try command -v
-    command -v "$software_name" &> /dev/null
+    local binary_name="${1:-}"
+
+    return 1
 }
 
-# Gets current version from system (via --get-current-version flag)
-# Also updates lock file with detected version
-# Args: command_name (optional, defaults to $COMMAND_NAME)
+# Gets current version from system by calling get_current_version() from command context
+# This function should only be called within a command's execution context (e.g., --info flag)
 # Returns: version string or "N/A"
-# Usage: version=$(get_current_software_version "docker")
 get_current_software_version() {
-    local command_name="${COMMAND_NAME:-}"
-    local software_name="${1:-${command_name}}"
+    local current_command=$(context_get "command.name" 2> /dev/null || echo "")
 
-    if [ -z "$command_name" ]; then
-        log_debug "Nome do software não especificado e COMMAND_NAME não definida"
-        echo "N/A"
-        return 1
+    if declare -f get_current_version > /dev/null 2>&1; then
+        log_debug "Obtendo versão atual via get_current_version()"
+
+        local version=$(get_current_version 2> /dev/null)
+        if [ -n "$version" ] && [ "$version" != "desconhecida" ]; then
+            echo "$version"
+            return 0
+        fi
+    else
+        log_debug "Função get_current_version() não implementada em $current_command"
     fi
 
-    local setup_command_file="${CLI_DIR}/commands/setup/${command_name}/main.sh"
-
-    # Check if setup command file exists
-    if [ ! -f "$setup_command_file" ]; then
-        log_debug "Comando de configuração não encontrado: commands/setup/${command_name}/main.sh"
-        echo "N/A"
-        return 0
-    fi
-
-    # Execute through susa CLI to ensure all environment variables are loaded
-    local version=$("${CORE_DIR}/susa" setup "$command_name" --get-current-version 2> /dev/null)
-    local exit_code=$?
-
-    # Validate and return version
-    if [ $exit_code -eq 0 ] && [ -n "$version" ] && [ "$version" != "desconhecida" ]; then
-        echo "$version"
-        register_or_update_software_in_lock "$command_name" "$version"
-        return 0
-    fi
-
-    log_debug "Não foi possível obter a versão atual de '$command_name' (exit code: $exit_code)"
     echo "N/A"
     return 0
 }
 
-# Gets latest available version from remote source (via --get-latest-version)
-# Args: software_name (optional, defaults to $COMMAND_NAME)
+# Gets latest available version from remote source by calling get_latest_version() from command context
+# This function should only be called within a command's execution context (e.g., --info flag)
 # Returns: version string or "N/A"
-# Usage: version=$(get_latest_software_version "docker")
 get_latest_software_version() {
-    local command_name="${COMMAND_NAME:-}"
-    local software_name="${1:-${command_name}}"
+    local current_command=$(context_get "command.name" 2> /dev/null || echo "")
 
-    if [ -z "$software_name" ]; then
-        log_debug "Nome do software não especificado e COMMAND_NAME não definida"
-        echo "N/A"
-        return 1
+    if declare -f get_latest_version > /dev/null 2>&1; then
+        log_debug "Obtendo última versão via get_latest_version()"
+
+        local version=$(get_latest_version 2> /dev/null)
+        if [ -n "$version" ] && [ "$version" != "desconhecida" ]; then
+            echo "$version"
+            return 0
+        fi
+    else
+        log_debug "Função get_latest_version() não implementada em $current_command"
     fi
 
-    local setup_command_file="${CLI_DIR}/commands/setup/${command_name}/main.sh"
-
-    # Check if setup command file exists
-    if [ ! -f "$setup_command_file" ]; then
-        log_debug "Comando de configuração não encontrado: commands/setup/${command_name}/main.sh"
-        echo "N/A"
-        return 0
-    fi
-
-    # Execute through susa CLI to ensure all environment variables are loaded
-    local version=$("${CORE_DIR}/susa" setup "$command_name" --get-latest-version 2> /dev/null)
-    local exit_code=$?
-
-    # Validate and return version
-    if [ $exit_code -eq 0 ] && [ -n "$version" ] && [ "$version" != "desconhecida" ]; then
-        echo "$version"
-        return 0
-    fi
-
-    log_debug "Não foi possível obter a última versão de '$command_name' (exit code: $exit_code)"
     echo "N/A"
     return 0
 }
 
 # Displays formatted installation info: status, location, versions, updates
 # Calls show_additional_info() if defined for custom information
-# Args: software_name (optional, defaults to $COMMAND_NAME)
-# Usage: show_software_info "docker"
+# Args:
+#   $1 - software_name (optional): nome do comando SUSA (ex: "vscode", "docker")
+#                                 Se não fornecido, tenta obter do contexto
+#   $2 - binary_name (optional): nome do binário no sistema (ex: "code", "docker")
+#                               Se não fornecido, assume o mesmo que software_name
+# Usage:
+#   show_software_info                    # Usa contexto automaticamente
+#   show_software_info "docker" "docker"  # Especifica nome
+#   show_software_info "vscode" "code"    # Nome comando diferente do binário
 show_software_info() {
-    local command_name="${COMMAND_NAME:-}"
-    local command_category="${COMMAND_CATEGORY:-}"
-    local software_name="${1:-${command_name}}"
+    local binary_name="${1:-}"
+    local command_name=$(context_get "command.name")
 
-    if [ -z "$software_name" ]; then
-        log_error "Nome do software não especificado e COMMAND_NAME não definida"
+    # Validate command name is provided
+    if [ -z "$command_name" ]; then
+        log_error "Nome do comando não fornecido e contexto não disponível"
         return 1
     fi
 
-    local lock_file="${CLI_DIR}/susa.lock"
+    # Validate command name is provided
+    if [ -z "$binary_name" ]; then
+        log_error "Nome do binário é obrigatório (parâmetro \$1)"
+        return 1
+    fi
 
-    # Get display name from lock file
-    local display_name=$(jq -r ".commands[] | select(.name == \"$software_name\") | .displayName // \"$software_name\"" "$lock_file" 2> /dev/null)
-    [ -z "$display_name" ] || [ "$display_name" = "null" ] && display_name="$software_name"
+    log_debug "Exibindo informações para: $command_name (binário: $binary_name)"
 
-    # Get versions
-    local current_version=$(get_current_software_version "$software_name" 2> /dev/null)
-    [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ] && current_version="N/A"
+    # Get display name from cache (performance optimized)
+    local display_name=$(cache_query ".commands[] | select(.name == \"$command_name\") | .displayName // \"$command_name\"" 2> /dev/null)
+    [ -z "$display_name" ] || [ "$display_name" = "null" ] && display_name="$command_name"
 
-    local latest_version=$(get_latest_software_version "$software_name" 2> /dev/null)
+    # Get latest version
+    local latest_version=$(get_latest_software_version 2> /dev/null)
     [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] || [ "$latest_version" = "N/A" ] && latest_version=""
+
+    # Check installation status and display accordingly
+    local is_installed=$(check_software_installed && echo "true" || echo "false")
+
+    # Get current version
+    local current_version=""
+    local install_location=""
+    if [ "$is_installed" = "true" ]; then
+        current_version=$(get_current_software_version 2> /dev/null)
+        [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ] && current_version="N/A"
+
+        install_location=$(command -v "$binary_name" 2> /dev/null)
+        [ -z "$install_location" ] || [ "$install_location" = "desconhecida" ] && install_location="N/A"
+    fi
+
+    log_debug "Status de instalação para $command_name: $is_installed. Versão atual: $current_version. Última versão: $latest_version"
 
     # Display header
     log_output "${LIGHT_GREEN}Informações do $display_name:${NC}"
-    log_output ""
     log_output "  ${CYAN}Nome:${NC} $display_name"
 
-    # Check installation status and display accordingly
-    local is_installed=$(check_software_installed "$software_name" && echo "true" || echo "false")
-
     if [ "$is_installed" = "true" ]; then
-        local install_location=$(command -v "$software_name" 2> /dev/null || echo "N/A")
         log_output "  ${CYAN}Status:${NC} ${GREEN}Instalado${NC}"
         log_output "  ${CYAN}Local:${NC} $install_location"
         log_output "  ${CYAN}Versão atual:${NC} $current_version"
 
-        # Display latest version with comparison
         _display_latest_version_info "$current_version" "$latest_version"
 
         # Call custom additional info function if it exists
@@ -572,56 +558,59 @@ sync_installations() {
     log_debug "Verificando instalações no sistema..."
 
     # Get all available setup commands
-    local commands_output=$(get_available_setup_commands)
+    local setup_base_commands=$(get_available_setup_commands)
 
-    if [ -z "$commands_output" ]; then
-        log_warning "Nenhum comando de setup encontrado"
+    if [ -z "$setup_base_commands" ]; then
+        log_warning "Nenhum comando de 'setup' encontrado"
         return 0
     fi
 
     # First pass: Check for new installations (system → lock)
-    while IFS= read -r software_name; do
-        [ -z "$software_name" ] && continue
+    while IFS= read -r setup_base_command; do
+        [ -z "$setup_base_command" ] && continue
 
-        log_debug "Verificando: $software_name"
+        log_debug "Verificando: $setup_base_command"
 
         # Check if software is installed on system
-        if check_software_installed "$software_name"; then
+        if check_software_installed "$setup_base_command"; then
             # Check if it's tracked in lock file
-            if ! is_installed "$software_name"; then
+            if ! is_installed "$setup_base_command"; then
                 # Get version (also registers in lock file automatically)
-                local version=$(get_current_software_version "$software_name")
+                local version=$(get_current_software_version "$setup_base_command")
                 [ -z "$version" ] || [ "$version" = "N/A" ] && version="unknown"
 
-                log_success "Sincronizado: $software_name ($version)"
+                # Register in lock file
+                register_or_update_software_in_lock "$setup_base_command" "$version"
+
+                log_success "Sincronizado: $setup_base_command ($version)"
 
                 # Track synced count in temp file
                 echo "1" >> "$temp_add_file"
             else
-                log_debug "$software_name já está no lock file"
+                log_debug "$setup_base_command já está no lock file"
             fi
         else
-            log_debug "$software_name não está instalado"
+            log_debug "$setup_base_command não está instalado"
         fi
-    done <<< "$commands_output"
+    done <<< "$setup_base_commands"
 
     # Second pass: Check for removed installations (lock → system)
     log_debug "Verificando instalações removidas..."
 
     # Get list of software marked as installed in lock file
-    local installed_in_lock=$(jq -r '.installations[] | select(.installed == true) | .name' "$lock_file" 2> /dev/null)
+    local installed_in_lock=$(get_installed_from_cache)
 
     if [ -n "$installed_in_lock" ]; then
-        while IFS= read -r software_name; do
-            [ -z "$software_name" ] && continue
+        while IFS= read -r setup_base_command; do
+            [ -z "$setup_base_command" ] && continue
 
-            log_debug "Verificando se $software_name ainda está instalado..."
+            log_debug "Verificando se $setup_base_command ainda está instalado..."
 
             # Check if software is still installed on system
-            if ! check_software_installed "$software_name"; then
+            if ! check_software_installed "$setup_base_command"; then
                 # Software was uninstalled, update lock file
-                remove_software_in_lock "$software_name"
-                log_warning "Removido do lock: $software_name (não está mais instalado)"
+                remove_software_in_lock "$setup_base_command"
+                log_warning "Removido do lock: $setup_base_command (não está mais instalado)"
 
                 # Track removed count in temp file
                 echo "1" >> "$temp_remove_file"

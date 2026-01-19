@@ -7,6 +7,86 @@ IFS=$'\n\t'
 # ============================================================
 # Functions for validating and executing commands
 
+# Initialize command context with structure details
+# Args: category command args...
+initialize_command_context() {
+    local full_category="$1"
+    local command="$2"
+    shift 2
+    local all_args=("$@")
+
+    # Initialize context
+    context_init
+
+    # Parse command structure
+    local category="$full_category"
+    local parent=""
+    local current="$command"
+    local action=""
+    local args=()
+
+    # Check if category has subcategories (ex: self/context -> category=self, parent=context)
+    if [[ "$full_category" == *"/"* ]]; then
+        # Extract parent category (last part before command)
+        parent="${full_category##*/}"
+        # Extract root category (first part)
+        category="${full_category%/*}"
+    fi
+
+    # Build full command - reconstruct the path as user typed it
+    local full_command="susa"
+    if [[ "$full_category" == *"/"* ]]; then
+        # Replace / with space for display (ex: self/context -> self context)
+        full_command="$full_command ${full_category//\// } $command"
+    else
+        full_command="$full_command $category $command"
+    fi
+
+    # Append args if any
+    for arg in "${all_args[@]}"; do
+        full_command="$full_command $arg"
+    done
+
+    # Separate action from args
+    # If first arg is not a flag, it's the action and the rest are args
+    if [ ${#all_args[@]} -gt 0 ] && [[ ! "${all_args[0]}" =~ ^- ]]; then
+        action="${all_args[0]}"
+        # Args are everything after the action
+        if [ ${#all_args[@]} -gt 1 ]; then
+            args=("${all_args[@]:1}")
+        fi
+    else
+        # No action, all are args (flags/options)
+        args=("${all_args[@]}")
+    fi
+
+    # Get command config path
+    local config_file=$(find_command_config "$full_category" "$command")
+    local command_path=""
+    if [ -n "$config_file" ]; then
+        command_path=$(dirname "$config_file")
+    fi
+
+    # Save to context
+    context_set "command.category" "$category"
+    context_set "command.full_category" "$full_category"
+    context_set "command.name" "$command"
+    context_set "command.parent" "$parent"
+    context_set "command.current" "$current"
+    context_set "command.action" "$action"
+    context_set "command.full" "$full_command"
+    context_set "command.path" "$command_path"
+    context_set "command.args" "$(printf '%s\n' "${args[@]}")"
+    context_set "command.args_count" "${#args[@]}"
+
+    # Save individual args for easy access
+    for i in "${!args[@]}"; do
+        context_set "command.arg.$i" "${args[$i]}"
+    done
+
+    log_debug2 "Contexto de comando inicializado: $full_command"
+}
+
 # Validate command exists and is compatible with current OS
 validate_command() {
     local category="$1"
@@ -54,6 +134,9 @@ execute_command() {
     local category="$1"
     local command="$2"
     shift 2
+
+    # Initialize command context with all structure details
+    initialize_command_context "$category" "$command" "$@"
 
     local current_os=$(get_simple_os)
 

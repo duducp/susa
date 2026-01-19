@@ -18,27 +18,11 @@ IFS=$'\n\t'
 # Name of the cache used for context
 CONTEXT_CACHE_NAME="context"
 
-# Helper for compatible logging (works even without logger.sh)
-_context_log_debug() {
-    if command -v log_debug &> /dev/null; then
-        log_debug "$@"
-    fi
-}
-
-_context_log_error() {
-    if command -v log_error &> /dev/null; then
-        log_error "$@"
-    else
-        echo "ERROR: $*" >&2
-    fi
-}
-
 # Initialize context (clears if exists)
 # Should be called at the beginning of each command execution
 context_init() {
     cache_named_clear "$CONTEXT_CACHE_NAME"
     cache_named_load "$CONTEXT_CACHE_NAME"
-    _context_log_debug "Context initialized"
 }
 
 # Set a value in the context
@@ -48,11 +32,12 @@ context_set() {
     local value="$2"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_set: key cannot be empty"
+        log_error "context_set: a chave não pode estar vazia"
         return 1
     fi
 
     cache_named_set "$CONTEXT_CACHE_NAME" "$key" "$value"
+    log_trace "Contexto adicionado para $key"
 }
 
 # Get a value from the context
@@ -62,7 +47,7 @@ context_get() {
     local key="$1"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_get: key cannot be empty"
+        log_error "context_get: a chave não pode estar vazia"
         return 1
     fi
 
@@ -76,7 +61,7 @@ context_has() {
     local key="$1"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_has: key cannot be empty"
+        log_error "context_has: a chave não pode estar vazia"
         return 1
     fi
 
@@ -96,25 +81,26 @@ context_remove() {
     local key="$1"
 
     if [ -z "$key" ]; then
-        _context_log_error "context_remove: key cannot be empty"
+        log_error "context_remove: a chave não pode estar vazia"
         return 1
     fi
 
     cache_named_remove "$CONTEXT_CACHE_NAME" "$key"
+    log_trace "Contexto removido para $key"
 }
 
 # Save context to disk (optional - useful for debugging)
 # Usage: context_save
 context_save() {
     cache_named_save "$CONTEXT_CACHE_NAME"
-    _context_log_debug "Context saved to disk"
+    log_trace "Contexto salvo"
 }
 
 # Clear entire context
 # Should be called at the end of each command execution
 context_clear() {
     cache_named_clear "$CONTEXT_CACHE_NAME"
-    _context_log_debug "Context cleared"
+    log_trace "Contexto limpo"
 }
 
 # List all context keys

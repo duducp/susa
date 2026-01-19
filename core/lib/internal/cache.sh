@@ -28,8 +28,12 @@ else
 fi
 
 # Associative arrays for named caches (bash 4+)
-declare -A _SUSA_NAMED_CACHES
-declare -A _SUSA_NAMED_CACHES_LOADED
+# Only declare if not already declared (prevent reset on re-source)
+if [ -z "${_SUSA_NAMED_CACHES_INITIALIZED+x}" ]; then
+    declare -A _SUSA_NAMED_CACHES
+    declare -A _SUSA_NAMED_CACHES_LOADED
+    export _SUSA_NAMED_CACHES_INITIALIZED=1
+fi
 
 # ============================================================
 # Internal Cache Functions
@@ -37,14 +41,16 @@ declare -A _SUSA_NAMED_CACHES_LOADED
 
 # Initialize cache directory
 _cache_init() {
+    log_trace "Chamando _cache_init()"
+
     if [ ! -d "$CACHE_DIR" ]; then
+        log_debug2 "Criando diretório de cache: $CACHE_DIR"
         mkdir -p "$CACHE_DIR" 2> /dev/null || {
-            if command -v log_debug &> /dev/null; then
-                log_debug "Não foi possível criar diretório de cache: $CACHE_DIR"
-            fi
+            log_error "Não foi possível criar diretório de cache: $CACHE_DIR"
             return 1
         }
         chmod 700 "$CACHE_DIR" 2> /dev/null
+        log_debug "Diretório de cache criado: $CACHE_DIR"
     fi
     return 0
 }
@@ -62,15 +68,18 @@ cache_named_load() {
     local name="$1"
     local source_file="${2:-}"
 
+    log_trace "Chamando cache_named_load(name=$name, source_file=$source_file)"
+
     if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_load: nome do cache não pode ser vazio"
-        fi
+        log_error "cache_named_load: nome do cache não pode ser vazio"
         return 1
     fi
 
     # Already loaded, skip
-    [ "${_SUSA_NAMED_CACHES_LOADED[$name]:-0}" -eq 1 ] && return 0
+    if [ "${_SUSA_NAMED_CACHES_LOADED[$name]:-0}" -eq 1 ]; then
+        log_trace "Cache '$name' já carregado, pulando"
+        return 0
+    fi
 
     _cache_init || return 1
 
@@ -90,18 +99,15 @@ cache_named_load() {
 
         # Update cache from source if needed
         if [ $needs_update -eq 1 ]; then
+            log_debug "Atualizando cache '$name' de: $source_file"
             if jq -c '.' "$source_file" > "${cache_file}.tmp" 2> /dev/null; then
                 mv "${cache_file}.tmp" "$cache_file"
                 chmod 600 "$cache_file"
-                if command -v log_debug &> /dev/null; then
-                    log_debug "Cache '$name' atualizado de: $source_file"
-                fi
+                log_debug2 "Cache '$name' salvo em: $cache_file"
             else
                 rm -f "${cache_file}.tmp" 2> /dev/null
                 # Fallback: load directly from source
-                if command -v log_debug &> /dev/null; then
-                    log_debug "Usando arquivo fonte diretamente: $source_file"
-                fi
+                log_debug2 "Usando arquivo fonte diretamente: $source_file"
                 _SUSA_NAMED_CACHES[$name]=$(jq -c '.' "$source_file" 2> /dev/null)
                 _SUSA_NAMED_CACHES_LOADED[$name]=1
                 return 0
@@ -118,9 +124,7 @@ cache_named_load() {
     # Load cache into memory
     _SUSA_NAMED_CACHES[$name]=$(cat "$cache_file" 2> /dev/null)
     _SUSA_NAMED_CACHES_LOADED[$name]=1
-    if command -v log_debug &> /dev/null; then
-        log_debug "Cache nomeado carregado: $name"
-    fi
+    log_debug2 "Cache carregado: $name"
     return 0
 }
 
@@ -130,10 +134,10 @@ cache_named_query() {
     local name="$1"
     local query="$2"
 
+    log_trace "Chamando cache_named_query(name=$name, query=$query)"
+
     if [ -z "$name" ] || [ -z "$query" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_query: nome e query são obrigatórios"
-        fi
+        log_error "cache_named_query: nome e query são obrigatórios"
         return 1
     fi
 
@@ -151,10 +155,10 @@ cache_named_set() {
     local key="$2"
     local value="$3"
 
+    log_trace "Chamando cache_named_set(name=$name, key=$key)"
+
     if [ -z "$name" ] || [ -z "$key" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_set: nome e chave são obrigatórios"
-        fi
+        log_error "cache_named_set: nome e chave são obrigatórios"
         return 1
     fi
 
@@ -169,14 +173,10 @@ cache_named_set() {
 
     if [ $? -eq 0 ]; then
         _SUSA_NAMED_CACHES[$name]="$updated_data"
-        if command -v log_debug &> /dev/null; then
-            log_debug "Cache atualizado: $name.$key = $value"
-        fi
+        log_debug2 "Cache atualizado: $name.$key = $value"
         return 0
     else
-        if command -v log_error &> /dev/null; then
-            log_error "Erro ao atualizar cache nomeado"
-        fi
+        log_error "Erro ao atualizar cache nomeado"
         return 1
     fi
 }
@@ -187,10 +187,10 @@ cache_named_get() {
     local name="$1"
     local key="$2"
 
+    log_trace "Chamando cache_named_get(name=$name, key=$key)"
+
     if [ -z "$name" ] || [ -z "$key" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_get: nome e chave são obrigatórios"
-        fi
+        log_error "cache_named_get: nome e chave são obrigatórios"
         return 1
     fi
 
@@ -209,9 +209,7 @@ cache_named_has() {
     local key="$2"
 
     if [ -z "$name" ] || [ -z "$key" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_has: nome e chave são obrigatórios"
-        fi
+        log_error "cache_named_has: nome e chave são obrigatórios"
         return 1
     fi
 
@@ -232,9 +230,7 @@ cache_named_get_all() {
     local name="$1"
 
     if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_get_all: nome do cache não pode ser vazio"
-        fi
+        log_error "cache_named_get_all: nome do cache não pode ser vazio"
         return 1
     fi
 
@@ -244,25 +240,6 @@ cache_named_get_all() {
     echo "${_SUSA_NAMED_CACHES[$name]}"
 }
 
-# Count keys in named cache
-# Args: cache_name
-cache_named_count() {
-    local name="$1"
-
-    if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_count: nome do cache não pode ser vazio"
-        fi
-        return 1
-    fi
-
-    # Ensure cache is loaded
-    cache_named_load "$name" || return 1
-
-    # Count keys in cache
-    echo "${_SUSA_NAMED_CACHES[$name]}" | jq 'keys | length' 2> /dev/null || echo "0"
-}
-
 # Remove a key from named cache
 # Args: cache_name key
 cache_named_remove() {
@@ -270,9 +247,7 @@ cache_named_remove() {
     local key="$2"
 
     if [ -z "$name" ] || [ -z "$key" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_remove: nome e chave são obrigatórios"
-        fi
+        log_error "cache_named_remove: nome e chave são obrigatórios"
         return 1
     fi
 
@@ -286,14 +261,10 @@ cache_named_remove() {
 
     if [ $? -eq 0 ]; then
         _SUSA_NAMED_CACHES[$name]="$updated_data"
-        if command -v log_debug &> /dev/null; then
-            log_debug "Chave removida do cache: $name.$key"
-        fi
+        log_debug "Chave removida do cache: $name.$key"
         return 0
     else
-        if command -v log_error &> /dev/null; then
-            log_error "Erro ao remover chave do cache nomeado"
-        fi
+        log_error "Erro ao remover chave do cache nomeado"
         return 1
     fi
 }
@@ -303,18 +274,16 @@ cache_named_remove() {
 cache_named_save() {
     local name="$1"
 
+    log_trace "Chamando cache_named_save(name=$name)"
+
     if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_save: nome do cache não pode ser vazio"
-        fi
+        log_error "cache_named_save: nome do cache não pode ser vazio"
         return 1
     fi
 
     # Check if cache is loaded
     if [ "${_SUSA_NAMED_CACHES_LOADED[$name]:-0}" -eq 0 ]; then
-        if command -v log_debug &> /dev/null; then
-            log_debug "Cache não carregado, nada para salvar: $name"
-        fi
+        log_debug2 "Cache não carregado, nada para salvar: $name"
         return 0
     fi
 
@@ -323,9 +292,8 @@ cache_named_save() {
     # Write to disk
     echo "${_SUSA_NAMED_CACHES[$name]}" > "$cache_file"
     chmod 600 "$cache_file"
-    if command -v log_debug &> /dev/null; then
-        log_debug "Cache salvo em disco: $name"
-    fi
+    log_debug "Cache salvo em disco: $name"
+    log_debug2 "Arquivo de cache: $cache_file"
 }
 
 # Clear named cache
@@ -333,10 +301,10 @@ cache_named_save() {
 cache_named_clear() {
     local name="$1"
 
+    log_trace "Chamando cache_named_clear(name=$name)"
+
     if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_clear: nome do cache não pode ser vazio"
-        fi
+        log_error "cache_named_clear: nome do cache não pode ser vazio"
         return 1
     fi
 
@@ -348,9 +316,7 @@ cache_named_clear() {
     local cache_file=$(_cache_named_file "$name")
     rm -f "$cache_file" 2> /dev/null
 
-    if command -v log_debug &> /dev/null; then
-        log_debug "Cache nomeado limpo: $name"
-    fi
+    log_debug2 "Cache limpo: $name"
 }
 
 # List all keys in named cache
@@ -359,9 +325,7 @@ cache_named_keys() {
     local name="$1"
 
     if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_keys: nome do cache não pode ser vazio"
-        fi
+        log_error "cache_named_keys: nome do cache não pode ser vazio"
         return 1
     fi
 
@@ -377,9 +341,7 @@ cache_named_count() {
     local name="$1"
 
     if [ -z "$name" ]; then
-        if command -v log_error &> /dev/null; then
-            log_error "cache_named_count: nome do cache não pode ser vazio"
-        fi
+        log_error "cache_named_count: nome do cache não pode ser vazio"
         return 1
     fi
 
