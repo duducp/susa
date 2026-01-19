@@ -223,34 +223,26 @@ list_commands() {
     display_category_help "$@"
 }
 
-# Main entry point
-main() {
-    # Validate or create lock file on first execution
-    validate_or_create_lock_file
-
-    # No arguments - show help
-    if [ $# -eq 0 ]; then
-        show_help
-        exit 0
-    fi
+# Process global flags and filter arguments
+process_global_flags() {
+    local -n _args_ref=$1
+    local -n _filtered_ref=$2
+    local -n _help_ref=$3
 
     # Initialize verbosity level
     export VERBOSE_LEVEL=0
 
     # First pass: check if --quiet is present (takes priority)
     local has_quiet=false
-    for arg in "$@"; do
+    for arg in "${_args_ref[@]}"; do
         if [[ "$arg" == "-q" ]] || [[ "$arg" == "--quiet" ]]; then
             has_quiet=true
             break
         fi
     done
 
-    # Check for global flags before processing
-    local args=("$@")
-    local filtered_args=()
-
-    for arg in "${args[@]}"; do
+    # Process each flag
+    for arg in "${_args_ref[@]}"; do
         case "$arg" in
             --group)
                 export SUSA_GROUP=1
@@ -282,36 +274,21 @@ main() {
                     log_debug "Modo verbose ativado (nível 1)"
                 fi
                 ;;
+            -h | --help)
+                _help_ref=true
+                ;;
             *)
-                filtered_args+=("$arg")
+                _filtered_ref+=("$arg")
                 ;;
         esac
     done
+}
 
-    # Reset arguments with filtered list
-    set -- "${filtered_args[@]}"
-
-    # No arguments after filtering - show help
-    if [ $# -eq 0 ]; then
-        show_help
-        exit 0
-    fi
-
-    # Global options
-    case "$1" in
-        -h | --help | help)
-            show_help
-            exit 0
-            ;;
-        -V | --version | version)
-            show_version
-            exit 0
-            ;;
-    esac
-
-    # Build category/subcategory path
+# Resolve category path from arguments
+resolve_category_path() {
     local category="$1"
-    local remaining_args=("${@:2}")
+    shift
+    local remaining_args=("$@")
 
     # Check if there are more arguments that could be subcategories
     while [ ${#remaining_args[@]} -gt 0 ]; do
@@ -337,7 +314,6 @@ main() {
                     local script_path=$(get_category_entrypoint_path "$category")
                     if [ -n "$script_path" ] && [ -f "$script_path" ]; then
                         # Initialize context for category script execution
-                        # Extract base name from category path (ex: setup/vscode -> vscode)
                         local category_name="${category##*/}"
                         initialize_command_context "$category" "$category_name" "${remaining_args[@]}"
 
@@ -352,13 +328,55 @@ main() {
         fi
     done
 
-    # If no arguments remain, list commands/subcategories for the category
-    if [ ${#remaining_args[@]} -eq 0 ]; then
-        list_commands "$category"
-        exit 0
+    # Return category and remaining args (space-separated)
+    echo "$category"
+    printf '%s\n' "${remaining_args[@]}"
+}
+
+# Main entry point
+main() {
+    # Validate or create lock file on first execution
+    validate_or_create_lock_file
+
+    # No arguments - show global help
+    [ $# -eq 0 ] && show_help && exit 0
+
+    # Process global flags and filter arguments
+    local args=("$@")
+    local filtered_args=()
+    local show_command_help=false
+    process_global_flags args filtered_args show_command_help
+
+    # No arguments after filtering - show global help
+    [ ${#filtered_args[@]} -eq 0 ] && show_help && exit 0
+
+    # Handle global options
+    case "${filtered_args[0]}" in
+        -h | --help | help)
+            show_help
+            exit 0
+            ;;
+        -V | --version | version)
+            show_version
+            exit 0
+            ;;
+    esac
+
+    # Resolve category path and remaining arguments
+    local result=$(resolve_category_path "${filtered_args[@]}")
+    local category="${result[0]}"
+    local remaining_args=("${result[@]:1}")
+
+    # No command specified - list category commands
+    [ ${#remaining_args[@]} -eq 0 ] && list_commands "$category" && exit 0
+
+    # Handle --help flag for command-specific help
+    if [ "$show_command_help" = true ]; then
+        declare -f show_help > /dev/null 2>&1 && show_help && exit 0
+        exit 1
     fi
 
-    # The next argument is the command
+    # Extract command and its arguments
     local command="${remaining_args[0]}"
     local command_args=("${remaining_args[@]:1}")
 
