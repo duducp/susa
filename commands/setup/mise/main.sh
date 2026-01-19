@@ -117,20 +117,20 @@ configure_shell() {
     log_debug "Configuração adicionada"
 }
 
-# Download and verify Mise release
-download_and_verify_mise() {
+# Download Mise release
+download_mise() {
     local version="$1"
     local os_name="$2"
     local arch="$3"
     local output_file="/tmp/${MISE_BIN_NAME}-${version}.tar.gz"
     local download_url=$(github_build_download_url "$REPO_SLUG" "$version" "$os_name" "$arch" "$MISE_TAR_PATTERN")
 
-    log_info "Baixando e verificando Mise..." >&2
+    log_info "Baixando Mise..." >&2
     log_debug "URL: $download_url" >&2
 
-    # Download with checksum verification (SHA256)
-    if ! github_download_and_verify "$REPO_SLUG" "$version" "$download_url" "$output_file" "$MISE_CHECKSUM_FILE" "sha256"; then
-        log_error "Falha ao baixar ou verificar Mise" >&2
+    # Download without checksum verification
+    if ! github_download_release "$download_url" "$output_file" "Mise"; then
+        log_error "Falha ao baixar Mise" >&2
         return 1
     fi
 
@@ -199,8 +199,8 @@ install_mise_release() {
     local os_name="${os_arch%:*}"
     local arch="${os_arch#*:}"
     log_info "Instalando Mise $mise_version..."
-    # Download and verify release
-    local tar_file=$(download_and_verify_mise "$mise_version" "$os_name" "$arch")
+    # Download release
+    local tar_file=$(download_mise "$mise_version" "$os_name" "$arch")
     if [ $? -ne 0 ] || [ -z "$tar_file" ]; then
         log_error "Não foi possível baixar o Mise. Tente novamente mais tarde."
         return 1
@@ -397,15 +397,8 @@ main() {
                 show_help
                 exit 0
                 ;;
-            -v | --verbose)
-                log_debug "Modo verbose ativado"
-                export DEBUG=true
-                ;;
-            -q | --quiet)
-                export SILENT=true
-                ;;
             --info)
-                show_software_info "$MISE_BIN_NAME"
+                show_software_info "mise" "$MISE_BIN_NAME"
                 exit 0
                 ;;
             --get-current-version)
