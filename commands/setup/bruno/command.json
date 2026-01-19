@@ -2,7 +2,7 @@
   "name": "Bruno",
   "description": "Instala Bruno (cliente de API open-source)",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": false,
   "group": "api",
   "os": [
     "linux",

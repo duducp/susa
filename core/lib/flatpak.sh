@@ -99,7 +99,7 @@ flatpak_is_installed() {
         return 1
     fi
 
-    flatpak list --user 2> /dev/null | grep -q "^${app_id}"
+    flatpak list --user --app --columns=application 2> /dev/null | grep -q "^${app_id}$"
 }
 
 # Get the installed version of a Flatpak application
@@ -125,7 +125,7 @@ flatpak_get_installed_version() {
         return 0
     fi
 
-    local version=$(flatpak info --user "$app_id" 2> /dev/null | grep "^Version:" | head -1 | awk '{print $2}' || echo "unknown")
+    local version=$(flatpak info --user "$app_id" 2> /dev/null | grep -E "^\s*Version:" | head -1 | awk '{print $2}' || echo "unknown")
     echo "$version"
 }
 
@@ -163,11 +163,11 @@ flatpak_get_latest_version() {
     fi
 
     # Try to get from pending updates first
-    local version=$(flatpak remote-ls --updates --user flathub 2> /dev/null | grep "^${app_id}" | awk '{print $2}')
+    local version=$(flatpak remote-ls --updates --user flathub --columns=application,version 2> /dev/null | grep "^${app_id}" | awk '{print $2}')
 
     # If not found in updates, search in remote-info
     if [ -z "$version" ]; then
-        version=$(flatpak remote-info flathub --user "$app_id" 2> /dev/null | grep "^Version:" | head -1 | awk '{print $2}')
+        version=$(flatpak remote-info flathub --user "$app_id" 2> /dev/null | grep -E "^\s*Version:" | head -1 | awk '{print $2}')
     fi
 
     # If still not found, return unknown

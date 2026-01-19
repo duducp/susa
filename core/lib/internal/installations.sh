@@ -467,24 +467,42 @@ show_software_info() {
 
     # Get display name from cache (performance optimized)
     local display_name=$(cache_query ".commands[] | select(.name == \"$command_name\") | .displayName // \"$command_name\"" 2> /dev/null)
-    [ -z "$display_name" ] || [ "$display_name" = "null" ] && display_name="$command_name"
+    if [ -z "$display_name" ] || [ "$display_name" = "null" ]; then
+        display_name="$command_name"
+    fi
+    log_debug "Display name: $display_name"
 
     # Get latest version
-    local latest_version=$(get_latest_software_version 2> /dev/null)
-    [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] || [ "$latest_version" = "N/A" ] && latest_version=""
+    log_debug "Obtendo última versão..."
+    local latest_version=$(get_latest_software_version 2> /dev/null) || latest_version=""
+    log_debug "Última versão obtida: '$latest_version'"
+    if [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] || [ "$latest_version" = "N/A" ]; then
+        latest_version=""
+    fi
+    log_debug "Última versão processada: '$latest_version'"
 
     # Check installation status and display accordingly
+    log_debug "Verificando status de instalação..."
     local is_installed=$(check_software_installed && echo "true" || echo "false")
+    log_debug "Is installed: $is_installed"
 
     # Get current version
     local current_version=""
     local install_location=""
     if [ "$is_installed" = "true" ]; then
-        current_version=$(get_current_software_version 2> /dev/null)
-        [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ] && current_version="N/A"
+        log_debug "Obtendo versão atual..."
+        current_version=$(get_current_software_version 2> /dev/null) || current_version=""
+        log_debug "Versão atual obtida: '$current_version'"
+        if [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ]; then
+            current_version="N/A"
+        fi
 
-        install_location=$(command -v "$binary_name" 2> /dev/null)
-        [ -z "$install_location" ] || [ "$install_location" = "desconhecida" ] && install_location="N/A"
+        log_debug "Obtendo localização..."
+        install_location=$(command -v "$binary_name" 2> /dev/null) || install_location=""
+        log_debug "Localização obtida: '$install_location'"
+        if [ -z "$install_location" ] || [ "$install_location" = "desconhecida" ]; then
+            install_location="N/A"
+        fi
     fi
 
     log_debug "Status de instalação para $command_name: $is_installed. Versão atual: $current_version. Última versão: $latest_version"
