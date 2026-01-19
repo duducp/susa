@@ -7,14 +7,16 @@ Este documento contém diretrizes e conhecimento sobre o projeto SUSA CLI para a
 1. [Quick Reference](#-quick-reference) - Comandos e padrões mais usados
 2. [Arquitetura do Projeto](#️-arquitetura-do-projeto) - Estrutura de diretórios
 3. [Sistema de Categorias, Comandos e Plugins](#-sistema-de-categorias-comandos-e-plugins)
-4. [Sistema de Cache](#-sistema-de-cache)
-5. [Bibliotecas Core](#-bibliotecas-core---guia-de-uso)
-6. [Padrões de Código](#-padrões-de-código)
-7. [Fluxo de Dados](#-fluxo-de-dados)
-8. [Padrões de Performance](#-padrões-de-performance)
-9. [Testing Guidelines](#-testing-guidelines)
-10. [Documentação de Comandos](#-documentação-de-comandos)
-11. [Learning Resources](#-learning-resources)
+4. [Sistema de Contexto de Comandos](#-sistema-de-contexto-de-comandos)
+5. [Sistema de Logs e Verbosidade](#-sistema-de-logs-e-verbosidade)
+6. [Sistema de Cache](#-sistema-de-cache)
+7. [Bibliotecas Core](#-bibliotecas-core---guia-de-uso)
+8. [Padrões de Código](#-padrões-de-código)
+9. [Fluxo de Dados](#-fluxo-de-dados)
+10. [Padrões de Performance](#-padrões-de-performance)
+11. [Testing Guidelines](#-testing-guidelines)
+12. [Documentação de Comandos](#-documentação-de-comandos)
+13. [Learning Resources](#-learning-resources)
 
 ---
 
@@ -35,7 +37,75 @@ registry_get_plugin_info "$file" "nome" "version"
 # Instalações - Preferir funções cached
 register_or_update_software_in_lock "docker" "24.0"
 get_installed_from_cache
+
+# Contexto - Acesso automático à estrutura do comando
+context_get "command.category"    # Categoria do comando
+context_get "command.full"        # Comando completo
+context_get "command.args"        # Lista de argumentos
+
+# Logs - Sistema global de verbosidade
+log_info "Mensagem informativa"
+log_debug "Debug (apenas com -v)"
+log_debug2 "Debug detalhado (apenas com -vv)"
+log_trace "Trace de execução (apenas com -vvv)"
+log_success "✓ Operação concluída"
+log_error "✗ Erro crítico"
 ```
+
+### Flags Globais
+
+O SUSA processa automaticamente as seguintes flags **antes** de executar qualquer comando:
+
+```bash
+# Verbosidade (níveis progressivos)
+susa -v [comando]          # Nível 1: Debug básico (DEBUG=1, VERBOSE_LEVEL=1)
+susa -vv [comando]         # Nível 2: Debug detalhado (VERBOSE_LEVEL=2)
+susa -vvv [comando]        # Nível 3: Trace completo (VERBOSE_LEVEL=3, TRACE=1)
+
+# Alternativas longas
+susa --verbose [comando]   # Igual a -v
+susa --verbose=2 [comando] # Igual a -vv
+susa --verbose=3 [comando] # Igual a -vvv
+
+# Modo silencioso (prioridade sobre -v)
+susa -q [comando]          # Modo quiet (SILENT=1, desativa DEBUG/TRACE)
+susa --quiet [comando]     # Igual a -q
+
+# Agrupamento
+susa --group [comando]     # Ativa agrupamento (SUSA_GROUP=1)
+
+# Flags podem ser combinadas
+susa -v --group setup --list
+susa -vv setup docker      # Debug detalhado
+```
+
+**⚠️ Importante sobre Flags Globais:**
+
+1. **--quiet tem prioridade absoluta:**
+   - Silencia **todos** os logs (incluindo debug, trace)
+   - Útil para scripts/automação
+   - Exemplo: `susa -v --quiet setup` → modo quiet (sem logs)
+
+2. **Níveis de verbosidade:**
+   - Nível 0 (padrão): Apenas info, success, warning, error
+   - Nível 1 (-v): + `log_debug()`
+   - Nível 2 (-vv): + `log_debug2()`
+   - Nível 3 (-vvv): + `log_trace()`
+
+3. **Não mapeie em comandos individuais:**
+   ```bash
+   # ❌ ERRADO - Não faça isso nos comandos
+   case "$1" in
+       -v|--verbose) export DEBUG=1; shift ;;  # Já é feito globalmente
+       -q|--quiet) export SILENT=1; shift ;;   # Já é feito globalmente
+   esac
+
+   # ✅ CORRETO - As flags já estão processadas
+   # Apenas use as funções de log normalmente
+   log_debug "Isso só aparece com -v ou superior"
+   log_debug2 "Isso só aparece com -vv ou superior"
+   log_trace "Isso só aparece com -vvv"
+   ```
 
 ### Ordem de Source de Bibliotecas
 
@@ -69,6 +139,9 @@ source "$LIB_DIR/shell.sh"                   # Se trabalhar com shells
 | `is_installed_cached()` | `is_installed()` em loop |
 | `registry_get_plugin_info()` | `jq` direto no registry |
 | `cache_refresh()` após sync | Cache stale após modificações |
+| `log_debug()` para debug | `echo` para debug |
+| Usar flags globais `-v/-vv/-vvv/-q` | Mapear essas flags em cada comando |
+| `log_info()` para mensagens | `echo` direto |
 
 ---
 
@@ -314,7 +387,250 @@ show_usage "[options]"    # Exibe: "susa self plugin add [options]"
 show_description          # Lê description do command.json
 ```
 
-## 🚀 Sistema de Cache
+## 🎯 Sistema de Contexto de Comandos
+
+### Como Funciona
+
+O SUSA captura automaticamente toda a estrutura do comando sendo executado e disponibiliza via contexto:
+
+1. **Inicialização:** Automática pelo `executor.sh` antes de executar qualquer comando
+2. **Armazenamento:** Cache em memória usando sistema de cache nomeado
+3. **Acesso:** Funções especializadas para cada campo
+4. **Limpeza:** Automática ao final da execução
+
+### Campos Capturados
+
+Quando você executa `susa setup docker install --force`, o contexto contém:
+
+```bash
+category: "setup"              # Categoria raiz
+full_category: "setup"         # Categoria completa (com subcategorias)
+name: "docker"                 # Nome do comando
+parent: ""                     # Categoria pai (se subcategoria)
+current: "docker"              # Comando atual
+action: "install"              # Primeira ação (não-flag, separado de args)
+full: "susa setup docker install --force"  # Comando completo
+path: "/path/to/commands/setup/docker"     # Caminho absoluto
+args: ["--force"]              # Argumentos (após a action)
+args_count: 1                  # Número de argumentos
+```
+
+### Funções de Contexto (Já Carregadas Automaticamente)
+
+```bash
+# Obter informações do comando usando context_get()
+context_get "command.category"      # Categoria do comando
+context_get "command.name"          # Nome do comando
+context_get "command.action"        # Primeira ação
+context_get "command.full"          # Comando completo
+context_get "command.path"          # Caminho do comando
+context_get "command.args_count"    # Número de argumentos
+
+# Obter argumentos
+context_get "command.args"          # Todos (um por linha)
+context_get "command.arg.0"         # Argumento por índice
+context_get "command.arg.1"         # Segundo argumento
+
+# Funções genéricas de contexto
+context_set "key" "value"           # Definir valor
+context_get "key"                   # Obter valor
+context_has "key"                   # Verificar existência
+context_remove "key"                # Remover valor
+context_get_all                     # Obter tudo como JSON
+```
+
+### Exemplos de Uso
+
+```bash
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+main() {
+    # Detectar modo de execução pela ação
+    local action=$(context_get "command.action")
+    case "$action" in
+        install) do_install ;;
+        update)  do_update ;;
+        *)       show_help ;;
+    esac
+
+    # Log com contexto
+    local full_command=$(context_get "command.full")
+    log_info "Executando: $full_command"
+
+    # Processar argumentos
+    local args_count=$(context_get "command.args_count")
+    for ((i=0; i<args_count; i++)); do
+        local arg=$(context_get "command.arg.$i")
+        process_arg "$arg"
+    done
+}
+
+main "$@"
+```
+
+### Testar Contexto
+
+```bash
+# Verificar valores do contexto em seu comando
+context_get "command.full"
+context_get_all  # Ver todo o contexto como JSON
+```
+
+## � Sistema de Logs e Verbosidade
+
+### Como Funciona
+
+O SUSA implementa um sistema unificado de logs com níveis progressivos de verbosidade, processados **globalmente** antes da execução de comandos.
+
+### Níveis de Verbosidade
+
+| Nível | Flag | Variáveis | Funções Ativas |
+|-------|------|-----------|----------------|
+| 0 (padrão) | - | - | `log_info`, `log_success`, `log_warning`, `log_error` |
+| 1 | `-v`, `--verbose` | `DEBUG=1`, `VERBOSE_LEVEL=1` | + `log_debug()` |
+| 2 | `-vv`, `--verbose=2` | `DEBUG=1`, `VERBOSE_LEVEL=2` | + `log_debug2()` |
+| 3 | `-vvv`, `--verbose=3` | `DEBUG=1`, `TRACE=1`, `VERBOSE_LEVEL=3` | + `log_trace()` |
+| Silencioso | `-q`, `--quiet` | `SILENT=1` | Nenhum (todos suprimidos) |
+
+### Funções de Log Disponíveis
+
+```bash
+# Logs básicos (sempre visíveis, exceto com --quiet)
+log_info "Iniciando instalação..."
+log_success "✓ Docker instalado com sucesso"
+log_warning "⚠ Versão desatualizada detectada"
+log_error "✗ Falha ao baixar arquivo"
+log_output "Texto formatado sem timestamp"  # Para output customizado
+
+# Logs de debug (requerem -v ou superior)
+log_debug "Detectando sistema operacional..."  # Visível com -v
+log_debug2 "URL de download: https://..."      # Visível com -vv
+log_trace "Chamando função detect_os_arch()"  # Visível com -vvv
+
+# Funções auxiliares para lógica condicional
+if is_debug_enabled; then
+    # Operação cara que só executa em modo debug
+    generate_detailed_report
+fi
+
+if is_trace_enabled; then
+    # Trace ultra-detalhado (profiling, etc)
+    profile_function_calls
+fi
+```
+
+### Boas Práticas de Log
+
+```bash
+# ✅ CORRETO - Usar funções de log apropriadas
+install_docker() {
+    log_info "Instalando Docker..."
+    log_debug "Plataforma: $platform"
+    log_debug2 "Checksum: $checksum"
+    log_trace "Entrando em download_and_verify()"
+
+    if download_file "$url"; then
+        log_success "Docker instalado com sucesso"
+    else
+        log_error "Falha ao baixar Docker"
+        return 1
+    fi
+}
+
+# ❌ ERRADO - Não use echo direto
+install_docker() {
+    echo "Instalando Docker..."  # Não respeita --quiet
+    echo "DEBUG: platform=$platform"  # Sempre visível
+}
+
+# ❌ ERRADO - Não mapeie flags globais em comandos
+main() {
+    case "$1" in
+        -v|--verbose) export DEBUG=1; shift ;;  # Desnecessário
+        -q|--quiet) export SILENT=1; shift ;;   # Desnecessário
+    esac
+}
+
+# ✅ CORRETO - Flags já estão processadas
+main() {
+    # Apenas use as funções de log normalmente
+    log_debug "Debug automático se -v foi passado"
+}
+```
+
+### Exemplos de Uso por Nível
+
+**Nível 0 (padrão):**
+```bash
+susa setup docker
+# Output:
+# [INFO] 2026-01-19 10:00:00 - Instalando Docker...
+# [SUCCESS] 2026-01-19 10:00:05 - Docker 24.0.5 instalado com sucesso
+```
+
+**Nível 1 (-v):**
+```bash
+susa -v setup docker
+# Output anterior +
+# [DEBUG] Detectando sistema operacional: Linux
+# [DEBUG] Plataforma: linux-x86_64
+# [DEBUG] Versão mais recente: 24.0.5
+```
+
+**Nível 2 (-vv):**
+```bash
+susa -vv setup docker
+# Output anterior +
+# [DEBUG2] URL de download: https://download.docker.com/...
+# [DEBUG2] Checksum verificado: OK
+# [DEBUG2] Binários extraídos para /usr/local/bin
+```
+
+**Nível 3 (-vvv):**
+```bash
+susa -vvv setup docker
+# Output anterior +
+# [TRACE] Chamando detect_os_arch()
+# [TRACE] Executando: curl -fsSL https://...
+# [TRACE] Cache hit: version=24.0.5
+```
+
+**Modo silencioso (-q):**
+```bash
+susa -q setup docker
+# Sem output (útil para automação)
+exit_code=$?
+```
+
+### Comportamento de --quiet
+
+- **Prioridade absoluta:** `--quiet` desativa todos os logs, independente da posição
+- **Ignora -v:** `susa -v --quiet` ou `susa --quiet -v` → modo silencioso
+- **Uso recomendado:** Scripts de automação, cronjobs, pipelines CI/CD
+
+```bash
+# Em scripts
+if susa -q setup docker; then
+    echo "Instalação concluída"  # Seu próprio output
+else
+    echo "Falha na instalação"
+    exit 1
+fi
+```
+
+### Testar Verbosidade
+
+```bash
+# Testar diferentes níveis no seu comando
+susa -v setup uv --info      # Debug básico
+susa -vv setup uv --info     # Debug detalhado
+susa -vvv setup uv --info    # Trace completo
+susa -q setup uv --info      # Silencioso
+```
+
+## �🚀 Sistema de Cache
 
 ### Como Funciona
 

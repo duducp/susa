@@ -234,16 +234,58 @@ main() {
         exit 0
     fi
 
+    # Initialize verbosity level
+    export VERBOSE_LEVEL=0
+
+    # First pass: check if --quiet is present (takes priority)
+    local has_quiet=false
+    for arg in "$@"; do
+        if [[ "$arg" == "-q" ]] || [[ "$arg" == "--quiet" ]]; then
+            has_quiet=true
+            break
+        fi
+    done
+
     # Check for global flags before processing
     local args=("$@")
     local filtered_args=()
 
     for arg in "${args[@]}"; do
-        if [ "$arg" = "--group" ]; then
-            export SUSA_GROUP=1
-        else
-            filtered_args+=("$arg")
-        fi
+        case "$arg" in
+            --group)
+                export SUSA_GROUP=1
+                ;;
+            -q | --quiet)
+                export VERBOSE_LEVEL=0
+                export SILENT=1
+                unset DEBUG TRACE
+                ;;
+            -vvv | --verbose=3)
+                if [ "$has_quiet" = false ]; then
+                    export VERBOSE_LEVEL=3
+                    export DEBUG=1
+                    export TRACE=1
+                    log_debug "Modo trace ativado (nível 3)"
+                fi
+                ;;
+            -vv | --verbose=2)
+                if [ "$has_quiet" = false ]; then
+                    export VERBOSE_LEVEL=2
+                    export DEBUG=1
+                    log_debug "Modo debug detalhado ativado (nível 2)"
+                fi
+                ;;
+            -v | --verbose | --verbose=1)
+                if [ "$has_quiet" = false ]; then
+                    export VERBOSE_LEVEL=1
+                    export DEBUG=1
+                    log_debug "Modo verbose ativado (nível 1)"
+                fi
+                ;;
+            *)
+                filtered_args+=("$arg")
+                ;;
+        esac
     done
 
     # Reset arguments with filtered list
@@ -294,6 +336,11 @@ main() {
                 if category_has_entrypoint "$category"; then
                     local script_path=$(get_category_entrypoint_path "$category")
                     if [ -n "$script_path" ] && [ -f "$script_path" ]; then
+                        # Initialize context for category script execution
+                        # Extract base name from category path (ex: setup/vscode -> vscode)
+                        local category_name="${category##*/}"
+                        initialize_command_context "$category" "$category_name" "${remaining_args[@]}"
+
                         # Execute category script with all remaining arguments
                         source "$script_path" "${remaining_args[@]}"
                         exit $?
