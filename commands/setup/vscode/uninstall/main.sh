@@ -13,10 +13,6 @@ source "$UTILS_DIR/common.sh"
 source "$UTILS_DIR/uninstall.sh"
 
 # Constants
-VSCODE_NAME="Visual Studio Code"
-VSCODE_BIN_NAME="code"
-VSCODE_HOMEBREW_CASK="visual-studio-code"
-
 SKIP_CONFIRM=false
 
 # Help function

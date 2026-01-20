@@ -1,0 +1,10 @@
+{
+  "name": "Update",
+  "description": "Atualiza DBeaver para a versão mais recente",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

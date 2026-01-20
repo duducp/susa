@@ -1,0 +1,5 @@
+{
+  "name": "DBeaver",
+  "description": "Gerenciar instalação e configurações do DBeaver",
+  "entrypoint": "main.sh"
+}

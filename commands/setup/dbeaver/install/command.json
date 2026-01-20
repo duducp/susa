@@ -1,9 +1,8 @@
 {
-  "name": "DBeaver",
+  "name": "Install",
   "description": "Instala DBeaver Community (ferramenta universal de gerenciamento de banco de dados)",
   "entrypoint": "main.sh",
-  "sudo": true,
-  "group": "database",
+  "sudo": false,
   "os": [
     "linux",
     "mac"

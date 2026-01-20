@@ -13,20 +13,6 @@ UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
 source "$UTILS_DIR/common.sh"
 source "$UTILS_DIR/install.sh"
 
-# Constants
-VSCODE_NAME="Visual Studio Code"
-VSCODE_REPO="microsoft/vscode"
-VSCODE_BIN_NAME="code"
-VSCODE_HOMEBREW_CASK="visual-studio-code"
-VSCODE_APT_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
-VSCODE_APT_REPO="https://packages.microsoft.com/repos/code"
-VSCODE_RPM_KEY_URL="https://packages.microsoft.com/keys/microsoft.asc"
-VSCODE_RPM_REPO_URL="https://packages.microsoft.com/yumrepos/vscode"
-VSCODE_DEB_PACKAGE="code"
-VSCODE_RPM_PACKAGE="code"
-VSCODE_ARCH_AUR="visual-studio-code-bin"
-VSCODE_ARCH_COMMUNITY="code"
-
 # Help function
 show_help() {
     show_description
