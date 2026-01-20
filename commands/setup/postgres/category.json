@@ -1,0 +1,5 @@
+{
+  "name": "PostgreSQL",
+  "description": "Gerenciar instalação do PostgreSQL Client",
+  "entrypoint": "main.sh"
+}
