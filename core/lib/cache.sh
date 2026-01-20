@@ -77,7 +77,6 @@ cache_named_load() {
 
     # Already loaded, skip
     if [ "${_SUSA_NAMED_CACHES_LOADED[$name]:-0}" -eq 1 ]; then
-        log_trace "Cache '$name' já carregado, pulando"
         return 0
     fi
 

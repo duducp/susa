@@ -27,15 +27,15 @@ Este documento contém diretrizes e conhecimento sobre o projeto SUSA CLI para a
 ```bash
 # Cache - SEMPRE use para múltiplas consultas
 cache_load
-is_installed_cached "docker"
-get_installed_version_cached "docker"
+is_installed_cached "podman-desktop"
+get_installed_version_cached "podman-desktop"
 
 # Registry - NUNCA use jq diretamente
 registry_plugin_exists "$file" "nome"
 registry_get_plugin_info "$file" "nome" "version"
 
 # Instalações - Preferir funções cached
-register_or_update_software_in_lock "docker" "24.0"
+register_or_update_software_in_lock "podman-desktop" "1.0.0"
 get_installed_from_cache
 
 # Contexto - Acesso automático à estrutura do comando
@@ -400,17 +400,17 @@ O SUSA captura automaticamente toda a estrutura do comando sendo executado e dis
 
 ### Campos Capturados
 
-Quando você executa `susa setup docker install --force`, o contexto contém:
+Quando você executa `susa setup podman-desktop install --force`, o contexto contém:
 
 ```bash
+type: "command"                # Tipo: "command" ou "category"
 category: "setup"              # Categoria raiz
 full_category: "setup"         # Categoria completa (com subcategorias)
-name: "docker"                 # Nome do comando
 parent: ""                     # Categoria pai (se subcategoria)
-current: "docker"              # Comando atual
+current: "podman-desktop"      # Comando ou última parte da categoria
 action: "install"              # Primeira ação (não-flag, separado de args)
-full: "susa setup docker install --force"  # Comando completo
-path: "/path/to/commands/setup/docker"     # Caminho absoluto
+full: "susa setup podman-desktop install --force"  # Comando completo
+path: "/path/to/commands/setup/podman-desktop"     # Caminho absoluto
 args: ["--force"]              # Argumentos (após a action)
 args_count: 1                  # Número de argumentos
 ```
@@ -419,8 +419,9 @@ args_count: 1                  # Número de argumentos
 
 ```bash
 # Obter informações do comando usando context_get()
+context_get "command.type"          # Tipo (command ou category)
 context_get "command.category"      # Categoria do comando
-context_get "command.name"          # Nome do comando
+context_get "command.current"       # Nome do comando ou categoria
 context_get "command.action"        # Primeira ação
 context_get "command.full"          # Comando completo
 context_get "command.path"          # Caminho do comando
@@ -525,23 +526,23 @@ fi
 
 ```bash
 # ✅ CORRETO - Usar funções de log apropriadas
-install_docker() {
-    log_info "Instalando Docker..."
+install_podman_desktop() {
+    log_info "Instalando Podman Desktop..."
     log_debug "Plataforma: $platform"
     log_debug2 "Checksum: $checksum"
     log_trace "Entrando em download_and_verify()"
 
     if download_file "$url"; then
-        log_success "Docker instalado com sucesso"
+        log_success "Podman Desktop instalado com sucesso"
     else
-        log_error "Falha ao baixar Docker"
+        log_error "Falha ao baixar Podman Desktop"
         return 1
     fi
 }
 
 # ❌ ERRADO - Não use echo direto
-install_docker() {
-    echo "Instalando Docker..."  # Não respeita --quiet
+install_podman_desktop() {
+    echo "Instalando Podman Desktop..."  # Não respeita --quiet
     echo "DEBUG: platform=$platform"  # Sempre visível
 }
 
@@ -564,42 +565,42 @@ main() {
 
 **Nível 0 (padrão):**
 ```bash
-susa setup docker
+susa setup podman-desktop
 # Output:
-# [INFO] 2026-01-19 10:00:00 - Instalando Docker...
-# [SUCCESS] 2026-01-19 10:00:05 - Docker 24.0.5 instalado com sucesso
+# [INFO] 2026-01-19 10:00:00 - Instalando Podman Desktop...
+# [SUCCESS] 2026-01-19 10:00:05 - Podman Desktop 1.0.0 instalado com sucesso
 ```
 
 **Nível 1 (-v):**
 ```bash
-susa -v setup docker
+susa -v setup podman-desktop
 # Output anterior +
 # [DEBUG] Detectando sistema operacional: Linux
 # [DEBUG] Plataforma: linux-x86_64
-# [DEBUG] Versão mais recente: 24.0.5
+# [DEBUG] Versão mais recente: 1.0.0
 ```
 
 **Nível 2 (-vv):**
 ```bash
-susa -vv setup docker
+susa -vv setup podman-desktop
 # Output anterior +
-# [DEBUG2] URL de download: https://download.docker.com/...
+# [DEBUG2] URL de download: https://github.com/containers/podman-desktop/releases/...
 # [DEBUG2] Checksum verificado: OK
-# [DEBUG2] Binários extraídos para /usr/local/bin
+# [DEBUG2] Pacote instalado com sucesso
 ```
 
 **Nível 3 (-vvv):**
 ```bash
-susa -vvv setup docker
+susa -vvv setup podman-desktop
 # Output anterior +
 # [TRACE] Chamando detect_os_arch()
 # [TRACE] Executando: curl -fsSL https://...
-# [TRACE] Cache hit: version=24.0.5
+# [TRACE] Cache hit: version=1.0.0
 ```
 
 **Modo silencioso (-q):**
 ```bash
-susa -q setup docker
+susa -q setup podman-desktop
 # Sem output (útil para automação)
 exit_code=$?
 ```
@@ -658,7 +659,7 @@ O SUSA implementa um sistema de cache em memória para otimizar leituras do arqu
 
 > **⚠️ Importante:** Funções de acesso ao lock file (`cache_load`, `cache_query`, `cache_get_*`) foram movidas para `lock.sh`.
 
-#### Core (core/lib/internal/cache.sh)
+#### Core (core/lib/cache.sh)
 
 ```bash
 # Sistema genérico de cache nomeado
@@ -704,20 +705,20 @@ cache_load
 ```bash
 # ✅ Usa cache - rápido para múltiplas consultas
 cache_load
-is_installed_cached "docker"
-get_installed_version_cached "docker"
+is_installed_cached "podman-desktop"
+get_installed_version_cached "podman-desktop"
 get_installed_from_cache  # Lista todos instalados
 
 # ✅ Para escrita no lock
-register_or_update_software_in_lock "docker" "24.0"
-remove_software_in_lock "docker"
+register_or_update_software_in_lock "podman-desktop" "1.0.0"
+remove_software_in_lock "podman-desktop"
 ```
 
 **Funções Legadas (Usar quando necessário):**
 ```bash
 # ⚠️ Lê do disco a cada chamada - mais lento
-is_installed "docker"              # Para casos isolados
-get_installed_version "docker"     # Para casos isolados
+is_installed "podman-desktop"              # Para casos isolados
+get_installed_version "podman-desktop"     # Para casos isolados
 ```
 
 **Quando usar cada uma:**
@@ -991,7 +992,7 @@ local count=$(registry_count_plugins "$registry_file")
 
 ```bash
 # Testar com debug
-DEBUG=1 susa setup docker --info
+DEBUG=1 susa setup podman-desktop --info
 
 # Testar cache
 susa self cache list
@@ -1151,7 +1152,7 @@ Ao criar documentação de um novo comando:
 ## 🎓 Learning Resources
 
 - **Documentação:** `docs/` directory
-- **Exemplos:** `commands/setup/docker/main.sh` (bem documentado)
+- **Exemplos:** `commands/setup/podman-desktop/main.sh` (bem documentado)
 - **Testes:** Execute comandos com `--help` para ver opções
 - **Cache:** Execute `susa self cache list --detailed` para entender o estado
 

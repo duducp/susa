@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source "$LIB_DIR/internal/json.sh"
-source "$LIB_DIR/internal/cache.sh"
+source "$LIB_DIR/cache.sh"
 
 # Lock cache configuration
 LOCK_FILE="${CLI_DIR:-$HOME/.susa}/susa.lock"

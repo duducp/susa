@@ -1,34 +1,23 @@
 #!/bin/bash
 
+UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/flatpak.sh"
 source "$LIB_DIR/homebrew.sh"
-
-# Source utils
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
-
 source "$UTILS_DIR/common.sh"
 source "$UTILS_DIR/install.sh"
 
-# Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
-    log_output ""
+# Show additional info in commando help
+show_complement_help() {
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $DBEAVER_NAME é uma ferramenta universal de gerenciamento de banco de dados,"
     log_output "  gratuita e open-source. Suporta MySQL, PostgreSQL, SQLite, Oracle,"
     log_output "  SQL Server, DB2, Sybase, MS Access, Teradata, Firebird, Apache Hive,"
     log_output "  Phoenix, Presto e mais de 80 tipos de bancos de dados."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup dbeaver install              # Instala o $DBEAVER_NAME"
@@ -97,5 +86,5 @@ main() {
     install_dbeaver
 }
 
-# Run main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

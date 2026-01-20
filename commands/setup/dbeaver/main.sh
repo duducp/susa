@@ -1,18 +1,16 @@
 #!/bin/bash
 
-# Source libraries only if not just showing complement help
-if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
-    source "$LIB_DIR/internal/installations.sh"
-    source "$LIB_DIR/github.sh"
+UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
 
-    # Source utils
-    UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
-    source "$UTILS_DIR/common.sh"
-fi
+# Source libraries only if not just showing complement help
+source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/os.sh"
+source "$LIB_DIR/flatpak.sh"
+source "$LIB_DIR/homebrew.sh"
+source "$UTILS_DIR/common.sh"
 
 # Show additional info in category listing
 show_complement_help() {
-    log_output ""
     log_output "${LIGHT_GREEN}Opções:${NC}"
     log_output "  --info          Mostra informações do DBeaver instalado"
 }
@@ -36,7 +34,7 @@ main() {
     done
 
     # If no arguments, show help
-    show_help
+    display_help
 }
 
 # Execute main function only if not skipped (for show_complement_help)

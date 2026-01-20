@@ -12,8 +12,8 @@ Internamente usa o sistema de cache nomeado (`context` cache) para máxima perfo
 
 ```bash
 # Carregar biblioteca
-source "$LIB_DIR/internal/cache.sh"
-source "$LIB_DIR/internal/context.sh"
+source "$LIB_DIR/cache.sh"
+source "$LIB_DIR/context.sh"
 
 # Inicializar contexto (início do comando)
 context_init
@@ -81,8 +81,8 @@ context_clear
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/internal/cache.sh"
-source "$LIB_DIR/internal/context.sh"
+source "$LIB_DIR/cache.sh"
+source "$LIB_DIR/context.sh"
 
 check_dependencies() {
     local missing=()
@@ -129,8 +129,8 @@ main "$@"
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/internal/cache.sh"
-source "$LIB_DIR/internal/context.sh"
+source "$LIB_DIR/cache.sh"
+source "$LIB_DIR/context.sh"
 
 download_software() {
     context_set "step" "download"
@@ -181,8 +181,8 @@ main "$@"
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/internal/cache.sh"
-source "$LIB_DIR/internal/context.sh"
+source "$LIB_DIR/cache.sh"
+source "$LIB_DIR/context.sh"
 
 validate_system() {
     # Verificar OS

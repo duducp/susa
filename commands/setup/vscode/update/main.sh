@@ -1,15 +1,11 @@
 #!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+
+UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
-
-# Source utils
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
-
 source "$UTILS_DIR/common.sh"
 source "$UTILS_DIR/update.sh"
 

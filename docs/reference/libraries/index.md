@@ -158,21 +158,21 @@ internal/config.sh
 ├── internal/registry.sh
 ├── internal/json.sh
 ├── internal/plugin.sh
-├── internal/cache.sh
+├── cache.sh
 └── internal/lock.sh
     ├── internal/json.sh
-    └── internal/cache.sh
+    └── cache.sh
 
-internal/cache.sh
+cache.sh
 └── logger.sh (opcional)
     └── color.sh
 
 internal/lock.sh
 ├── internal/json.sh
-└── internal/cache.sh
+└── cache.sh
 
-internal/context.sh
-└── internal/cache.sh
+context.sh
+└── cache.sh
     └── logger.sh (opcional)
         └── color.sh
 
@@ -195,7 +195,7 @@ internal/registry.sh
 
 internal/lock.sh
 ├── internal/json.sh
-└── internal/cache.sh
+└── cache.sh
 
 internal/installations.sh
 ├── internal/json.sh

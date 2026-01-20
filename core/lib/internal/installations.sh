@@ -6,7 +6,7 @@
 # Functions to track software installations in lock file
 
 source "$LIB_DIR/internal/json.sh"
-source "$LIB_DIR/internal/cache.sh"
+source "$LIB_DIR/cache.sh"
 
 # Returns the absolute path to susa.lock file
 # Usage: lock_file=$(get_lock_file_path)

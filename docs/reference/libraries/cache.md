@@ -186,7 +186,7 @@ Funções como `cache_load()`, `cache_query()`, `cache_get_*` não estão mais e
 
 ```bash
 # Antes (cache.sh tinha tudo)
-source "$LIB_DIR/internal/cache.sh"
+source "$LIB_DIR/cache.sh"
 cache_load
 cache_query '.categories[].name'
 
@@ -219,7 +219,7 @@ Veja [documentação completa de lock.sh](lock.md) para detalhes e exemplos.
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/internal/cache.sh"
+source "$LIB_DIR/cache.sh"
 
 # Carregar cache
 cache_named_load "myapp"
@@ -381,7 +381,7 @@ chmod 700 "${XDG_RUNTIME_DIR:-/tmp}/susa-$USER"
 
 ```bash
 #!/bin/bash
-source "$LIB_DIR/internal/cache.sh"
+source "$LIB_DIR/cache.sh"
 
 main() {
     # Carregar no início
@@ -440,7 +440,7 @@ cache_query() {
 
 ### Localização dos Arquivos
 
-- **Implementação**: `core/lib/internal/cache.sh`
+- **Implementação**: `core/lib/cache.sh`
 - **Caches em disco**: `${XDG_RUNTIME_DIR:-/tmp}/susa-$USER/*.cache`
 - **Lock file**: `$CLI_DIR/susa.lock`
 

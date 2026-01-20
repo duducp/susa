@@ -8,7 +8,7 @@
 # Uses the named cache system for optimized performance.
 #
 # Dependencies:
-#   - core/lib/internal/cache.sh (required)
+#   - core/lib/cache.sh (required)
 #   - core/lib/logger.sh (optional - for logging)
 #
 
@@ -49,6 +49,7 @@ context_get() {
     fi
 
     cache_named_get "$CONTEXT_CACHE_NAME" "$key"
+    log_trace "Contexto obtido para $key"
 }
 
 # Check if a key exists in the context
@@ -112,4 +113,33 @@ context_keys() {
 # Returns: Number of keys
 context_count() {
     cache_named_count "$CONTEXT_CACHE_NAME"
+}
+
+# Print all context data (useful for debugging)
+# Usage: print_context
+# Outputs: Formatted list of all context keys and values
+print_context() {
+    local count=$(context_count)
+
+    log_output ""
+    log_output "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    log_output "${CYAN}📋 Context Debug${RESET}"
+    log_output "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
+    if [ "$count" -eq 0 ]; then
+        log_output "${YELLOW}  (vazio)${RESET}"
+    else
+        local keys
+        keys=$(context_keys)
+
+        while IFS= read -r key; do
+            [ -z "$key" ] && continue
+            local value=$(context_get "$key")
+            log_output "${GREEN}  $key:${RESET} $value"
+        done <<< "$keys"
+    fi
+
+    log_output "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    log_output "${DIM}Total: $count item(s)${RESET}"
+    log_output ""
 }
