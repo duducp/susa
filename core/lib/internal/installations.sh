@@ -448,27 +448,31 @@ get_latest_software_version() {
 #   show_software_info "docker" "docker"  # Especifica nome
 #   show_software_info "vscode" "code"    # Nome comando diferente do binário
 show_software_info() {
-    local binary_name="${1:-}"
-    local command_name=$(context_get "command.name")
+    local software_name="${1:-}"
+    local binary_name="${2:-}"
 
-    # Validate command name is provided
-    if [ -z "$command_name" ]; then
+    # Try to get from context if not provided
+    if [ -z "$software_name" ]; then
+        software_name=$(context_get "command.current" 2> /dev/null || echo "")
+    fi
+
+    # Validate software name is provided
+    if [ -z "$software_name" ]; then
         log_error "Nome do comando não fornecido e contexto não disponível"
         return 1
     fi
 
-    # Validate command name is provided
+    # If binary_name not provided, use software_name
     if [ -z "$binary_name" ]; then
-        log_error "Nome do binário é obrigatório (parâmetro \$1)"
-        return 1
+        binary_name="$software_name"
     fi
 
-    log_debug "Exibindo informações para: $command_name (binário: $binary_name)"
+    log_debug "Exibindo informações para: $software_name (binário: $binary_name)"
 
     # Get display name from cache (performance optimized)
-    local display_name=$(cache_query ".commands[] | select(.name == \"$command_name\") | .displayName // \"$command_name\"" 2> /dev/null)
+    local display_name=$(cache_query ".commands[] | select(.name == \"$software_name\") | .displayName // \"$software_name\"" 2> /dev/null)
     if [ -z "$display_name" ] || [ "$display_name" = "null" ]; then
-        display_name="$command_name"
+        display_name="$software_name"
     fi
     log_debug "Display name: $display_name"
 
@@ -505,7 +509,7 @@ show_software_info() {
         fi
     fi
 
-    log_debug "Status de instalação para $command_name: $is_installed. Versão atual: $current_version. Última versão: $latest_version"
+    log_debug "Status de instalação para $software_name: $is_installed. Versão atual: $current_version. Última versão: $latest_version"
 
     # Display header
     log_output "${LIGHT_GREEN}Informações do $display_name:${NC}"

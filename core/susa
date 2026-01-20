@@ -352,8 +352,27 @@ resolve_category_path() {
                     return 0
                 fi
             fi
-            # Not a subcategory or option, must be a command
-            break
+
+            # Check if it looks like a command (not an option and category has commands)
+            if ! category_has_entrypoint "$category"; then
+                # Not a subcategory and no entrypoint, must be a command
+                break
+            fi
+
+            # Category has entrypoint but arg doesn't start with -
+            # Could be a command or argument to entrypoint
+            # If command exists, treat as command; otherwise pass to entrypoint
+            local commands=$(get_category_commands "$category" "$(get_simple_os)")
+            if echo "$commands" | grep -q "^${next_arg}$"; then
+                # It's a command
+                break
+            fi
+
+            # Not a command, pass all remaining args to entrypoint
+            echo "$EXEC_ENTRYPOINT_MARKER"
+            echo "$category"
+            printf '%s\n' "${remaining_args[@]}"
+            return 0
         fi
     done
 
