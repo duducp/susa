@@ -1,0 +1,10 @@
+{
+  "name": "Install",
+  "description": "Instala o MySQL Client (mysql, mysqldump, mysqladmin)",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

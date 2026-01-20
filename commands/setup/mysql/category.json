@@ -1,0 +1,5 @@
+{
+  "name": "MySQL",
+  "description": "Gerenciar instalação do MySQL Client",
+  "entrypoint": "main.sh"
+}
