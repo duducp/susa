@@ -59,6 +59,10 @@ Funções auxiliares para trabalhar com Kubernetes. Valida instalação do `kube
 
 Gerenciamento de aplicativos via Flatpak. Instala, atualiza e remove apps do Flathub com configuração automática do repositório. Todas operações em nível de usuário (--user).
 
+#### [snap.sh](snap.md)
+
+Gerenciamento de aplicativos via Snap. Instala, atualiza e remove apps do Snap Store. Suporta canais (stable, beta, edge) e modo classic. Requer sudo para operações.
+
 #### [homebrew.sh](homebrew.md)
 
 Gerenciamento de aplicativos via Homebrew. Instala, atualiza e remove casks (aplicativos gráficos) do Homebrew no macOS. Fornece interface consistente para gerenciamento de instalações.
