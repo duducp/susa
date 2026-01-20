@@ -217,18 +217,23 @@ _try_execute_custom_help() {
 _load_and_display_help() {
     local script_path="$1"
 
-    (
-        export CORE_DIR LIB_DIR CLI_DIR
-        # shellcheck disable=SC2031
-        export SUSA_SHOW_HELP=1
-        source "$script_path" 2> /dev/null || true
+    if [ ! -f "$script_path" ]; then
         display_help
         exit 0
-    ) && exit 0
+    fi
 
-    # Fallback to standard help
-    display_help
-    exit 0
+    # Load script and call display_help in the same context
+    (
+        export CORE_DIR LIB_DIR CLI_DIR
+        export SUSA_SHOW_HELP=1
+
+        # Source the script to make show_help and show_complement_help available
+        source "$script_path" 2> /dev/null || true
+
+        # Now call display_help which will detect the functions
+        display_help
+    )
+    exit $?
 }
 
 # Validates or creates the lock file on first execution

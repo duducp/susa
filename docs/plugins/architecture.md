@@ -407,9 +407,7 @@ main() {
 }
 
 # IMPORTANTE: Controle de execução
-if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
-    main "$@"
-fi
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"
 ```
 
 ### Resolução de Paths
@@ -431,7 +429,7 @@ O script da categoria tem acesso às mesmas variáveis que comandos:
 - `$CLI_DIR` - Diretório base do CLI
 - `$CORE_DIR` - Diretório do core
 - `$LIB_DIR` - Diretório das bibliotecas
-- `$SUSA_SKIP_MAIN` - Flag de controle (setada pelo sistema)
+- `$SUSA_SHOW_HELP` - Flag de controle (setada pelo sistema)
 
 ### Comportamento
 

@@ -349,3 +349,46 @@ cache_named_count() {
 
     echo "${_SUSA_NAMED_CACHES[$name]}" | jq 'keys | length' 2> /dev/null || echo "0"
 }
+
+# Get cache directory path
+cache_get_dir() {
+    echo "$CACHE_DIR"
+}
+
+# List all cache names
+# Returns one cache name per line
+cache_list_all() {
+    _cache_init || return 1
+
+    if [ ! -d "$CACHE_DIR" ]; then
+        return 0
+    fi
+
+    for cache_file in "$CACHE_DIR"/*.cache; do
+        [ -f "$cache_file" ] || continue
+        basename "$cache_file" .cache
+    done
+}
+
+# Clear all caches
+# Returns the number of caches cleared
+cache_clear_all() {
+    log_trace "Chamando cache_clear_all()"
+
+    _cache_init || return 1
+
+    if [ ! -d "$CACHE_DIR" ]; then
+        echo "0"
+        return 0
+    fi
+
+    local count=0
+    for cache_file in "$CACHE_DIR"/*.cache; do
+        [ -f "$cache_file" ] || continue
+        local name=$(basename "$cache_file" .cache)
+        cache_named_clear "$name" 2> /dev/null || true
+        count=$((count + 1))
+    done
+
+    echo "$count"
+}

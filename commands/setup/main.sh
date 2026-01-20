@@ -205,6 +205,4 @@ main() {
 }
 
 # Execute main
-if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
-    main "$@"
-fi
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

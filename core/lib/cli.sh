@@ -124,9 +124,9 @@ show_usage() {
     # Trim leading space from custom_args
     custom_args="${custom_args# }"
 
-    # If no custom arguments and show_options is true, use [opções]
+    # If no custom arguments and show_options is true, use [argumentos] [opções]
     if [ -z "$custom_args" ] && [ "$show_options" = true ]; then
-        custom_args="[opções]"
+        custom_args="[argumentos] [opções]"
     fi
 
     # Build usage string

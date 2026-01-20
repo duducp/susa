@@ -39,7 +39,5 @@ main() {
     display_help
 }
 
-# Execute main function only if not skipped (for show_complement_help)
-if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
-    main "$@"
-fi
+# Execute main only if not showing help
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

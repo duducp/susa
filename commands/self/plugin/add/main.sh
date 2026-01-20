@@ -5,13 +5,16 @@ IFS=$'\n\t'
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
-source "$LIB_DIR/internal/args.sh"
 
 # Help function
-show_help() {
-    show_description
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --gitlab      Usa GitLab (para formato user/repo)"
+    log_output "  --bitbucket   Usa Bitbucket (para formato user/repo)"
+    log_output "  --ssh         Força uso de SSH (recomendado para repos privados)"
     log_output ""
-    show_usage "<git-url|user/repo> [opções]"
+    log_output "${LIGHT_GREEN}Argumentos:${NC}"
+    log_output "  <git-url|user/repo>   URL Git completa ou formato user/repo (GitHub por padrão)"
     log_output ""
     log_output "${LIGHT_GREEN}Formato:${NC}"
     log_output "  susa self plugin add ${GRAY}<git-url>${NC}"
@@ -43,14 +46,6 @@ show_help() {
     log_output "  # Privados com SSH"
     log_output "  susa self plugin add organization/private-plugin --ssh"
     log_output "  susa self plugin add user/private-plugin --gitlab --ssh"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -v, --verbose     Modo verbose (debug)"
-    log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  --gitlab      Usa GitLab (para formato user/repo)"
-    log_output "  --bitbucket   Usa Bitbucket (para formato user/repo)"
-    log_output "  --ssh         Força uso de SSH (recomendado para repos privados)"
-    log_output "  -h, --help    Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Modo Desenvolvimento:${NC}"
     log_output "  Use caminho local para testar plugins sem publicar no Git."
@@ -330,9 +325,40 @@ show_installation_success() {
 
 # Main function
 main() {
-    local plugin_url="$1"
-    local use_ssh="${2:-false}"
-    local provider="${3:-github}"
+    local use_ssh="false"
+    local provider="github"
+    local plugin_arg=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ssh)
+                use_ssh="true"
+                shift
+                ;;
+            --gitlab)
+                provider="gitlab"
+                shift
+                ;;
+            --bitbucket)
+                provider="bitbucket"
+                shift
+                ;;
+            *)
+                # Argumento é a URL/nome do plugin
+                plugin_arg="$1"
+                shift
+                ;;
+        esac
+    done
+
+    # If no plugin argument provided, use current directory
+    if [ -z "$plugin_arg" ]; then
+        log_debug "Nenhum argumento fornecido, usando diretório atual"
+        plugin_arg="."
+    fi
+
+    local plugin_url="$plugin_arg"
 
     log_debug "Plugin URL/Path: $plugin_url"
     log_debug "Use SSH: $use_ssh"
@@ -532,38 +558,7 @@ main() {
     log_info "Execute 'susa --help' para ver as novas categorias"
 }
 
-# Parse arguments first, before running main
-USE_SSH="false"
-PROVIDER="github"
-PLUGIN_ARG=""
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --ssh)
-            USE_SSH="true"
-            shift
-            ;;
-        --gitlab)
-            PROVIDER="gitlab"
-            shift
-            ;;
-        --bitbucket)
-            PROVIDER="bitbucket"
-            shift
-            ;;
-        *)
-            # Argumento é a URL/nome do plugin
-            PLUGIN_ARG="$1"
-            shift
-            ;;
-    esac
-done
-
-# If no plugin argument provided, use current directory
-if [ -z "$PLUGIN_ARG" ]; then
-    log_debug "Nenhum argumento fornecido, usando diretório atual"
-    PLUGIN_ARG="."
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
 fi
-
-# Execute main function
-main "$PLUGIN_ARG" "$USE_SSH" "$PROVIDER"

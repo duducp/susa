@@ -9,17 +9,10 @@ IFS=$'\n\t'
 # Help Function
 # ============================================================
 
-show_help() {
-    show_description
-    log_output ""
-    show_usage "<cache-name> | --all"
-    log_output ""
+show_complement_help() {
     log_output "${LIGHT_GREEN}Argumentos:${NC}"
     log_output "  <cache-name>      Nome do cache a limpar (ex: lock)"
     log_output "  --all             Limpa todos os caches"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Descrição:${NC}"
     log_output "  Remove um cache específico ou todos os caches da memória e disco."
@@ -30,9 +23,6 @@ show_help() {
     log_output "  • Você deseja limpar espaço em memória"
     log_output "  • Um cache está corrompido ou causando problemas"
     log_output "  • Para forçar uma recriação completa"
-    log_output ""
-    log_output "${LIGHT_GREEN}Caches Disponíveis:${NC}"
-    log_output "  lock              Cache do arquivo susa.lock (categorias, comandos, plugins)"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self cache clear lock        # Limpa apenas o cache do lock"
@@ -56,30 +46,12 @@ main() {
     if [ "$cache_name" = "--all" ]; then
         log_info "Limpando todos os caches..."
 
-        # Get all cache files
-        local cache_dir
-        if [[ "$(uname)" == "Darwin" ]]; then
-            cache_dir="${TMPDIR:-$HOME/Library/Caches}/susa"
-        else
-            cache_dir="${XDG_RUNTIME_DIR:-/tmp}/susa-$USER"
-        fi
+        local count=$(cache_clear_all)
 
-        if [ -d "$cache_dir" ]; then
-            local count=0
-            for cache_file in "$cache_dir"/*.cache; do
-                [ -f "$cache_file" ] || continue
-                local name=$(basename "$cache_file" .cache)
-                cache_named_clear "$name" 2> /dev/null || true
-                count=$((count + 1))
-            done
-
-            if [ $count -gt 0 ]; then
-                log_success "✓ $count cache(s) removido(s) com sucesso!"
-            else
-                log_warning "Nenhum cache encontrado"
-            fi
+        if [ "$count" -gt 0 ]; then
+            log_success "✓ $count cache(s) removido(s) com sucesso!"
         else
-            log_warning "Diretório de cache não existe"
+            log_warning "Nenhum cache encontrado"
         fi
         exit 0
     fi
@@ -94,4 +66,7 @@ main() {
     fi
 }
 
-main "$@"
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
+fi

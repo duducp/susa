@@ -1078,7 +1078,7 @@ main() {
     esac
 }
 
-# Executes (does not execute if it has already been called via source for show_help)
-if [ "${SUSA_SHOW_HELP_CALLED:-false}" != "true" ]; then
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
     main "$@"
 fi

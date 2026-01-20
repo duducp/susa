@@ -7,31 +7,6 @@ IFS=$'\n\t'
 source "$LIB_DIR/table.sh"
 
 # ============================================================
-# Help Function
-# ============================================================
-
-show_help() {
-    show_description
-    log_output ""
-    show_usage --no-options
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output ""
-    log_output "${LIGHT_GREEN}Descrição:${NC}"
-    log_output "  Lista todos os caches atualmente disponíveis no sistema,"
-    log_output "  mostrando informações detalhadas de cada um:"
-    log_output "  • Nome do cache"
-    log_output "  • Tamanho do arquivo"
-    log_output "  • Número de chaves armazenadas"
-    log_output "  • Data da última modificação"
-    log_output "  • Localização do arquivo"
-    log_output ""
-    log_output "${LIGHT_GREEN}Exemplo:${NC}"
-    log_output "  susa self cache list"
-}
-
-# ============================================================
 # Main
 # ============================================================
 
@@ -162,4 +137,7 @@ main() {
     fi
 }
 
-main "$@"
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
+fi

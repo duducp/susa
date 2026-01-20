@@ -190,13 +190,13 @@ _validate_category_exists() {
 
 # Display help for commands
 _display_command_help() {
-    # Priority: custom show_help > standard help with show_complement_help
+    # Priority 1: custom show_help (complete replacement)
     if declare -f show_help > /dev/null 2>&1; then
         show_help
         return 0
     fi
 
-    # Standard command help
+    # Priority 2: Standard command help + show_complement_help
     show_description
     log_output ""
     show_usage
@@ -206,7 +206,7 @@ _display_command_help() {
     log_output "  -v, --verbose     Habilita saída detalhada para depuração"
     log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
 
-    # Auto-detect and call show_complement_help
+    # Add custom complement if available
     if declare -f show_complement_help > /dev/null 2>&1; then
         log_output ""
         show_complement_help
@@ -279,7 +279,7 @@ _execute_category_complement_help() {
 
     # Execute show_complement_help
     (
-        export CORE_DIR LIB_DIR CLI_DIR SUSA_SKIP_MAIN=1
+        export CORE_DIR LIB_DIR CLI_DIR SUSA_SHOW_HELP=1
         source "$script_path" 2> /dev/null || true
         if declare -F show_complement_help > /dev/null 2>&1; then
             log_output ""

@@ -5,30 +5,21 @@ IFS=$'\n\t'
 # Source libs
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
-source "$LIB_DIR/internal/args.sh"
 source "$LIB_DIR/table.sh"
 
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage "[options] [--detail <plugin>]"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --detail <plugin> Exibe detalhes completos de um plugin específico"
     log_output ""
     log_output "${LIGHT_GREEN}Descrição:${NC}"
     log_output "  Lista todos os plugins instalados no Susa CLI,"
     log_output "  incluindo origem, versão, comandos e categorias."
     log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  --detail <plugin> Exibe detalhes completos de um plugin específico"
-    log_output "  -v, --verbose     Modo verbose (debug)"
-    log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  -h, --help        Exibe esta mensagem de ajuda"
-    log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin list                    # Lista todos os plugins"
     log_output "  susa self plugin list --detail my-plugin # Detalhes de um plugin"
     log_output "  susa self plugin list --help             # Exibe esta ajuda"
-    log_output ""
 }
 
 # Show detailed information about a specific plugin
@@ -83,12 +74,12 @@ show_plugin_detail() {
     [ -n "$installedAt" ] && log_output "${BOLD}Instalado em:${NC} $installedAt"
 }
 
-# Main function
-main() {
+# List all plugins function
+list_all_plugins() {
+    local REGISTRY_FILE="$1"
+
     log_output "${BOLD}Plugins Instalados${NC}"
     log_output ""
-
-    REGISTRY_FILE="$PLUGINS_DIR/registry.json"
 
     if [ ! -f "$REGISTRY_FILE" ]; then
         log_info "Nenhum plugin instalado"
@@ -183,36 +174,44 @@ main() {
     log_output "${GREEN}Total: $plugin_count plugin(s)${NC}"
 }
 
-# Parse arguments first, before running main
-DETAIL_PLUGIN=""
+# Main function
+main() {
+    local DETAIL_PLUGIN=""
+    local REGISTRY_FILE="$PLUGINS_DIR/registry.json"
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --detail)
-            if [ -z "${2:-}" ]; then
-                log_error "O argumento --detail requer um nome de plugin"
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --detail)
+                if [ -z "${2:-}" ]; then
+                    log_error "O argumento --detail requer um nome de plugin"
+                    exit 1
+                fi
+                DETAIL_PLUGIN="$2"
+                shift 2
+                ;;
+            *)
+                log_error "Argumento inválido: $1"
+                log_output ""
+                show_help
                 exit 1
-            fi
-            DETAIL_PLUGIN="$2"
-            shift 2
-            ;;
-        *)
-            log_error "Argumento inválido: $1"
-            log_output ""
-            show_help
-            exit 1
-            ;;
-    esac
-done
+                ;;
+        esac
+    done
 
-# Execute main or detail function
-if [ -n "$DETAIL_PLUGIN" ]; then
-    REGISTRY_FILE="$PLUGINS_DIR/registry.json"
-    if [ ! -f "$REGISTRY_FILE" ]; then
-        log_error "Nenhum plugin instalado"
-        exit 1
+    # Execute main or detail function
+    if [ -n "$DETAIL_PLUGIN" ]; then
+        if [ ! -f "$REGISTRY_FILE" ]; then
+            log_error "Nenhum plugin instalado"
+            exit 1
+        fi
+        show_plugin_detail "$DETAIL_PLUGIN" "$REGISTRY_FILE"
+    else
+        list_all_plugins "$REGISTRY_FILE"
     fi
-    show_plugin_detail "$DETAIL_PLUGIN" "$REGISTRY_FILE"
-else
-    main
+}
+
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
 fi

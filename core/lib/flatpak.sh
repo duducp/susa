@@ -225,7 +225,6 @@ flatpak_install() {
     # Verify installation
     if flatpak_is_installed "$app_id"; then
         local version=$(flatpak_get_installed_version "$app_id")
-        log_success "$app_name $version instalado com sucesso!"
         return 0
     else
         log_error "$app_name foi instalado mas não está disponível"

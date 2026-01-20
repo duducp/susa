@@ -7,16 +7,8 @@ source "$LIB_DIR/internal/completion.sh"
 source "$LIB_DIR/internal/args.sh"
 
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage --no-options
-    log_output ""
-    log_output "${LIGHT_GREEN}Descrição:${NC}"
-    log_output "  Exibe informações detalhadas sobre a instalação da CLI Susa,"
-    log_output "  incluindo versão, caminhos, status de completação e dependências."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  -v, --verbose     Modo verbose (debug)"
     log_output "  -h, --help        Exibe esta mensagem de ajuda"
     log_output ""
@@ -32,7 +24,6 @@ show_help() {
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self info                # Exibe todas as informações da CLI"
     log_output "  susa self info --help         # Exibe esta ajuda"
-    log_output ""
 }
 
 # Main function
@@ -92,5 +83,7 @@ main() {
     fi
 }
 
-# Execute main function
-main
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
+fi

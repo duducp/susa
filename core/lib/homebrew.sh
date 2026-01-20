@@ -183,7 +183,6 @@ homebrew_install() {
     # Verify installation
     if homebrew_is_installed "$cask_name"; then
         local version=$(homebrew_get_installed_version "$cask_name")
-        log_success "$app_name $version instalado com sucesso!"
         return 0
     else
         log_error "$app_name foi instalado mas não está disponível"

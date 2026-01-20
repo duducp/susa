@@ -5,29 +5,23 @@ IFS=$'\n\t'
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
-source "$LIB_DIR/internal/args.sh"
 
 # Help function
-show_help() {
-    show_description
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  -y, --yes         Pula confirmação e remove automaticamente"
     log_output ""
-    show_usage "<plugin-name>"
+    log_output "${LIGHT_GREEN}Argumentos:${NC}"
+    log_output "  <plugin-name>     Nome do plugin a remover"
     log_output ""
     log_output "${LIGHT_GREEN}Descrição:${NC}"
     log_output "  Remove um plugin instalado do Susa CLI, incluindo"
     log_output "  todos os seus comandos e registro no sistema."
     log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -y, --yes         Pula confirmação e remove automaticamente"
-    log_output "  -v, --verbose     Modo verbose (debug)"
-    log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin remove backup-tools    # Remove o plugin backup-tools"
     log_output "  susa self plugin remove				  # Remove o plugin do diretório atual (dev plugin)"
     log_output "  susa self plugin remove --help          # Exibe esta ajuda"
-    log_output ""
 }
 
 # Main function
@@ -186,5 +180,7 @@ if [ -z "$PLUGIN_ARG" ]; then
     fi
 fi
 
-# Execute main function
-main "$PLUGIN_ARG" "$auto_confirm"
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$PLUGIN_ARG" "$auto_confirm"
+fi

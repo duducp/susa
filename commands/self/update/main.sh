@@ -9,29 +9,11 @@ source "$LIB_DIR/github.sh"
 TEMP_DIR=$(mktemp -d)
 TEMP_VERSION_FILE="/tmp/susa_update_check_$$_${RANDOM}"
 
-# Cleanup function to remove temp directory on exit
-cleanup() {
-    if [ -d "$TEMP_DIR" ]; then
-        rm -rf "$TEMP_DIR"
-    fi
-    rm -f "$TEMP_VERSION_FILE" "/tmp/susa_update_$$_"* 2> /dev/null || true
-}
-trap cleanup EXIT # Execute cleanup on script exit
-
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage "[options]"
-    log_output ""
-    log_output "${LIGHT_GREEN}Descrição:${NC}"
-    log_output "  Atualiza o Susa CLI para a versão mais recente disponível no repositório."
-    log_output "  Verifica se há atualizações e, se disponível, baixa e instala a nova versão."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  -y, --yes         Pula confirmação e atualiza automaticamente"
     log_output "  -f, --force       Força atualização mesmo se já estiver na versão mais recente"
-    log_output "  -h, --help        Exibe esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Como funciona:${NC}"
     log_output "  • Compara a versão atual com a versão mais recente no GitHub"
@@ -50,8 +32,16 @@ show_help() {
     log_output "  susa -v self update           # Atualiza com logs de debug"
     log_output "  susa -vv self update          # Debug detalhado"
     log_output "  susa self update --help       # Exibe esta ajuda"
-    log_output ""
 }
+
+# Cleanup function to remove temp directory on exit
+cleanup() {
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+    rm -f "$TEMP_VERSION_FILE" "/tmp/susa_update_$$_"* 2> /dev/null || true
+}
+trap cleanup EXIT # Execute cleanup on script exit
 
 # Function to get the current version
 get_current_version() {
@@ -169,8 +159,30 @@ perform_update() {
 
 # Main function
 main() {
-    local auto_confirm=${1:-false}
-    local force_update=${2:-false}
+    # Parse arguments
+    auto_confirm=false
+    force_update=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -y | --yes)
+                auto_confirm=true
+                log_debug "Modo auto-confirmação ativado"
+                shift
+                ;;
+            -f | --force)
+                force_update=true
+                log_debug "Modo forçar atualização ativado"
+                shift
+                ;;
+            *)
+                log_error "Argumento inválido: $1"
+                log_output ""
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+
     log_trace "Chamando main() com auto_confirm=$auto_confirm, force_update=$force_update"
     log_info "Verificando atualizações..."
 
@@ -263,29 +275,7 @@ main() {
     fi
 }
 
-# Parse arguments
-auto_confirm=false
-force_update=false
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -y | --yes)
-            auto_confirm=true
-            log_debug "Modo auto-confirmação ativado"
-            shift
-            ;;
-        -f | --force)
-            force_update=true
-            log_debug "Modo forçar atualização ativado"
-            shift
-            ;;
-        *)
-            log_error "Argumento inválido: $1"
-            log_output ""
-            show_help
-            exit 1
-            ;;
-    esac
-done
-
-# Execute main function
-main "$auto_confirm" "$force_update"
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
+fi

@@ -17,24 +17,17 @@ APP_MACOS="/Applications/Podman Desktop.app"
 SKIP_CONFIRM=false
 
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info            Mostra informações sobre a instalação do $APP_NAME"
+    log_output "  --uninstall       Desinstala o $APP_NAME do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o $APP_NAME para a versão mais recente"
     log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $APP_NAME é uma interface gráfica para gerenciar containers,"
     log_output "  imagens e pods Podman. Oferece uma experiência visual amigável"
     log_output "  para trabalhar com containers sem necessidade de linha de comando."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --info            Mostra informações sobre a instalação do $APP_NAME"
-    log_output "  --uninstall       Desinstala o $APP_NAME do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o $APP_NAME para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup podman-desktop              # Instala o $APP_NAME"
@@ -362,4 +355,7 @@ main() {
     esac
 }
 
-main "$@"
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
+fi

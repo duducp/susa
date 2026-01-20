@@ -433,19 +433,17 @@ main() {
     done
 }
 
-# Execute main (controlado por SUSA_SKIP_MAIN)
-if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
-    main "$@"
-fi
+# Execute main (controlado por SUSA_SHOW_HELP)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"
 ```
 
-### Importante sobre `SUSA_SKIP_MAIN`
+### Importante sobre `SUSA_SHOW_HELP`
 
-A variável `SUSA_SKIP_MAIN` é usada pelo sistema para evitar execução do `main` quando apenas quer chamar `show_complement_help`:
+A variável `SUSA_SHOW_HELP` é usada pelo sistema para evitar execução do `main` quando apenas quer chamar `show_complement_help`:
 
 ```bash
 # Sempre adicione esta condição no final do script
-if [ "${SUSA_SKIP_MAIN:-}" != "1" ]; then
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
     main "$@"
 fi
 ```

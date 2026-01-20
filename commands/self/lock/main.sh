@@ -13,19 +13,12 @@ source "$LIB_DIR/internal/plugin.sh"
 # Help Function
 # ============================================================
 
-show_help() {
-    show_description
-    log_output ""
-    show_usage --no-options
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --sync            Sincroniza instalações: verifica aplicações instaladas"
     log_output "                    no sistema e atualiza o lock file:"
     log_output "                    • Adiciona novas instalações ao lock"
     log_output "                    • Remove instalações que foram desinstaladas"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Descrição:${NC}"
     log_output "  Este comando varre os diretórios 'commands/' e 'plugins/' para"
@@ -554,8 +547,6 @@ main() {
                 shift
                 ;;
             *)
-                log_error "Opção desconhecida: $1"
-                echo "Use 'susa self lock --help' para ver as opções disponíveis"
                 exit 1
                 ;;
         esac
@@ -575,4 +566,7 @@ main() {
     fi
 }
 
-main "$@"
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
+fi

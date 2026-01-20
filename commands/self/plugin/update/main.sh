@@ -5,25 +5,20 @@ IFS=$'\n\t'
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
-source "$LIB_DIR/internal/args.sh"
 
 # Help function
-show_help() {
-    show_description
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  -y, --yes         Pula confirmação e atualiza automaticamente"
+    log_output "  --ssh             Força uso de SSH (recomendado para repos privados)"
     log_output ""
-    show_usage "<plugin-name> [opções]"
+    log_output "${LIGHT_GREEN}Argumentos:${NC}"
+    log_output "  <plugin-name>     Nome do plugin a atualizar"
     log_output ""
     log_output "${LIGHT_GREEN}Descrição:${NC}"
     log_output "  Baixa novamente o plugin da origem registrada e"
     log_output "  substitui a instalação atual pela versão mais recente."
     log_output "  Suporta GitHub, GitLab e Bitbucket."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -y, --yes         Pula confirmação e atualiza automaticamente"
-    log_output "  -v, --verbose     Modo verbose (debug)"
-    log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  --ssh             Força uso de SSH (recomendado para repos privados)"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self plugin update backup-tools           # Atualiza o plugin"
@@ -31,16 +26,61 @@ show_help() {
     log_output "  susa self plugin update 						 # Atualiza o plugin do diretório atual (dev plugin)"
     log_output "  susa self plugin update --help                 # Exibe esta ajuda"
     log_output ""
-    log_output "${GRAY}Nota: O provedor Git é detectado automaticamente da URL registrada.${NC}"
-    log_output ""
+    log_output "${GRAY}>> Nota: O provedor Git é detectado automaticamente da URL registrada.${NC}"
 }
 
 # Main function
 main() {
-    local PLUGIN_NAME="$1"
-    local USE_SSH="${2:-false}"
-    local auto_confirm="${3:-false}"
+    local USE_SSH="false"
+    local auto_confirm=false
+    local PLUGIN_ARG=""
     local REGISTRY_FILE="$PLUGINS_DIR/registry.json"
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -y | --yes)
+                auto_confirm=true
+                shift
+                ;;
+            --ssh)
+                USE_SSH="true"
+                shift
+                ;;
+            *)
+                # Argument is the name of the plugin
+                PLUGIN_ARG="$1"
+                shift
+                ;;
+        esac
+    done
+
+    # If no plugin argument provided, try to detect from current directory
+    if [ -z "$PLUGIN_ARG" ]; then
+        CURRENT_DIR="$(pwd)"
+
+        # Try to find plugin name from registry by matching current directory
+        if [ -f "$REGISTRY_FILE" ]; then
+            DETECTED_PLUGIN=$(registry_get_plugin_by_source "$REGISTRY_FILE" "$CURRENT_DIR")
+
+            if [ -n "$DETECTED_PLUGIN" ]; then
+                log_debug "Plugin detectado no diretório atual: $DETECTED_PLUGIN"
+                PLUGIN_ARG="$DETECTED_PLUGIN"
+            else
+                log_error "Nenhum plugin especificado e diretório atual não é um plugin em modo desenvolvimento"
+                log_output ""
+                show_usage "<plugin-name> [opções]"
+                exit 1
+            fi
+        else
+            log_error "Nenhum plugin especificado"
+            log_output ""
+            show_usage "<plugin-name> [opções]"
+            exit 1
+        fi
+    fi
+
+    local PLUGIN_NAME="$PLUGIN_ARG"
 
     # Check if registry exists
     if [ ! -f "$REGISTRY_FILE" ]; then
@@ -285,54 +325,7 @@ main() {
     fi
 }
 
-# Parse arguments first, before running main
-USE_SSH="false"
-auto_confirm=false
-PLUGIN_ARG=""
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -y | --yes)
-            auto_confirm=true
-            shift
-            ;;
-        --ssh)
-            USE_SSH="true"
-            shift
-            ;;
-        *)
-            # Argument is the name of the plugin
-            PLUGIN_ARG="$1"
-            shift
-            ;;
-    esac
-done
-
-# If no plugin argument provided, try to detect from current directory
-if [ -z "$PLUGIN_ARG" ]; then
-    CURRENT_DIR="$(pwd)"
-    REGISTRY_FILE="$PLUGINS_DIR/registry.json"
-
-    # Try to find plugin name from registry by matching current directory
-    if [ -f "$REGISTRY_FILE" ]; then
-        DETECTED_PLUGIN=$(registry_get_plugin_by_source "$REGISTRY_FILE" "$CURRENT_DIR")
-
-        if [ -n "$DETECTED_PLUGIN" ]; then
-            log_debug "Plugin detectado no diretório atual: $DETECTED_PLUGIN"
-            PLUGIN_ARG="$DETECTED_PLUGIN"
-        else
-            log_error "Nenhum plugin especificado e diretório atual não é um plugin em modo desenvolvimento"
-            log_output ""
-            show_usage "<plugin-name> [opções]"
-            exit 1
-        fi
-    else
-        log_error "Nenhum plugin especificado"
-        log_output ""
-        show_usage "<plugin-name> [opções]"
-        exit 1
-    fi
+# Execute main only if not showing help
+if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
+    main "$@"
 fi
-
-# Execute main function
-main "$PLUGIN_ARG" "$USE_SSH" "$auto_confirm"
