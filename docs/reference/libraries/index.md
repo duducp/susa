@@ -59,6 +59,10 @@ Funções auxiliares para trabalhar com Kubernetes. Valida instalação do `kube
 
 Gerenciamento de aplicativos via Flatpak. Instala, atualiza e remove apps do Flathub com configuração automática do repositório. Todas operações em nível de usuário (--user).
 
+#### [homebrew.sh](homebrew.md)
+
+Gerenciamento de aplicativos via Homebrew. Instala, atualiza e remove casks (aplicativos gráficos) do Homebrew no macOS. Fornece interface consistente para gerenciamento de instalações.
+
 #### [github.sh](github.md)
 
 Gerenciamento de releases do GitHub. Baixa releases com verificação de checksum, detecta sistema/arquitetura e automatiza instalação de binários de projetos hospedados no GitHub.

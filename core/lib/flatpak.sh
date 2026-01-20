@@ -40,24 +40,24 @@ flatpak_is_available() {
 #   1 on error
 flatpak_ensure_flathub() {
     if ! flatpak_is_available; then
-        log_error "Flatpak is not installed. Please install Flatpak first."
-        log_info "See: https://flatpak.org/setup/"
+        log_error "Flatpak não está instalado. Por favor, instale o Flatpak primeiro."
+        log_info "Veja: https://flatpak.org/setup/"
         return 1
     fi
 
     # Check if flathub is already added
     if flatpak remotes --user 2> /dev/null | grep -q "^flathub"; then
-        log_debug "Flathub repository is already configured"
+        log_debug "Repositório Flathub já está configurado"
         return 0
     fi
 
-    log_info "Adding Flathub repository..."
+    log_info "Adicionando repositório Flathub..."
     if ! flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo; then
-        log_error "Failed to add Flathub repository"
+        log_error "Falha ao adicionar repositório Flathub"
         return 1
     fi
 
-    log_success "Flathub repository added successfully"
+    log_success "Repositório Flathub adicionado com sucesso"
     return 0
 }
 
@@ -70,12 +70,12 @@ flatpak_ensure_flathub() {
 #   0 always (metadata update is not critical)
 flatpak_update_metadata() {
     if ! flatpak_is_available; then
-        log_debug "Flatpak not available, skipping metadata update"
+        log_debug "Flatpak não disponível, pulando atualização de metadados"
         return 0
     fi
 
-    log_debug "Updating Flathub metadata..."
-    flatpak update --appstream --user 2> /dev/null || log_debug "Metadata is already up to date"
+    log_debug "Atualizando metadados do Flathub..."
+    flatpak update --appstream --user 2> /dev/null || log_debug "Metadados já estão atualizados"
     return 0
 }
 
@@ -91,7 +91,7 @@ flatpak_is_installed() {
     local app_id="${1:-}"
 
     if [ -z "$app_id" ]; then
-        log_error "Application ID is required"
+        log_error "ID da aplicação é obrigatório"
         return 1
     fi
 
@@ -144,20 +144,20 @@ flatpak_get_latest_version() {
     local app_id="${1:-}"
 
     if [ -z "$app_id" ]; then
-        log_error "Application ID is required"
+        log_error "ID da aplicação é obrigatório"
         echo "unknown"
         return 1
     fi
 
     if ! flatpak_is_available; then
-        log_error "Flatpak is not installed"
+        log_error "Flatpak não está instalado"
         echo "unknown"
         return 1
     fi
 
     # Check if Flathub is configured
     if ! flatpak remotes --user 2> /dev/null | grep -q "^flathub"; then
-        log_error "Flathub repository not configured"
+        log_error "Repositório Flathub não configurado"
         echo "unknown"
         return 1
     fi
@@ -206,7 +206,7 @@ flatpak_install() {
     # Check if already installed
     if flatpak_is_installed "$app_id"; then
         local version=$(flatpak_get_installed_version "$app_id")
-        log_info "$app_name $version is already installed"
+        log_info "$app_name $version já está instalado"
         return 0
     fi
 
@@ -214,21 +214,21 @@ flatpak_install() {
     flatpak_update_metadata
 
     # Install the application
-    log_info "Installing $app_name via Flatpak..."
-    log_debug "Application ID: $app_id"
+    log_info "Instalando $app_name via Flatpak..."
+    log_debug "ID da aplicação: $app_id"
 
     if ! flatpak install -y --user flathub "$app_id"; then
-        log_error "Failed to install $app_name via Flatpak"
+        log_error "Falha ao instalar $app_name via Flatpak"
         return 1
     fi
 
     # Verify installation
     if flatpak_is_installed "$app_id"; then
         local version=$(flatpak_get_installed_version "$app_id")
-        log_success "$app_name $version installed successfully!"
+        log_success "$app_name $version instalado com sucesso!"
         return 0
     else
-        log_error "$app_name was installed but is not available"
+        log_error "$app_name foi instalado mas não está disponível"
         return 1
     fi
 }
@@ -247,24 +247,24 @@ flatpak_update() {
     local app_name="${2:-$app_id}"
 
     if [ -z "$app_id" ]; then
-        log_error "Application ID is required"
+        log_error "ID da aplicação é obrigatório"
         return 1
     fi
 
     # Check if installed
     if ! flatpak_is_installed "$app_id"; then
-        log_error "$app_name is not installed"
+        log_error "$app_name não está instalado"
         return 1
     fi
 
     local current_version=$(flatpak_get_installed_version "$app_id")
-    log_debug "Current version: $current_version"
+    log_debug "Versão atual: $current_version"
 
     # Update the application
-    log_info "Updating $app_name via Flatpak..."
+    log_info "Atualizando $app_name via Flatpak..."
 
     if ! flatpak update -y --user "$app_id"; then
-        log_error "Failed to update $app_name via Flatpak"
+        log_error "Falha ao atualizar $app_name via Flatpak"
         return 1
     fi
 
@@ -272,9 +272,9 @@ flatpak_update() {
     local new_version=$(flatpak_get_installed_version "$app_id")
 
     if [ "$current_version" = "$new_version" ]; then
-        log_info "$app_name was already at the latest version ($new_version)"
+        log_info "$app_name já estava na versão mais recente ($new_version)"
     else
-        log_success "$app_name successfully updated to version $new_version!"
+        log_success "$app_name atualizado com sucesso para versão $new_version!"
     fi
 
     return 0
@@ -294,30 +294,30 @@ flatpak_uninstall() {
     local app_name="${2:-$app_id}"
 
     if [ -z "$app_id" ]; then
-        log_error "Application ID is required"
+        log_error "ID da aplicação é obrigatório"
         return 1
     fi
 
     # Check if installed
     if ! flatpak_is_installed "$app_id"; then
-        log_debug "$app_name is not installed"
+        log_debug "$app_name não está instalado"
         return 0
     fi
 
-    log_info "Removing $app_name..."
-    log_debug "Application ID: $app_id"
+    log_info "Removendo $app_name..."
+    log_debug "ID da aplicação: $app_id"
 
     if ! flatpak uninstall -y --user "$app_id" 2> /dev/null; then
-        log_error "Failed to remove $app_name via Flatpak"
+        log_error "Falha ao remover $app_name via Flatpak"
         return 1
     fi
 
     # Verify removal
     if ! flatpak_is_installed "$app_id"; then
-        log_success "$app_name removed successfully!"
+        log_success "$app_name removido com sucesso!"
         return 0
     else
-        log_error "Failed to remove $app_name completely"
+        log_error "Falha ao remover $app_name completamente"
         return 1
     fi
 }

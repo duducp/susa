@@ -78,7 +78,6 @@ install_vscode() {
             local installed_version=$(get_current_version)
             register_or_update_software_in_lock "$COMMAND_NAME" "$installed_version"
 
-            log_success "VS Code $installed_version instalado com sucesso!"
             log_output ""
             log_output "Próximos passos:"
             log_output "  1. Execute: ${LIGHT_CYAN}code${NC} para abrir o editor"
