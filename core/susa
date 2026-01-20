@@ -27,6 +27,9 @@ export LIB_DIR
 export PLUGINS_DIR
 export GLOBAL_CONFIG_FILE
 
+# Constants
+readonly EXEC_ENTRYPOINT_MARKER="__EXEC_ENTRYPOINT__"
+
 # ============================================================
 # Dependency Checking
 # ============================================================
@@ -150,11 +153,11 @@ check_dependencies() {
 source "$LIB_DIR/color.sh"
 source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/os.sh"
+source "$LIB_DIR/cache.sh"
+source "$LIB_DIR/context.sh"
 
 # Essential internal libraries (loaded automatically for all commands)
-source "$LIB_DIR/internal/cache.sh"
 source "$LIB_DIR/internal/lock.sh"
-source "$LIB_DIR/internal/context.sh"
 
 # Config system (uses lock.sh internally)
 source "$LIB_DIR/internal/config.sh"
@@ -187,6 +190,47 @@ fi
 # Functions
 # ============================================================
 
+# Try to execute custom show_help from script
+# Returns 0 if custom help was executed, 1 otherwise
+_try_execute_custom_help() {
+    local script_path="$1"
+
+    if [ ! -f "$script_path" ] || ! grep -q "^show_help()" "$script_path" 2> /dev/null; then
+        return 1
+    fi
+
+    (
+        export CORE_DIR LIB_DIR CLI_DIR
+        # shellcheck disable=SC2030,SC2031
+        export SUSA_SHOW_HELP=1
+        source "$script_path" 2> /dev/null || true
+        if declare -f show_help > /dev/null 2>&1; then
+            show_help
+            exit 0
+        fi
+    ) && exit 0
+
+    return 1
+}
+
+# Try to load script and execute display_help with show_complement_help
+_load_and_display_help() {
+    local script_path="$1"
+
+    (
+        export CORE_DIR LIB_DIR CLI_DIR
+        # shellcheck disable=SC2031
+        export SUSA_SHOW_HELP=1
+        source "$script_path" 2> /dev/null || true
+        display_help
+        exit 0
+    ) && exit 0
+
+    # Fallback to standard help
+    display_help
+    exit 0
+}
+
 # Validates or creates the lock file on first execution
 validate_or_create_lock_file() {
     local lock_file="$CLI_DIR/susa.lock"
@@ -216,21 +260,10 @@ validate_or_create_lock_file() {
     echo ""
 }
 
-# Display global help information (alias for show_global_help from display.sh)
-show_help() {
-    show_global_help
-}
-
-# List commands for a category (alias for display_category_help from display.sh)
-list_commands() {
-    display_category_help "$@"
-}
-
 # Process global flags and filter arguments
 process_global_flags() {
     local -n _args_ref=$1
     local -n _filtered_ref=$2
-    local -n _help_ref=$3
 
     # Initialize verbosity level
     export VERBOSE_LEVEL=0
@@ -277,10 +310,8 @@ process_global_flags() {
                     log_debug "Modo verbose ativado (nível 1)"
                 fi
                 ;;
-            -h | --help)
-                _help_ref=true
-                ;;
             *)
+                # Keep all other arguments (including --help)
                 _filtered_ref+=("$arg")
                 ;;
         esac
@@ -299,7 +330,7 @@ resolve_category_path() {
 
         # If it's help, show help for current category
         if [ "$next_arg" = "help" ]; then
-            list_commands "$category"
+            display_help
             exit 0
         fi
 
@@ -310,20 +341,15 @@ resolve_category_path() {
             category="$category/$next_arg"
             remaining_args=("${remaining_args[@]:1}")
         else
-            # Not a subcategory, check if it's an option for the category script
+            # Not a subcategory - check if it's an option (starts with -)
             if [[ "$next_arg" =~ ^- ]]; then
-                # It's an option (starts with -), check if category has a script
+                # It's an option - check if category has a script to handle it
                 if category_has_entrypoint "$category"; then
-                    local script_path=$(get_category_entrypoint_path "$category")
-                    if [ -n "$script_path" ] && [ -f "$script_path" ]; then
-                        # Initialize context for category script execution
-                        local category_name="${category##*/}"
-                        initialize_command_context "$category" "$category_name" "${remaining_args[@]}"
-
-                        # Execute category script with all remaining arguments
-                        source "$script_path" "${remaining_args[@]}"
-                        exit $?
-                    fi
+                    # Return special marker to indicate entrypoint execution
+                    echo "$EXEC_ENTRYPOINT_MARKER"
+                    echo "$category"
+                    printf '%s\n' "${remaining_args[@]}"
+                    return 0
                 fi
             fi
             # Not a subcategory or option, must be a command
@@ -331,9 +357,132 @@ resolve_category_path() {
         fi
     done
 
+    # After resolving full category path, check if it has an entrypoint
+    # This handles cases like "susa setup dbeaver" where dbeaver is a subcategory with entrypoint
+    if [ ${#remaining_args[@]} -eq 0 ] && category_has_entrypoint "$category"; then
+        # Return special marker to indicate entrypoint execution
+        echo "$EXEC_ENTRYPOINT_MARKER"
+        echo "$category"
+        return 0
+    fi
+
     # Return category and remaining args (space-separated)
     echo "$category"
     printf '%s\n' "${remaining_args[@]}"
+}
+
+# Handle global commands that should show info and exit immediately
+# Only processes: help, --help, -h, version, --version, -V
+_handle_global_commands() {
+    local first_arg="$1"
+
+    case "$first_arg" in
+        -h | --help)
+            show_global_help
+            exit 0
+            ;;
+        -V | --version)
+            show_version
+            exit 0
+            ;;
+    esac
+}
+
+# Handle execution of category entrypoint
+_handle_entrypoint_execution() {
+    local category="$1"
+    shift
+    local entrypoint_args=("$@")
+
+    # Check if --help was requested
+    for arg in "${entrypoint_args[@]}"; do
+        if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            initialize_command_context "$category" "" "${entrypoint_args[@]}"
+            display_help
+            exit 0
+        fi
+    done
+
+    # Initialize context for category with entrypoint
+    initialize_command_context "$category" "" "${entrypoint_args[@]}"
+
+    # If no args, show category help instead of executing entrypoint
+    if [ ${#entrypoint_args[@]} -eq 0 ]; then
+        display_help
+        exit 0
+    fi
+
+    # Execute category script with args
+    local script_path=$(get_category_entrypoint_path "$category")
+    if [ -n "$script_path" ] && [ -f "$script_path" ]; then
+        (
+            set -- "${entrypoint_args[@]}"
+            source "$script_path" "$@"
+        )
+        exit $?
+    fi
+
+    log_error "Entrypoint não encontrado para categoria: $category"
+    exit 1
+}
+
+# Handle category display (with or without entrypoint)
+_handle_category_display() {
+    local category="$1"
+
+    # Check if category has entrypoint
+    if category_has_entrypoint "$category"; then
+        initialize_command_context "$category" ""
+
+        local script_path=$(get_category_entrypoint_path "$category")
+        if [ -n "$script_path" ] && [ -f "$script_path" ]; then
+            # Try custom show_help
+            _try_execute_custom_help "$script_path" && return
+
+            # No custom show_help, execute entrypoint normally
+            (source "$script_path")
+            exit $?
+        fi
+
+        log_error "Entrypoint não encontrado para categoria: $category"
+        exit 1
+    fi
+
+    # No entrypoint - list category commands
+    initialize_command_context "$category" ""
+    display_help
+    exit 0
+}
+
+# Handle command help display
+_handle_command_help() {
+    local category="$1"
+    local command="$2"
+    shift 2
+    local command_args=("$@")
+
+    initialize_command_context "$category" "$command" "${command_args[@]}"
+
+    # Find command script
+    local config_file=$(find_command_config "$category" "$command")
+    if [ -n "$config_file" ]; then
+        local command_dir=$(dirname "$config_file")
+        local entrypoint=$(get_config_field "$config_file" "entrypoint")
+        local script_path="$command_dir/$entrypoint"
+
+        # Try custom show_help
+        if [ -f "$script_path" ]; then
+            _try_execute_custom_help "$script_path" && return
+
+            # No custom show_help, load script and try show_complement_help
+            _load_and_display_help "$script_path"
+            return
+        fi
+    fi
+
+    # No config file or script, use standard help
+    display_help
+    exit 0
 }
 
 # Main entry point
@@ -342,28 +491,17 @@ main() {
     validate_or_create_lock_file
 
     # No arguments - show global help
-    [ $# -eq 0 ] && show_help && exit 0
+    [ $# -eq 0 ] && show_global_help && exit 0
 
     # Process global flags and filter arguments
     local args=("$@")
-    local filtered_args=()
-    local show_command_help=false
-    process_global_flags args filtered_args show_command_help
+    process_global_flags args filtered_args
 
     # No arguments after filtering - show global help
-    [ ${#filtered_args[@]} -eq 0 ] && show_help && exit 0
+    [ ${#filtered_args[@]} -eq 0 ] && show_global_help && exit 0
 
-    # Handle global options
-    case "${filtered_args[0]}" in
-        -h | --help | help)
-            show_help
-            exit 0
-            ;;
-        -V | --version | version)
-            show_version
-            exit 0
-            ;;
-    esac
+    # Handle global commands (help/version)
+    _handle_global_commands "${filtered_args[0]}"
 
     # Resolve category path and remaining arguments
     local result_output
@@ -375,19 +513,22 @@ main() {
         result+=("$line")
     done <<< "$result_output"
 
+    local marker="${result[0]}"
+
+    # Check if we need to execute category entrypoint
+    if [ "$marker" = "$EXEC_ENTRYPOINT_MARKER" ]; then
+        local category="${result[1]}"
+        local entrypoint_args=("${result[@]:2}")
+        _handle_entrypoint_execution "$category" "${entrypoint_args[@]}"
+    fi
+
+    # Normal flow: category and command
     local category="${result[0]}"
     local remaining_args=("${result[@]:1}")
 
-    # No command specified - list category commands
+    # No command specified
     if [ ${#remaining_args[@]} -eq 0 ]; then
-        list_commands "$category"
-        exit 0
-    fi
-
-    # Handle --help flag for command-specific help
-    if [ "$show_command_help" = true ]; then
-        declare -f show_help > /dev/null 2>&1 && show_help && exit 0
-        exit 1
+        _handle_category_display "$category"
     fi
 
     # Extract command and its arguments
@@ -395,11 +536,22 @@ main() {
 
     # If no command was extracted, show help
     if [ -z "$command" ]; then
-        list_commands "$category"
+        initialize_command_context "$category" ""
+        display_help
         exit 0
     fi
 
     local command_args=("${remaining_args[@]:1}")
+
+    # Check if --help was requested (global flag handling)
+    for arg in "${command_args[@]}"; do
+        if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            _handle_command_help "$category" "$command" "${command_args[@]}"
+        fi
+    done
+
+    # Initialize context before executing command
+    initialize_command_context "$category" "$command" "${command_args[@]}"
 
     # Execute the command
     execute_command "$category" "$command" "${command_args[@]}"

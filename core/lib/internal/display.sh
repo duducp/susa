@@ -169,105 +169,171 @@ list_grouped_commands() {
     [ "$has_compatible_commands" = "true" ] && return 0 || return 1
 }
 
-# List available commands and subcategories for a given category
-display_category_help() {
-    local category="$1"
+# Validate if category exists in lock file
+_validate_category_exists() {
+    local full_category="$1"
     local categories=$(get_all_categories "$GLOBAL_CONFIG_FILE")
 
-    # Validate category exists in lock file (cache)
-    # No need to check physical directories - lock file is source of truth
-    local category_exists=false
-
     # Check if it's a top-level category
-    if echo "$categories" | grep -q "^${category}$"; then
-        category_exists=true
-    else
-        # Check if any command belongs to this category (including subcategories)
-        local category_commands=$(cache_query ".commands[] | select(.category == \"$category\" or (.category | startswith(\"$category/\"))) | .name" 2> /dev/null | head -1)
-        if [ -n "$category_commands" ]; then
-            category_exists=true
-        fi
+    if echo "$categories" | grep -q "^${full_category}$"; then
+        return 0
     fi
 
-    if [ "$category_exists" = false ]; then
-        log_error "Categoria '$category' não encontrada"
+    # Check if any command belongs to this category (including subcategories)
+    local category_commands=$(cache_query ".commands[] | select(.category == \"$full_category\" or (.category | startswith(\"$full_category/\"))) | .name" 2> /dev/null | head -1)
+    if [ -n "$category_commands" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+# Display help for commands
+_display_command_help() {
+    # Priority: custom show_help > standard help with show_complement_help
+    if declare -f show_help > /dev/null 2>&1; then
+        show_help
+        return 0
+    fi
+
+    # Standard command help
+    show_description
+    log_output ""
+    show_usage
+    log_output ""
+    log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  -h, --help        Mostra esta mensagem de ajuda"
+    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
+    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
+
+    # Auto-detect and call show_complement_help
+    if declare -f show_complement_help > /dev/null 2>&1; then
+        log_output ""
+        show_complement_help
+    fi
+}
+
+# Display category commands (with or without grouping)
+_display_category_commands() {
+    local full_category="$1"
+    local commands="$2"
+    local current_os="$3"
+    local subcategories="$4"
+
+    if [ -z "$commands" ]; then
+        return 0
+    fi
+
+    log_output "${LIGHT_GREEN}Comandos:${NC}"
+
+    if [ "${SUSA_GROUP:-0}" = "1" ]; then
+        # List ungrouped commands
+        list_ungrouped_commands "$full_category" "$commands" "$current_os" || true
+        local has_ungrouped=$?
+
+        # List grouped commands
+        local groups=$(get_category_groups "$GLOBAL_CONFIG_FILE" "$full_category" "$current_os")
+        list_grouped_commands "$full_category" "$commands" "$current_os" "$groups" || true
+        local has_grouped=$?
+
+        # Show message if no compatible commands found
+        if [ $has_ungrouped -ne 0 ] && [ $has_grouped -ne 0 ] && [ -z "$subcategories" ]; then
+            log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+        fi
+    else
+        # List all commands without grouping (default)
+        local has_compatible=false
+        for cmd in $commands; do
+            if ! is_command_compatible "$GLOBAL_CONFIG_FILE" "$full_category" "$cmd" "$current_os"; then
+                continue
+            fi
+
+            has_compatible=true
+            local cmd_desc=$(get_command_info "$GLOBAL_CONFIG_FILE" "$full_category" "$cmd" "description")
+            print_command_line "$full_category" "$cmd" "$cmd_desc"
+        done
+
+        if [ "$has_compatible" = false ] && [ -z "$subcategories" ]; then
+            log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
+        fi
+    fi
+}
+
+# Execute category's show_complement_help if available
+_execute_category_complement_help() {
+    local full_category="$1"
+
+    if ! category_has_entrypoint "$full_category"; then
+        return 0
+    fi
+
+    local script_path=$(get_category_entrypoint_path "$full_category")
+    if [ -z "$script_path" ] || [ ! -f "$script_path" ]; then
+        return 0
+    fi
+
+    # Check if show_complement_help exists in the script
+    if ! grep -q "^show_complement_help()" "$script_path" 2> /dev/null; then
+        return 0
+    fi
+
+    # Execute show_complement_help
+    (
+        export CORE_DIR LIB_DIR CLI_DIR SUSA_SKIP_MAIN=1
+        source "$script_path" 2> /dev/null || true
+        if declare -F show_complement_help > /dev/null 2>&1; then
+            log_output ""
+            show_complement_help
+        fi
+    ) || true
+}
+
+# Display help for categories
+_display_category_help() {
+    local full_category="$1"
+
+    # Validate category exists
+    if ! _validate_category_exists "$full_category"; then
+        log_error "Categoria '$full_category' não encontrada"
         return 1
     fi
 
-    local category_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$category" "description")
+    # Get category info
+    local category_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$full_category" "description")
     local current_os=$(get_simple_os)
-    local commands=$(get_category_commands "$category" "$current_os")
-    local subcategories=$(get_category_subcategories "$category")
+    local commands=$(get_category_commands "$full_category" "$current_os")
+    local subcategories=$(get_category_subcategories "$full_category")
 
+    # Display header
     log_output "$category_desc"
     log_output ""
-    show_usage "$category"
+    show_usage "$full_category"
     log_output ""
 
-    # Print subcategories first
-    print_subcategories "$category" "$subcategories"
+    # Display subcategories
+    print_subcategories "$full_category" "$subcategories"
 
-    # Add spacing between subcategories and commands if both exist
+    # Add spacing between subcategories and commands
     if [ -n "$subcategories" ] && [ -n "$commands" ]; then
         log_output ""
     fi
 
-    # List commands
-    if [ -n "$commands" ]; then
-        log_output "${LIGHT_GREEN}Comandos:${NC}"
+    # Display commands
+    _display_category_commands "$full_category" "$commands" "$current_os" "$subcategories"
 
-        # Check if grouping is enabled (default is no grouping)
-        if [ "${SUSA_GROUP:-0}" = "1" ]; then
-            # List commands without a group
-            list_ungrouped_commands "$category" "$commands" "$current_os" || true
-            local has_ungrouped=$?
+    # Execute category's show_complement_help if available
+    _execute_category_complement_help "$full_category"
+}
 
-            # List grouped commands
-            local groups=$(get_category_groups "$GLOBAL_CONFIG_FILE" "$category" "$current_os")
-            list_grouped_commands "$category" "$commands" "$current_os" "$groups" || true
-            local has_grouped=$?
+# Display help for category or command
+# Uses context to determine type and path - no parameters needed
+display_help() {
+    local type=$(context_get "command.type" 2> /dev/null || echo "command")
+    local full_category=$(context_get "command.full_category" 2> /dev/null || echo "")
 
-            # Show message if no compatible commands found
-            if [ $has_ungrouped -ne 0 ] && [ $has_grouped -ne 0 ] && [ -z "$subcategories" ]; then
-                log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
-            fi
-        else
-            # List all commands without grouping (default behavior)
-            local has_compatible=false
-            for cmd in $commands; do
-                # Check OS compatibility
-                if ! is_command_compatible "$GLOBAL_CONFIG_FILE" "$category" "$cmd" "$current_os"; then
-                    continue
-                fi
-
-                has_compatible=true
-                local cmd_desc=$(get_command_info "$GLOBAL_CONFIG_FILE" "$category" "$cmd" "description")
-                print_command_line "$category" "$cmd" "$cmd_desc"
-            done
-
-            if [ "$has_compatible" = false ] && [ -z "$subcategories" ]; then
-                log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"
-            fi
-        fi
-    fi
-
-    # If category has entrypoint, execute show_complement_help if it exists
-    if category_has_entrypoint "$category"; then
-        local script_path=$(get_category_entrypoint_path "$category")
-        if [ -n "$script_path" ] && [ -f "$script_path" ]; then
-            # Check if show_complement_help function exists in the script
-            if grep -q "^show_complement_help()" "$script_path" 2> /dev/null; then
-                # Execute show_complement_help from the category script
-                # Use a special environment variable to prevent main from running
-                (
-                    export CORE_DIR LIB_DIR CLI_DIR
-                    export SUSA_SKIP_MAIN=1
-                    source "$script_path" 2> /dev/null || true
-                    if declare -F show_complement_help > /dev/null 2>&1; then
-                        show_complement_help
-                    fi
-                ) || true
-            fi
-        fi
+    if [ "$type" = "command" ]; then
+        _display_command_help
+    else
+        _display_category_help "$full_category"
     fi
 }

@@ -24,22 +24,48 @@ initialize_command_context() {
     local current="$command"
     local action=""
     local args=()
+    local type="command" # Default to command
 
-    # Check if category has subcategories (ex: self/context -> category=self, parent=context)
+    # Extract category structure
     if [[ "$full_category" == *"/"* ]]; then
-        # Extract parent category (last part before command)
-        parent="${full_category##*/}"
-        # Extract root category (first part)
-        category="${full_category%/*}"
+        # Has subcategory path
+        if [ -n "$command" ]; then
+            # Has command - parent is the last part of category path
+            # Ex: "setup/dbeaver" + "install" -> category="setup", parent="dbeaver", command="install", current="install"
+            parent="${full_category##*/}"
+            category="${full_category%/*}"
+            type="command"
+        else
+            # No command - it's a category with entrypoint
+            # Ex: "setup/dbeaver" (no command) -> category="setup", parent="", full_category="setup/dbeaver"
+            # Use the last part of category as the "command" name for context
+            current="${full_category##*/}"
+            category="${full_category%/*}"
+            type="category"
+        fi
+    else
+        # Simple path (no /)
+        if [ -z "$command" ]; then
+            # No command - it's a category
+            type="category"
+        else
+            # Has command
+            type="command"
+        fi
     fi
 
     # Build full command - reconstruct the path as user typed it
     local full_command="susa"
     if [[ "$full_category" == *"/"* ]]; then
         # Replace / with space for display (ex: self/context -> self context)
-        full_command="$full_command ${full_category//\// } $command"
+        full_command="$full_command ${full_category//\// }"
     else
-        full_command="$full_command $category $command"
+        full_command="$full_command $category"
+    fi
+
+    # Add command name if not empty (for regular commands)
+    if [ -n "$command" ]; then
+        full_command="$full_command $command"
     fi
 
     # Append args if any
@@ -61,13 +87,17 @@ initialize_command_context() {
     fi
 
     # Get command config path
-    local config_file=$(find_command_config "$full_category" "$command")
+    local config_file=""
+    if [ -n "$command" ]; then
+        config_file=$(find_command_config "$full_category" "$command")
+    fi
     local command_path=""
     if [ -n "$config_file" ]; then
         command_path=$(dirname "$config_file")
     fi
 
     # Save to context
+    context_set "command.type" "$type"
     context_set "command.category" "$category"
     context_set "command.full_category" "$full_category"
     context_set "command.name" "$command"
@@ -117,26 +147,33 @@ check_and_show_command_help() {
 
     for arg in "$@"; do
         if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
-            # Check if show_help function exists without executing the script
-            if grep -q "^show_help()" "$script_path" 2> /dev/null; then
-                export SUSA_SHOW_HELP_CALLED=true
-                source "$script_path"
-                show_help
-                unset SUSA_SHOW_HELP_CALLED
-            fi
+            # Set flag to prevent main execution
+            export SUSA_SHOW_HELP=1
+
+            # Try to source the script and show help
+            # display_help will auto-detect show_help or show_complement_help if they exist
+            (
+                # Try to source the command script
+                source "$script_path" 2> /dev/null || true
+                display_help
+                exit 0
+            ) && exit 0 # If subshell succeeded, exit
+
+            # If we get here, script failed to load
+            # Show default help (without arguments = command help)
+            log_debug "Retornando à exibição de ajuda padrão para $script_path"
+            display_help
             exit 0
         fi
     done
 }
 
 # Execute a command with its arguments
+# Note: Context should already be initialized by the caller
 execute_command() {
     local category="$1"
     local command="$2"
     shift 2
-
-    # Initialize command context with all structure details
-    initialize_command_context "$category" "$command" "$@"
 
     local current_os=$(get_simple_os)
 
