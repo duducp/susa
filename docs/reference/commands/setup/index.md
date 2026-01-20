@@ -199,6 +199,10 @@ Instala e configura o JetBrains Toolbox, gerenciador oficial para todas as IDEs 
 
 Instala e configura o Mise (anteriormente rtx), um gerenciador de versões polyglot escrito em Rust. Compatível com plugins do ASDF, mas com melhor performance, além de funcionalidades extras como task runner e gerenciamento de variáveis de ambiente. **Disponível para Linux e macOS.**
 
+### [NordPass](nordpass.md)
+
+Instala e configura o NordPass, um gerenciador de senhas seguro e intuitivo. Oferece armazenamento criptografado de senhas, cartões de crédito e notas seguras, com sincronização entre dispositivos e gerador de senhas fortes. **Disponível para Linux e macOS.**
+
 ### [Podman](podman.md)
 
 Instala e configura o Podman, um motor de container open-source para desenvolvimento, gerenciamento e execução de containers OCI. É uma alternativa daemon-less e rootless ao Docker.

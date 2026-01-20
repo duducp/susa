@@ -6,6 +6,7 @@ nav:
   - DBeaver: dbeaver.md
   - Docker: docker.md
   - Flameshot: flameshot.md
+  - NordPass: nordpass.md
   - Podman: podman.md
   - Podman Desktop: podman-desktop.md
   - Poetry: poetry.md

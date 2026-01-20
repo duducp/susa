@@ -1,0 +1,5 @@
+{
+  "name": "NordPass",
+  "description": "Gerenciar instalação do NordPass",
+  "entrypoint": "main.sh"
+}

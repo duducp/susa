@@ -1,0 +1,10 @@
+{
+  "name": "Install",
+  "description": "Instala NordPass (gerenciador de senhas seguro)",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

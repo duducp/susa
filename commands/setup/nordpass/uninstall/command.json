@@ -1,0 +1,10 @@
+{
+  "name": "Uninstall",
+  "description": "Remove o NordPass do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

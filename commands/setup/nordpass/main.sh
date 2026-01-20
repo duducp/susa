@@ -1,0 +1,40 @@
+#!/bin/bash
+
+UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+
+# Source libraries
+source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/os.sh"
+source "$LIB_DIR/snap.sh"
+source "$LIB_DIR/homebrew.sh"
+source "$UTILS_DIR/common.sh"
+
+# Show additional info in category listing
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  --info          Mostra informações do NordPass instalado"
+}
+
+# Main function
+main() {
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --info)
+                show_software_info "nordpass" "$NORDPASS_BIN_NAME"
+                exit 0
+                ;;
+            *)
+                log_error "Opção desconhecida: $1"
+                log_output ""
+                log_output "Use ${LIGHT_CYAN}susa setup nordpass --help${NC} para ver opções disponíveis"
+                exit 1
+                ;;
+        esac
+    done
+
+    # If no arguments, show help
+    display_help
+}
+
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"
