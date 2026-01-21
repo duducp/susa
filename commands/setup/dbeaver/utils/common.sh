@@ -133,7 +133,7 @@ get_dbeaver_config_paths() {
                 fi
             # Check if DBeaver is installed via Flatpak
             elif flatpak_is_installed "$FLATPAK_APP_ID"; then
-                DBEAVER_CONFIG_DIR="$HOME/.var/app/$FLATPAK_APP_ID/data/DBeaverData/workspace6"
+                DBEAVER_CONFIG_DIR="$HOME/.local/share/DBeaverData/workspace6"
                 log_debug "Usando diretório Flatpak: $DBEAVER_CONFIG_DIR"
             else
                 # Standard Linux installation
