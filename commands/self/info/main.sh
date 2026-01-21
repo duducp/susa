@@ -4,7 +4,6 @@ IFS=$'\n\t'
 
 # Source completion library
 source "$LIB_DIR/internal/completion.sh"
-source "$LIB_DIR/internal/args.sh"
 
 # Help function
 show_complement_help() {

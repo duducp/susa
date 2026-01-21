@@ -3,7 +3,6 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Source libraries
-source "$LIB_DIR/internal/args.sh"
 source "$LIB_DIR/github.sh"
 
 TEMP_DIR=$(mktemp -d)

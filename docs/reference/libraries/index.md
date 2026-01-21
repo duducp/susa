@@ -97,10 +97,6 @@ Wrapper para acesso otimizado ao cache do arquivo `susa.lock`. Fornece funções
 
 Sistema de contexto para compartilhar dados durante a execução de comandos. Provê armazenamento chave-valor em memória otimizado que é automaticamente limpo após cada comando. Usa o sistema de cache nomeado para máxima performance.
 
-#### [args.sh](args.md)
-
-Parsing consistente de argumentos de linha de comando. Valida argumentos obrigatórios, processa flags e elimina código duplicado.
-
 #### [completion.sh](completion.md)
 
 Gerenciamento de autocompletar (tab completion) para Bash e Zsh. Verifica instalação, status e carregamento de scripts de completion.
