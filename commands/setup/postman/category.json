@@ -1,0 +1,5 @@
+{
+  "name": "Postman",
+  "description": "Gerenciar instalação do Postman (plataforma completa para desenvolvimento de APIs)",
+  "entrypoint": "main.sh"
+}
