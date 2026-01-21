@@ -479,8 +479,7 @@ show_software_info() {
     # Get latest version
     log_debug "Obtendo última versão..."
     local latest_version=$(get_latest_software_version 2> /dev/null) || latest_version=""
-    log_debug "Última versão obtida: '$latest_version'"
-    if [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] || [ "$latest_version" = "N/A" ]; then
+    if [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] || [ "$latest_version" = "N/A" ] || [ "$latest_version" = "unknown" ] || [ "$latest_version" = "N/A" ]; then
         latest_version=""
     fi
     log_debug "Última versão processada: '$latest_version'"
@@ -488,7 +487,6 @@ show_software_info() {
     # Check installation status and display accordingly
     log_debug "Verificando status de instalação..."
     local is_installed=$(check_software_installed && echo "true" || echo "false")
-    log_debug "Is installed: $is_installed"
 
     # Get current version
     local current_version=""
@@ -496,17 +494,17 @@ show_software_info() {
     if [ "$is_installed" = "true" ]; then
         log_debug "Obtendo versão atual..."
         current_version=$(get_current_software_version 2> /dev/null) || current_version=""
-        log_debug "Versão atual obtida: '$current_version'"
-        if [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ]; then
-            current_version="N/A"
+        if [ -z "$current_version" ] || [ "$current_version" = "desconhecida" ] || [ "$current_version" = "N/A" ] || [ "$current_version" = "unknown" ]; then
+            current_version=""
         fi
+        log_debug "Versão atual processada: '$current_version'"
 
         log_debug "Obtendo localização..."
         install_location=$(command -v "$binary_name" 2> /dev/null) || install_location=""
-        log_debug "Localização obtida: '$install_location'"
-        if [ -z "$install_location" ] || [ "$install_location" = "desconhecida" ]; then
-            install_location="N/A"
+        if [ -z "$install_location" ] || [ "$install_location" = "desconhecida" ] || [ "$install_location" = "N/A" ] || [ "$install_location" = "unknown" ]; then
+            install_location=""
         fi
+        log_debug "Localização processada: '$install_location'"
     fi
 
     log_debug "Status de instalação para $software_name: $is_installed. Versão atual: $current_version. Última versão: $latest_version"
@@ -517,8 +515,8 @@ show_software_info() {
 
     if [ "$is_installed" = "true" ]; then
         log_output "  ${CYAN}Status:${NC} ${GREEN}Instalado${NC}"
-        log_output "  ${CYAN}Local:${NC} $install_location"
-        log_output "  ${CYAN}Versão atual:${NC} $current_version"
+        log_output "  ${CYAN}Local:${NC} ${install_location:-Desconhecido}"
+        log_output "  ${CYAN}Versão atual:${NC} ${current_version:-Desconhecida}"
 
         _display_latest_version_info "$current_version" "$latest_version"
 
@@ -544,17 +542,17 @@ _display_latest_version_info() {
     fi
 
     # If current version is available, check for updates
-    if [ -n "$current" ] && [ "$current" != "N/A" ]; then
+    if [ -n "$current" ]; then
         local current_normalized="${current#v}"
         local latest_normalized="${latest#v}"
 
         if [ "$latest_normalized" != "$current_normalized" ]; then
             log_output "  ${CYAN}Última versão:${NC} ${YELLOW}$latest (atualização disponível)${NC}"
         else
-            log_output "  ${CYAN}Última versão:${NC} $latest"
+            log_output "  ${CYAN}Última versão:${NC} ${latest:-Desconhecida}"
         fi
     else
-        log_output "  ${CYAN}Última versão:${NC} $latest"
+        log_output "  ${CYAN}Última versão:${NC} ${latest:-Desconhecida}"
     fi
 }
 

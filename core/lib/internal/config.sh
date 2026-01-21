@@ -50,15 +50,27 @@ get_category_commands_from_lock() {
 get_category_subcategories_from_lock() {
     local category="$1"
 
-    # Find all commands that start with "category/"
-    # Extract the next level subcategory name
-    local subcats=$(cache_query '.commands[].category' |
+    # Find all subcategories from .categories[] that start with "category/"
+    # Extract only the immediate next level
+    local subcats_from_categories=$(cache_query '.categories[].name' |
         grep "^${category}/" |
         sed "s|^${category}/||" |
         cut -d'/' -f1 |
         sort -u)
 
-    echo "$subcats"
+    # Find all commands that start with "category/"
+    # Extract the next level subcategory name
+    local subcats_from_commands=$(cache_query '.commands[].category' |
+        grep "^${category}/" |
+        sed "s|^${category}/||" |
+        cut -d'/' -f1 |
+        sort -u)
+
+    # Combine both and sort unique
+    {
+        echo "$subcats_from_categories"
+        echo "$subcats_from_commands"
+    } | sort -u | grep -v '^$'
 }
 
 # Get command metadata from lock file

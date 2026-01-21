@@ -6,10 +6,13 @@
 # Funções reutilizáveis para baixar e verificar releases do GitHub
 
 # Obtém a última versão de um repositório GitHub
-# Args: owner/repo
+# Args:
+#   $1 - owner/repo
+#   $2 - (opcional) strip_prefix: "true" para remover prefixo 'v', "false" ou vazio para manter
 # Retorna: tag_name da última release
 github_get_latest_version() {
     local repo="$1"
+    local strip_prefix="${2:-false}"
     local api_url="https://api.github.com/repos/${repo}/releases/latest"
     local max_time="${GITHUB_API_MAX_TIME:-10}"
     local connect_timeout="${GITHUB_API_CONNECT_TIMEOUT:-5}"
@@ -27,6 +30,11 @@ github_get_latest_version() {
         log_error "Não foi possível obter a versão mais recente de $repo"
         log_debug "Verifique sua conexão com a internet ou tente novamente"
         return 1
+    fi
+
+    # Remove prefixo 'v' se solicitado
+    if [ "$strip_prefix" = "true" ]; then
+        version="${version#v}"
     fi
 
     log_debug "Última versão: $version"

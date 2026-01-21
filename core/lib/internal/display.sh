@@ -295,6 +295,14 @@ _display_category_help() {
     # Validate category exists
     if ! _validate_category_exists "$full_category"; then
         log_error "Categoria '$full_category' não encontrada"
+
+        # Try to find similar category
+        local similar=$(find_similar_category "$full_category")
+        if [ -n "$similar" ]; then
+            log_output ""
+            show_similarity_suggestion "category" "$full_category" "$similar"
+        fi
+
         return 1
     fi
 

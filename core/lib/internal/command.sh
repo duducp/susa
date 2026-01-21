@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # ============================================================
-# Command Execution Functions for SUSA CLI
+# Command Functions for SUSA CLI
 # ============================================================
 # Functions for validating and executing commands
 
@@ -118,6 +118,7 @@ initialize_command_context() {
 }
 
 # Validate command exists and is compatible with current OS
+# Note: This is a safety check - validation should already happen in core/susa
 validate_command() {
     local category="$1"
     local command="$2"
