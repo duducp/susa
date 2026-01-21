@@ -5,15 +5,13 @@ IFS=$'\n\t'
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/homebrew.sh"
+source "$LIB_DIR/flatpak.sh"
 source "$LIB_DIR/os.sh"
-source "$LIB_DIR/github.sh"
 
 # Constants
 FLAMESHOT_NAME="Flameshot"
-FLAMESHOT_BIN_NAME="flameshot"
-FLAMESHOT_GITHUB_REPO="flameshot-org/flameshot"
-FLAMESHOT_INSTALL_DIR="/opt/flameshot"
 FLAMESHOT_HOMEBREW_FORMULA="flameshot"
+FLATPAK_APP_ID="org.flameshot.Flameshot"
 
 SKIP_CONFIRM=false
 
@@ -54,19 +52,23 @@ show_complement_help() {
     log_output "    flameshot gui"
 }
 
-# Get latest version (not implemented)
+# Get latest version
 get_latest_version() {
-    github_get_latest_version "$FLAMESHOT_GITHUB_REPO"
+    if is_mac; then
+        homebrew_get_latest_version "$FLAMESHOT_HOMEBREW_FORMULA"
+    else
+        flatpak_get_latest_version "$FLATPAK_APP_ID"
+    fi
 }
 
 # Get installed Flameshot version
 get_current_version() {
-    # Check version file first (for GitHub releases)
-    if [ -f "$FLAMESHOT_INSTALL_DIR/version.txt" ]; then
-        cat "$FLAMESHOT_INSTALL_DIR/version.txt"
-    elif check_installation; then
-        local version=$($FLAMESHOT_BIN_NAME --version 2> /dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "instalada")
-        echo "$version"
+    if check_installation; then
+        if is_mac; then
+            homebrew_get_installed_version "$FLAMESHOT_HOMEBREW_FORMULA"
+        else
+            flatpak_get_installed_version "$FLATPAK_APP_ID"
+        fi
     else
         echo "desconhecida"
     fi
@@ -74,42 +76,31 @@ get_current_version() {
 
 # Check if Flameshot is installed
 check_installation() {
-    command -v $FLAMESHOT_BIN_NAME &> /dev/null
+    if is_mac; then
+        homebrew_is_installed "$FLAMESHOT_HOMEBREW_FORMULA"
+    else
+        flatpak_is_installed "$FLATPAK_APP_ID"
+    fi
 }
 
 # Install Flameshot on macOS using Homebrew
 install_flameshot_macos() {
-    log_info "Instalando Flameshot no macOS..."
-
-    # Check if Homebrew is installed
-    if ! homebrew_is_available; then
-        log_error "Homebrew não está instalado. Instale-o primeiro:"
-        log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-        return 1
-    fi
-
-    # Install or upgrade Flameshot
-    if homebrew_is_installed_formula "$FLAMESHOT_HOMEBREW_FORMULA"; then
-        log_info "Atualizando Flameshot via Homebrew..."
-        homebrew_update_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot" || {
-            log_warning "Flameshot já está na versão mais recente"
-        }
+    if ! homebrew_is_installed "$FLAMESHOT_HOMEBREW_FORMULA"; then
+        homebrew_install "$FLAMESHOT_HOMEBREW_FORMULA" "$FLAMESHOT_NAME"
     else
-        log_info "Instalando Flameshot via Homebrew..."
-        homebrew_install_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot"
+        log_warning "Flameshot já está instalado via Homebrew"
     fi
-
-    log_success "Flameshot instalado com sucesso!"
-    log_output ""
-    log_output "${LIGHT_CYAN}Para usar o Flameshot:${NC}"
-    log_output "  • Via menu de aplicativos"
-    log_output "  • Via terminal: ${LIGHT_GREEN}flameshot gui${NC}"
-    log_output ""
-    log_output "${YELLOW}Nota:${NC} Configure permissões de captura de tela em:"
-    log_output "  System Preferences → Security & Privacy → Screen Recording"
+    return 0
 }
 
 # Install Flameshot on Debian/Ubuntu
+# Install Flameshot on Linux using Flatpak
+install_flameshot_linux() {
+    flatpak_install "$FLATPAK_APP_ID" "$FLAMESHOT_NAME"
+    return $?
+}
+
+# Legacy function - kept for compatibility but not used
 install_flameshot_debian() {
     log_info "Instalando Flameshot no Debian/Ubuntu..."
 
@@ -320,33 +311,6 @@ install_flameshot_arch() {
     log_output "  • Via terminal: ${LIGHT_GREEN}flameshot gui${NC}"
 }
 
-# Install Flameshot on Linux
-install_flameshot_linux() {
-    if is_linux_debian; then
-        install_flameshot_debian
-    elif is_linux_redhat; then
-        install_flameshot_rhel
-    elif is_linux_arch; then
-        install_flameshot_arch
-    else
-        local distro=$(get_distro_id)
-        log_warning "Distribuição não reconhecida: $distro"
-        log_info "Tentando instalar via gerenciador de pacotes genérico..."
-
-        if command -v apt-get &> /dev/null; then
-            install_flameshot_debian
-        elif command -v dnf &> /dev/null || command -v yum &> /dev/null; then
-            install_flameshot_rhel
-        elif command -v pacman &> /dev/null; then
-            install_flameshot_arch
-        else
-            log_error "Nenhum gerenciador de pacotes suportado encontrado"
-            log_info "Visite https://flameshot.org para instruções manuais"
-            return 1
-        fi
-    fi
-}
-
 # Main installation function
 install_flameshot() {
     if check_installation; then
@@ -354,15 +318,37 @@ install_flameshot() {
         exit 0
     fi
 
+    log_info "Iniciando instalação do Flameshot..."
+
     if is_mac; then
         install_flameshot_macos
     else
         install_flameshot_linux
     fi
 
-    # Mark as installed
-    local version=$(get_current_version)
-    register_or_update_software_in_lock "$COMMAND_NAME" "$version"
+    local install_result=$?
+
+    if [ $install_result -eq 0 ]; then
+        # Verify installation
+        if check_installation; then
+            local installed_version=$(get_current_version)
+
+            # Mark as installed in lock file
+            register_or_update_software_in_lock "$COMMAND_NAME" "$installed_version"
+
+            log_success "Flameshot $installed_version instalado com sucesso!"
+            log_output ""
+            log_output "Próximos passos:"
+            log_output "  1. Execute: ${LIGHT_CYAN}flameshot gui${NC} para abrir o capturador"
+            log_output "  2. Configure um atalho global (ex: Print Screen)"
+            log_output "  3. Use ${LIGHT_CYAN}susa setup flameshot --help${NC} para mais informações"
+        else
+            log_error "Flameshot foi instalado mas não está acessível"
+            return 1
+        fi
+    else
+        return $install_result
+    fi
 }
 
 # Update Flameshot
@@ -378,56 +364,31 @@ update_flameshot() {
     log_info "Versão atual: $current_version"
 
     if is_mac; then
-        log_info "Atualizando via Homebrew..."
-        homebrew_update_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot" || {
-            log_info "Flameshot já está na versão mais recente"
-        }
-    else
-        # Get latest version from GitHub
-        log_info "Buscando última versão disponível..."
-        local latest_version=$(get_latest_version)
-
-        if [ -z "$latest_version" ]; then
-            log_error "Não foi possível obter a versão mais recente"
+        if homebrew_is_installed "$FLAMESHOT_HOMEBREW_FORMULA"; then
+            homebrew_update "$FLAMESHOT_HOMEBREW_FORMULA" "$FLAMESHOT_NAME"
+        else
+            log_error "Flameshot não está instalado via Homebrew"
             return 1
         fi
-
-        # Remove 'v' prefix for comparison
-        local current_clean="${current_version#v}"
-        local latest_clean="${latest_version#v}"
-
-        if [ "$current_clean" = "$latest_clean" ]; then
-            log_info "Flameshot já está na versão mais recente ($current_version)"
-            return 0
-        fi
-
-        log_info "Atualizando de $current_version para $latest_version..."
-
-        # Uninstall current version
-        log_debug "Removendo versão antiga..."
-
-        if is_linux_debian; then
-            sudo dpkg -r flameshot 2> /dev/null || true
-        elif is_linux_redhat; then
-            sudo rpm -e flameshot 2> /dev/null || true
-        elif is_linux_arch; then
-            sudo pacman -R --noconfirm flameshot 2> /dev/null || true
-        fi
-
-        # Reinstall with latest version
-        install_flameshot_linux
-
-        if [ $? -ne 0 ]; then
-            log_error "Falha ao instalar nova versão"
+    else
+        if flatpak_is_installed "$FLATPAK_APP_ID"; then
+            flatpak_update "$FLATPAK_APP_ID" "$FLAMESHOT_NAME"
+        else
+            log_error "Flameshot não está instalado via Flatpak"
             return 1
         fi
     fi
 
     local new_version=$(get_current_version)
-    log_success "Flameshot atualizado para versão $new_version"
 
     # Update lock file
     register_or_update_software_in_lock "$COMMAND_NAME" "$new_version"
+
+    if [ "$current_version" = "$new_version" ]; then
+        log_info "Flameshot já estava na versão mais recente ($current_version)"
+    else
+        log_success "Flameshot atualizado com sucesso para versão $new_version!"
+    fi
 }
 
 # Uninstall Flameshot
@@ -435,16 +396,18 @@ uninstall_flameshot() {
     log_info "Desinstalando Flameshot..."
 
     if ! check_installation; then
-        log_warning "Flameshot não está instalado"
+        log_info "Flameshot não está instalado"
         return 0
     fi
 
     local current_version=$(get_current_version)
+    log_debug "Versão a ser removida: $current_version"
 
+    log_output ""
     if [ "$SKIP_CONFIRM" = false ]; then
-        log_output ""
         log_output "${YELLOW}Deseja realmente desinstalar o Flameshot $current_version? (s/N)${NC}"
         read -r response
+
         if [[ ! "$response" =~ ^[sSyY]$ ]]; then
             log_info "Desinstalação cancelada"
             return 0
@@ -452,42 +415,30 @@ uninstall_flameshot() {
     fi
 
     if is_mac; then
-        log_info "Desinstalando via Homebrew..."
-        homebrew_uninstall_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot"
-    else
-        if is_linux_debian; then
-            log_info "Removendo pacote .deb..."
-            sudo dpkg -r flameshot 2> /dev/null || sudo apt-get remove -y flameshot 2> /dev/null
-        elif is_linux_redhat; then
-            log_info "Removendo pacote .rpm..."
-            sudo rpm -e flameshot 2> /dev/null || {
-                local pkg_manager=$(get_redhat_pkg_manager)
-                sudo $pkg_manager remove -y flameshot 2> /dev/null
-            }
-        elif is_linux_arch; then
-            log_info "Desinstalando via pacman..."
-            sudo pacman -R --noconfirm flameshot
+        if homebrew_is_installed "$FLAMESHOT_HOMEBREW_FORMULA"; then
+            homebrew_uninstall "$FLAMESHOT_HOMEBREW_FORMULA" "$FLAMESHOT_NAME"
         else
-            log_warning "Distribuição não reconhecida, tentando desinstalação genérica..."
-            if command -v dpkg &> /dev/null; then
-                sudo dpkg -r flameshot 2> /dev/null || sudo apt-get remove -y flameshot 2> /dev/null
-            elif command -v rpm &> /dev/null; then
-                sudo rpm -e flameshot 2> /dev/null || sudo dnf remove -y flameshot 2> /dev/null
-            elif command -v pacman &> /dev/null; then
-                sudo pacman -R --noconfirm flameshot
-            fi
+            log_warning "Flameshot não está instalado via Homebrew"
+            return 1
         fi
-
-        # Remove version info directory
-        if [ -d "$FLAMESHOT_INSTALL_DIR" ]; then
-            sudo rm -rf "$FLAMESHOT_INSTALL_DIR"
+    else
+        if flatpak_is_installed "$FLATPAK_APP_ID"; then
+            flatpak_uninstall "$FLATPAK_APP_ID" "$FLAMESHOT_NAME"
+        else
+            log_warning "Flameshot não está instalado via Flatpak"
+            return 1
         fi
     fi
 
-    log_success "Flameshot desinstalado com sucesso!"
-
-    # Remove from lock file
-    remove_software_in_lock "$COMMAND_NAME"
+    # Verify uninstallation
+    if ! check_installation; then
+        # Remove from lock file
+        remove_software_in_lock "$COMMAND_NAME"
+        log_success "Flameshot desinstalado com sucesso!"
+    else
+        log_error "Falha ao desinstalar Flameshot completamente"
+        return 1
+    fi
 }
 
 # Main execution
@@ -499,7 +450,7 @@ main() {
     for arg in "$@"; do
         case "$arg" in
             --info)
-                show_software_info "flameshot" "$FLAMESHOT_BIN_NAME"
+                show_software_info
                 exit 0
                 ;;
             -y | --yes)

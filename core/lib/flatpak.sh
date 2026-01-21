@@ -170,6 +170,12 @@ flatpak_get_latest_version() {
         version=$(flatpak remote-info flathub --user "$app_id" 2> /dev/null | grep -E "^\s*Version:" | head -1 | awk '{print $2}')
     fi
 
+    # If still not found, try Flathub API
+    if [ -z "$version" ]; then
+        log_debug "Tentando obter versão via API do Flathub para $app_id"
+        version=$(curl -fsSL "https://flathub.org/api/v2/appstream/${app_id}" 2> /dev/null | jq -r '.releases[0].version // empty' 2> /dev/null)
+    fi
+
     # If still not found, return unknown
     if [ -z "$version" ]; then
         echo "unknown"
