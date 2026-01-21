@@ -1,0 +1,5 @@
+{
+  "name": "Restore",
+  "description": "Restaura um backup das configurações e scripts do DBeaver",
+  "entrypoint": "main.sh"
+}

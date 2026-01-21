@@ -1,0 +1,5 @@
+{
+  "name": "Create",
+  "description": "Cria um backup das configurações e scripts do DBeaver",
+  "entrypoint": "main.sh"
+}

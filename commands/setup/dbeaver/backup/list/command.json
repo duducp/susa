@@ -1,0 +1,5 @@
+{
+  "name": "List",
+  "description": "Lista todos os backups disponíveis do DBeaver",
+  "entrypoint": "main.sh"
+}
