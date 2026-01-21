@@ -7,36 +7,13 @@ IFS=$'\n\t'
 UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../../utils"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/flatpak.sh"
+source "$LIB_DIR/snap.sh"
 source "$LIB_DIR/homebrew.sh"
 source "$UTILS_DIR/common.sh"
 
 # Default backup directory
 DEFAULT_BACKUP_DIR="$HOME/.susa/backups/dbeaver"
 BACKUP_DIR="${DBEAVER_BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
-
-# Get DBeaver configuration paths based on OS
-get_dbeaver_config_paths() {
-    local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
-
-    case "$os_name" in
-        darwin)
-            DBEAVER_CONFIG_DIR="$HOME/Library/DBeaverData/workspace6"
-            DBEAVER_SCRIPTS_DIR="$HOME/Library/DBeaverData/workspace6/scripts"
-            DBEAVER_CONNECTIONS_FILE="$HOME/Library/DBeaverData/workspace6/.metadata/.plugins/org.jkiss.dbeaver.core/data-sources.json"
-            ;;
-        linux)
-            DBEAVER_CONFIG_DIR="$HOME/.local/share/DBeaverData/workspace6"
-            DBEAVER_SCRIPTS_DIR="$HOME/.local/share/DBeaverData/workspace6/scripts"
-            DBEAVER_CONNECTIONS_FILE="$HOME/.local/share/DBeaverData/workspace6/.metadata/.plugins/org.jkiss.dbeaver.core/data-sources.json"
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $os_name"
-            return 1
-            ;;
-    esac
-
-    return 0
-}
 
 # Show help
 show_complement_help() {
