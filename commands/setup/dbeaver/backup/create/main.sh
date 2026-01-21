@@ -69,8 +69,8 @@ create_backup() {
         fi
     fi
 
-    # Get configuration paths
-    if ! get_dbeaver_config_paths; then
+    # Get configuration paths (modo backup: lê de onde os dados estão)
+    if ! get_dbeaver_config_paths "backup"; then
         return 1
     fi
 

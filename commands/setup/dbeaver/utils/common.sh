@@ -90,7 +90,12 @@ check_installation() {
 }
 
 # Get DBeaver configuration paths based on OS and installation method
+# Args:
+#   $1 - mode: 'backup' (default) or 'restore'
+#        backup: finds where data currently is (may be revision-specific)
+#        restore: uses persistent location (common/ for Snap)
 get_dbeaver_config_paths() {
+    local mode="${1:-backup}"
     local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
 
     case "$os_name" in
@@ -105,13 +110,34 @@ get_dbeaver_config_paths() {
                 # Snap installations store data in ~/snap/app-name/
                 local snap_base="$HOME/snap/dbeaver-ce"
 
-                # Try common/ first (persistent data), then current/ (latest revision)
-                if [ -d "$snap_base/common/.local/share/DBeaverData/workspace6" ]; then
+                if [ "$mode" = "restore" ]; then
+                    # For restore, ALWAYS use common/ (persistent across updates)
                     DBEAVER_CONFIG_DIR="$snap_base/common/.local/share/DBeaverData/workspace6"
-                elif [ -d "$snap_base/current/.local/share/DBeaverData/workspace6" ]; then
-                    DBEAVER_CONFIG_DIR="$snap_base/current/.local/share/DBeaverData/workspace6"
+                    log_debug "Modo restore: usando diretório persistente common/"
                 else
-                    DBEAVER_CONFIG_DIR="$snap_base/common/.local/share/DBeaverData/workspace6"
+                    # For backup, find where data currently is
+                    # Priority order:
+                    # 1. common/ - persistent data across updates
+                    # 2. current/ - symlink to current revision
+                    # 3. Find the actual revision number directory
+                    if [ -d "$snap_base/common/.local/share/DBeaverData/workspace6" ]; then
+                        DBEAVER_CONFIG_DIR="$snap_base/common/.local/share/DBeaverData/workspace6"
+                        log_debug "Usando dados persistentes: common/"
+                    elif [ -d "$snap_base/current/.local/share/DBeaverData/workspace6" ]; then
+                        DBEAVER_CONFIG_DIR="$snap_base/current/.local/share/DBeaverData/workspace6"
+                        log_debug "Usando revisão atual via symlink: current/"
+                    else
+                        # Find the most recent revision directory
+                        local latest_revision=$(ls -1d "$snap_base"/[0-9]* 2> /dev/null | sort -V | tail -1)
+                        if [ -n "$latest_revision" ] && [ -d "$latest_revision/.local/share/DBeaverData/workspace6" ]; then
+                            DBEAVER_CONFIG_DIR="$latest_revision/.local/share/DBeaverData/workspace6"
+                            log_debug "Usando revisão específica: $(basename "$latest_revision")/"
+                        else
+                            # Fallback to common even if it doesn't exist yet
+                            DBEAVER_CONFIG_DIR="$snap_base/common/.local/share/DBeaverData/workspace6"
+                            log_debug "Usando diretório padrão (pode não existir): common/"
+                        fi
+                    fi
                 fi
 
                 DBEAVER_SCRIPTS_DIR="$DBEAVER_CONFIG_DIR/scripts"

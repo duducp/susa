@@ -121,7 +121,8 @@ show_backup_info() {
 
 # Create safety backup
 create_safety_backup() {
-    if ! get_dbeaver_config_paths; then
+    # Use backup mode to read current configurations
+    if ! get_dbeaver_config_paths "backup"; then
         return 1
     fi
 
@@ -166,8 +167,8 @@ restore_backup() {
         return 1
     fi
 
-    # Get configuration paths
-    if ! get_dbeaver_config_paths; then
+    # Get configuration paths (modo restore: always use common/ for Snap)
+    if ! get_dbeaver_config_paths "restore"; then
         return 1
     fi
 
