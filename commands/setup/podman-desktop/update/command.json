@@ -1,0 +1,6 @@
+{
+  "name": "Atualizar",
+  "description": "Atualiza o Podman Desktop para a versão mais recente",
+  "entrypoint": "main.sh",
+  "os": ["linux", "macos"]
+}

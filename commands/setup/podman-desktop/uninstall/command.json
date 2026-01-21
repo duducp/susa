@@ -1,0 +1,6 @@
+{
+  "name": "Desinstalar",
+  "description": "Remove o Podman Desktop do sistema",
+  "entrypoint": "main.sh",
+  "os": ["linux", "macos"]
+}

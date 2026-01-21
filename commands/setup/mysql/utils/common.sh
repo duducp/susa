@@ -86,9 +86,7 @@ get_latest_version() {
 # Get installed MySQL client version
 get_current_version() {
     if check_installation; then
-        ${MYSQL_UTILS[0]} --version 2> /dev/null | grep -oP '\d+(\.\d+){1,2}' | head -1 || echo "desconhecida"
-    else
-        echo "desconhecida"
+        ${MYSQL_UTILS[0]} --version 2> /dev/null | grep -oP '\d+(\.\d+){1,2}' | head -1 || echo ""
     fi
 }
 

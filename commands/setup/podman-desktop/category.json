@@ -1,0 +1,5 @@
+{
+  "name": "Podman Desktop",
+  "description": "Interface gráfica para gerenciar containers Podman",
+  "entrypoint": "main.sh"
+}
