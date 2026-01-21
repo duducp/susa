@@ -1,0 +1,10 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Redis CLI para a versão mais recente disponível",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

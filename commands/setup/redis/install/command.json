@@ -1,0 +1,10 @@
+{
+  "name": "Install",
+  "description": "Instala o cliente de linha de comando do Redis (redis-cli e redis-benchmark)",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

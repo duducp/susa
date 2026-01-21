@@ -1,0 +1,5 @@
+{
+  "name": "Redis",
+  "description": "Gerenciar instalação do Redis CLI",
+  "entrypoint": "main.sh"
+}

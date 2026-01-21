@@ -1,0 +1,10 @@
+{
+  "name": "Uninstall",
+  "description": "Remove o Redis CLI do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}
