@@ -168,6 +168,54 @@ check_and_show_command_help() {
     done
 }
 
+# Validate command arguments
+# Check for invalid combined flags like -hg
+validate_command_arguments() {
+    local args=("$@")
+
+    for arg in "${args[@]}"; do
+        # Skip if not a flag
+        if [[ ! "$arg" =~ ^- ]]; then
+            continue
+        fi
+
+        # Skip if it's a known valid pattern (long flag with value or double dash)
+        if [[ "$arg" =~ ^--.*=.* ]] || [[ "$arg" == "--" ]]; then
+            continue
+        fi
+
+        # Check for invalid combined short flags (more than one character after single -)
+        # Valid: -h, -v, -y
+        # Invalid: -hg, -abc, -vvv (unless explicitly handled by command)
+        if [[ "$arg" =~ ^-[a-zA-Z]{2,}$ ]]; then
+            # Check if it's a valid combined flag like -vvv for verbosity
+            if [[ "$arg" =~ ^-v+$ ]]; then
+                continue # -v, -vv, -vvv are valid
+            fi
+
+            log_error "Argumento inválido: '$arg'"
+            log_output ""
+
+            # Build proper command path for help suggestion
+            local category=$(context_get "command.category")
+            local parent=$(context_get "command.parent")
+            local current=$(context_get "command.current")
+            local help_cmd="susa $category"
+
+            if [ -n "$parent" ]; then
+                help_cmd="$help_cmd $parent"
+            fi
+
+            if [ -n "$current" ]; then
+                help_cmd="$help_cmd $current"
+            fi
+
+            log_output "Use ${LIGHT_CYAN}$help_cmd --help${NC} para ver as opções válidas."
+            exit 1
+        fi
+    done
+}
+
 # Execute a command with its arguments
 # Note: Context should already be initialized by the caller
 execute_command() {
@@ -226,6 +274,9 @@ execute_command() {
 
     # Check if help was requested for the command
     check_and_show_command_help "$script_path" "$@"
+
+    # Validate arguments before execution
+    validate_command_arguments "$@"
 
     # Check if sudo is required (bypass logic handled internally)
     if requires_sudo "$GLOBAL_CONFIG_FILE" "$category" "$command"; then

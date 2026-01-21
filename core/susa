@@ -366,18 +366,25 @@ resolve_category_path() {
 
             # Category has entrypoint but arg doesn't start with -
             # Could be a command or argument to entrypoint
-            # If command exists, treat as command; otherwise pass to entrypoint
+            # If command exists, treat as command; otherwise check validity
             local commands=$(get_category_commands "$category" "$(get_simple_os)")
             if echo "$commands" | grep -q "^${next_arg}$"; then
                 # It's a command
                 break
             fi
 
-            # Not a command, pass all remaining args to entrypoint
-            echo "$EXEC_ENTRYPOINT_MARKER"
-            echo "$category"
-            printf '%s\n' "${remaining_args[@]}"
-            return 0
+            # Check if it's a valid subcategory
+            local all_subcats=$(get_category_subcategories "$category")
+            if echo "$all_subcats" | grep -q "^${next_arg}$"; then
+                # It's a subcategory but we already checked above, shouldn't reach here
+                break
+            fi
+
+            # Not a command or subcategory - show error
+            log_error "Comando ou subcategoria '$next_arg' não encontrado em '$category'"
+            log_output ""
+            log_output "Use ${LIGHT_CYAN}susa $category --help${NC} para ver os comandos e subcategorias disponíveis."
+            exit 1
         fi
     done
 
@@ -504,9 +511,11 @@ _handle_command_help() {
         fi
     fi
 
-    # No config file or script, use standard help
-    display_help
-    exit 0
+    # Command not found - show error message
+    log_error "Comando '$command' não encontrado na categoria '$category'"
+    log_output ""
+    log_output "Use ${LIGHT_CYAN}susa $category --help${NC} para ver os comandos disponíveis."
+    exit 1
 }
 
 # Main entry point
