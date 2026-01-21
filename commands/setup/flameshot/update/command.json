@@ -1,0 +1,5 @@
+{
+  "name": "Atualizar",
+  "description": "Atualiza o Flameshot para a versão mais recente",
+  "entrypoint": "main.sh"
+}

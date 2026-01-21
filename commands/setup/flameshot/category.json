@@ -1,0 +1,5 @@
+{
+  "name": "Flameshot",
+  "description": "Ferramenta de captura de tela",
+  "entrypoint": "main.sh"
+}

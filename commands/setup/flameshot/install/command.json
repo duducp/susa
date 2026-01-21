@@ -1,0 +1,5 @@
+{
+  "name": "Instalar",
+  "description": "Instala o Flameshot (cliente de API)",
+  "entrypoint": "main.sh"
+}

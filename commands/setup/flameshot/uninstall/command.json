@@ -1,0 +1,5 @@
+{
+  "name": "Desinstalar",
+  "description": "Remove o Flameshot do sistema",
+  "entrypoint": "main.sh"
+}
