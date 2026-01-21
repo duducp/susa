@@ -1,0 +1,10 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala LazyPG do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

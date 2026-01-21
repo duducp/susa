@@ -1,0 +1,5 @@
+{
+  "name": "LazyPG",
+  "description": "Gerenciar instalação do LazyPG (TUI para PostgreSQL)",
+  "entrypoint": "main.sh"
+}
