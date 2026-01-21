@@ -6,33 +6,14 @@ IFS=$'\n\t'
 # Source libraries
 UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../../utils"
 source "$LIB_DIR/os.sh"
+source "$LIB_DIR/flatpak.sh"
+source "$LIB_DIR/snap.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$UTILS_DIR/common.sh"
 
 # Default backup directory
 DEFAULT_BACKUP_DIR="$HOME/.susa/backups/vscode"
 BACKUP_DIR="${VSCODE_BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
-
-# Get VSCode configuration paths based on OS
-get_vscode_config_paths() {
-    local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
-
-    case "$os_name" in
-        darwin)
-            VSCODE_CONFIG_DIR="$HOME/Library/Application Support/Code"
-            VSCODE_USER_DIR="$HOME/.vscode"
-            ;;
-        linux)
-            VSCODE_CONFIG_DIR="$HOME/.config/Code"
-            VSCODE_USER_DIR="$HOME/.vscode"
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $os_name"
-            return 1
-            ;;
-    esac
-
-    return 0
-}
 
 # Show help
 show_complement_help() {

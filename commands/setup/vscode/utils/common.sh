@@ -18,6 +18,8 @@ VSCODE_DEB_PACKAGE="code"
 VSCODE_RPM_PACKAGE="code"
 VSCODE_ARCH_AUR="visual-studio-code-bin"
 VSCODE_ARCH_COMMUNITY="code"
+FLATPAK_APP_ID="com.visualstudio.code"
+SNAP_PACKAGE_NAME="code"
 
 # Get latest version from GitHub
 get_latest_version() {
@@ -42,7 +44,100 @@ get_current_version() {
     fi
 }
 
+# Check if VS Code is installed via alternative methods
+check_installation_alternative() {
+    # Check if code command is available
+    if command -v code &> /dev/null; then
+        log_debug "VS Code encontrado no PATH: $(command -v code)"
+        return 0
+    fi
+
+    # Check common installation directories
+    local common_dirs=(
+        "/usr/bin/code"
+        "/usr/local/bin/code"
+        "$HOME/.local/bin/code"
+    )
+
+    for dir in "${common_dirs[@]}"; do
+        if [ -x "$dir" ]; then
+            log_debug "VS Code encontrado em: $dir"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 # Check if VS Code is installed
 check_installation() {
-    command -v $VSCODE_BIN_NAME &> /dev/null
+    if is_mac; then
+        # On Mac, check Homebrew first, then command
+        if homebrew_is_installed "$VSCODE_HOMEBREW_CASK"; then
+            return 0
+        fi
+        command -v $VSCODE_BIN_NAME &> /dev/null
+    else
+        # On Linux, check Flatpak, Snap, then alternatives
+        if flatpak_is_installed "$FLATPAK_APP_ID"; then
+            return 0
+        fi
+
+        if snap_is_installed "$SNAP_PACKAGE_NAME"; then
+            return 0
+        fi
+
+        check_installation_alternative
+    fi
+}
+
+# Get VSCode configuration paths based on OS and installation method
+get_vscode_config_paths() {
+    local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+    case "$os_name" in
+        darwin)
+            VSCODE_CONFIG_DIR="$HOME/Library/Application Support/Code"
+            VSCODE_USER_DIR="$HOME/.vscode"
+            ;;
+        linux)
+            # Check if VS Code is installed via Snap
+            if snap_is_installed "$SNAP_PACKAGE_NAME"; then
+                # Snap installations store data in ~/snap/app-name/
+                local snap_base="$HOME/snap/code"
+
+                # Try common/ first (persistent data), then current/ (latest revision)
+                if [ -d "$snap_base/common/.config/Code" ]; then
+                    VSCODE_CONFIG_DIR="$snap_base/common/.config/Code"
+                elif [ -d "$snap_base/current/.config/Code" ]; then
+                    VSCODE_CONFIG_DIR="$snap_base/current/.config/Code"
+                else
+                    VSCODE_CONFIG_DIR="$snap_base/common/.config/Code"
+                fi
+
+                VSCODE_USER_DIR="$HOME/.vscode"
+
+                log_debug "Usando diretório Snap: $VSCODE_CONFIG_DIR"
+            # Check if VS Code is installed via Flatpak
+            elif flatpak_is_installed "$FLATPAK_APP_ID"; then
+                # Flatpak installations store data in ~/.var/app/
+                VSCODE_CONFIG_DIR="$HOME/.var/app/$FLATPAK_APP_ID/config/Code"
+                VSCODE_USER_DIR="$HOME/.var/app/$FLATPAK_APP_ID/data/vscode"
+
+                log_debug "Usando diretório Flatpak: $VSCODE_CONFIG_DIR"
+            else
+                # Standard Linux installation
+                VSCODE_CONFIG_DIR="$HOME/.config/Code"
+                VSCODE_USER_DIR="$HOME/.vscode"
+
+                log_debug "Usando diretório padrão: $VSCODE_CONFIG_DIR"
+            fi
+            ;;
+        *)
+            log_error "Sistema operacional não suportado: $os_name"
+            return 1
+            ;;
+    esac
+
+    return 0
 }
