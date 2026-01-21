@@ -176,10 +176,6 @@ context.sh
     └── logger.sh (opcional)
         └── color.sh
 
-internal/args.sh
-└── logger.sh
-    └── color.sh
-
 internal/completion.sh
 └── shell.sh
 
@@ -222,7 +218,6 @@ set -euo pipefail
 source "$LIB_DIR/logger.sh"
 source "$LIB_DIR/color.sh"
 source "$LIB_DIR/os.sh"
-source "$LIB_DIR/internal/args.sh"
 source "$LIB_DIR/internal/installations.sh"  # Para rastreamento
 
 # Help function

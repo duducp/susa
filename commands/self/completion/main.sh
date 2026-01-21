@@ -29,7 +29,7 @@ show_help() {
     log_output "  -p, --print       Apenas imprime o script (não instala)"
     log_output ""
     log_output "${LIGHT_GREEN}Examples:${NC}"
-    log_output "  susa self completion --ins    tall            # Instala em todos os shells"
+    log_output "  susa self completion --install            # Instala em todos os shells"
     log_output "  susa self completion bash --install       # Instala apenas no bash"
     log_output "  susa self completion zsh --install        # Instala apenas no zsh"
     log_output "  susa self completion fish --install       # Instala apenas no fish"

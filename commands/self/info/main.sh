@@ -3,6 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Source completion library
+source "$LIB_DIR/shell.sh"
 source "$LIB_DIR/internal/completion.sh"
 
 # Help function
