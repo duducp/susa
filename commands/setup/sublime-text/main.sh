@@ -23,23 +23,16 @@ SUBLIME_ARCH_COMMUNITY="sublime-text-dev"
 
 SKIP_CONFIRM=false
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --uninstall       Desinstala o Sublime Text do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o Sublime Text para a versão mais recente"
     log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $SUBLIME_NAME é um editor de texto sofisticado para código, markup e prosa."
     log_output "  Conhecido por sua velocidade, interface limpa e recursos poderosos como"
     log_output "  múltiplos cursores, busca avançada, e extensa biblioteca de plugins."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --uninstall       Desinstala o Sublime Text do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o Sublime Text para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup sublime-text              # Instala o $SUBLIME_NAME"
@@ -517,5 +510,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

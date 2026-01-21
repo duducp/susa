@@ -11,13 +11,8 @@ DEFAULT_BACKUP_DIR="$HOME/.susa/backups/vscode"
 BACKUP_DIR="${VSCODE_BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
 
 # Show help
-show_help() {
-    show_description
-    log_output ""
-    show_usage "[opções]"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --dir <dir>       Diretório de backups (padrão: ~/.susa/backups/vscode)"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplo:${NC}"
@@ -90,5 +85,5 @@ main() {
     list_backups
 }
 
-# Execute main
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

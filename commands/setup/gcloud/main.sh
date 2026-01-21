@@ -526,5 +526,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

@@ -21,24 +21,18 @@ LOCAL_BIN_DIR="$HOME/.local/bin"
 MISE_CONFIG_DIR="$HOME/.config/mise"
 
 SKIP_CONFIRM=false
+
 # Help function
-show_help() {
-    show_description
-    echo ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --uninstall       Desinstala o Mise do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o Mise para a versão mais recente"
     echo ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Mise (anteriormente rtx) é um gerenciador de versões de ferramentas"
     log_output "  de desenvolvimento polyglot, escrito em Rust. É compatível com ASDF,"
     log_output "  mas oferece melhor performance e recursos adicionais como task runner."
-    echo ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --uninstall       Desinstala o Mise do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o Mise para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup mise              # Instala o Mise"
@@ -487,5 +481,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

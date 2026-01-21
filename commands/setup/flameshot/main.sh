@@ -16,24 +16,18 @@ FLAMESHOT_INSTALL_DIR="/opt/flameshot"
 FLAMESHOT_HOMEBREW_FORMULA="flameshot"
 
 SKIP_CONFIRM=false
+
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --uninstall       Desinstala o Flameshot do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o Flameshot para a versão mais recente"
     log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $FLAMESHOT_NAME é uma ferramenta poderosa e simples de captura de tela."
     log_output "  Oferece recursos de anotação, edição e compartilhamento de screenshots"
     log_output "  com interface intuitiva e atalhos de teclado customizáveis."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --uninstall       Desinstala o Flameshot do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o Flameshot para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup flameshot              # Instala o $FLAMESHOT_NAME"
@@ -564,5 +558,5 @@ main() {
     fi
 }
 
-# Run main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

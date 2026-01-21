@@ -10,6 +10,9 @@ source "$UTILS_DIR/uninstall.sh"
 
 # Show additional info in command help
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  -y, --yes         Pula confirmação de desinstalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que faz:${NC}"
     log_output "  Remove completamente o Redis CLI do sistema."
     log_output ""
@@ -17,9 +20,6 @@ show_complement_help() {
     log_output "  susa setup redis uninstall           # Desinstala o Redis CLI"
     log_output "  susa setup redis uninstall -y        # Desinstala sem confirmação"
     log_output "  susa setup redis uninstall -v        # Desinstala com saída detalhada"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -y, --yes         Pula confirmação de desinstalação"
 }
 
 # Main uninstall function

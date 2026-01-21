@@ -20,24 +20,18 @@ UV_DATA_DIR="$HOME/.local/share/uv"
 UV_CACHE_DIR="$HOME/.cache/uv"
 
 SKIP_CONFIRM=false
+
 # Help function
-show_help() {
-    show_description
-    echo ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --uninstall       Desinstala o UV do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o UV para a versão mais recente"
     echo ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $UV_NAME (by Astral) é um gerenciador de pacotes e projetos Python extremamente"
     log_output "  rápido, escrito em Rust. Substitui pip, pip-tools, pipx, poetry, pyenv,"
     log_output "  virtualenv e muito mais, com velocidade 10-100x mais rápida."
-    echo ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --uninstall       Desinstala o UV do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o UV para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup uv              # Instala o $UV_NAME"
@@ -470,5 +464,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

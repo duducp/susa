@@ -12,11 +12,11 @@ SKIP_CONFIRM=false
 
 # Show additional info in command help
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  -y, --yes     Pula confirmação de desinstalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Remove o MySQL Client e todos os seus utilitários do sistema."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -y, --yes     Pula confirmação de desinstalação"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup mysql uninstall              # Desinstala com confirmação"

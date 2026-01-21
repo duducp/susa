@@ -44,17 +44,11 @@ check_vscode_installation() {
 }
 
 # Show help
-show_help() {
-    show_description
-    log_output ""
-    show_usage "[opções]"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help              Mostra esta mensagem de ajuda"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --name <nome>           Nome do backup (padrão: vscode-backup-YYYYMMDD-HHMMSS)"
     log_output "  --no-extensions         Não incluir extensões no backup"
     log_output "  --dir <diretório>       Diretório onde salvar o backup"
-    log_output "  -v, --verbose           Habilita saída detalhada"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup vscode backup create                      # Cria backup com nome automático"
@@ -223,5 +217,5 @@ main() {
     create_backup "$backup_name" "$include_extensions"
 }
 
-# Execute main
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

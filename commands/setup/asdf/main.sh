@@ -15,24 +15,17 @@ LOCAL_BIN_DIR="$HOME/.local/bin"
 
 SKIP_CONFIRM=false
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info            Mostra informações sobre a instalação do ASDF"
+    log_output "  --uninstall       Desinstala o ASDF do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o ASDF para a versão mais recente"
     log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $ASDF_NAME é um gerenciador de versões universal que suporta múltiplas"
     log_output "  linguagens de programação através de plugins (Node.js, Python, Ruby,"
     log_output "  Elixir, Java, e muitos outros)."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --info            Mostra informações sobre a instalação do ASDF"
-    log_output "  --uninstall       Desinstala o ASDF do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o ASDF para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup asdf              # Instala o $ASDF_NAME"
@@ -485,5 +478,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

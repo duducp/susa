@@ -10,20 +10,11 @@ source "$UTILS_DIR/common.sh"
 source "$UTILS_DIR/install.sh"
 
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
-    log_output ""
+show_complement_help() {
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Visual Studio Code é um editor de código-fonte desenvolvido pela Microsoft."
     log_output "  Gratuito e open-source, oferece depuração integrada, controle Git,"
     log_output "  syntax highlighting, IntelliSense, snippets e refatoração de código."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup vscode install              # Instala o VS Code"
@@ -95,5 +86,5 @@ main() {
     install_vscode
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

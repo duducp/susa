@@ -16,23 +16,16 @@ POETRY_HOME="$HOME/.local/share/pypoetry"
 
 SKIP_CONFIRM=false
 # Help function
-show_help() {
-    show_description
-    echo ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --uninstall       Desinstala o Poetry do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o Poetry para a versão mais recente"
     echo ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $POETRY_NAME é um gerenciador de dependências e empacotamento para Python."
     log_output "  Facilita o gerenciamento de bibliotecas, criação de ambientes virtuais"
     log_output "  e publicação de pacotes Python de forma simplificada."
-    echo ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --uninstall       Desinstala o Poetry do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o Poetry para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup poetry              # Instala o $POETRY_NAME"
@@ -396,5 +389,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

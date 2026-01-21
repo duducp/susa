@@ -355,7 +355,5 @@ main() {
     esac
 }
 
-# Execute main only if not showing help
-if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
-    main "$@"
-fi
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

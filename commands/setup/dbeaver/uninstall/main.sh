@@ -13,20 +13,13 @@ source "$UTILS_DIR/uninstall.sh"
 SKIP_CONFIRM=false
 
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  -y, --yes         Pula confirmação"
     log_output ""
     log_output "${LIGHT_GREEN}O que faz:${NC}"
     log_output "  Remove completamente o DBeaver do sistema,"
     log_output "  incluindo pacotes e repositórios."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  -y, --yes         Pula confirmação"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup dbeaver uninstall        # Desinstala com confirmação"
@@ -98,5 +91,5 @@ main() {
     uninstall_dbeaver
 }
 
-# Run main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

@@ -9,7 +9,7 @@ source "$UTILS_DIR/common.sh"
 
 # Show additional info in category listing
 show_complement_help() {
-    log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --info          Mostra informações do PostgreSQL Client instalado"
 }
 

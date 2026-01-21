@@ -44,17 +44,15 @@ check_vscode_installation() {
 }
 
 # Show help
-show_help() {
-    show_description
-    log_output ""
-    show_usage "<nome-do-backup> [opções]"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help              Mostra esta mensagem de ajuda"
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --no-extensions         Não reinstalar extensões"
     log_output "  -y, --yes               Pula confirmação"
     log_output "  --info                  Mostra informações do backup sem restaurar"
     log_output "  --dir <diretório>       Diretório de onde restaurar o backup"
+    log_output ""
+    log_output "${LIGHT_GREEN}Argumentos:${NC}"
+    log_output "  <nome-do-backup>        Nome do backup a ser restaurado"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup vscode backup restore my-backup              # Restaura backup específico"
@@ -370,5 +368,5 @@ main() {
     fi
 }
 
-# Execute main
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

@@ -21,23 +21,16 @@ LOCAL_BIN_DIR="$HOME/.local/bin"
 
 SKIP_CONFIRM=false
 # Help function
-show_help() {
-    show_description
-    echo ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --uninstall       Desinstala o JetBrains Toolbox do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o JetBrains Toolbox para a versão mais recente"
     echo ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $TOOLBOX_NAME é um aplicativo que facilita o gerenciamento"
     log_output "  de todas as IDEs da JetBrains (IntelliJ IDEA, PyCharm, WebStorm,"
     log_output "  GoLand, etc.) a partir de uma única interface."
-    echo ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --uninstall       Desinstala o JetBrains Toolbox do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o JetBrains Toolbox para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     echo ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup jetbrains-toolbox              # Instala o $TOOLBOX_NAME"
@@ -704,5 +697,5 @@ main() {
     esac
 }
 
-# Execute main function
-main "$@"
+# Run main function (skip if showing help)
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"
