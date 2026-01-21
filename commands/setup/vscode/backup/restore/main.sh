@@ -4,7 +4,9 @@ IFS=$'\n\t'
 
 # Restore VSCode configurations from backup
 # Source libraries
+UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../../utils"
 source "$LIB_DIR/os.sh"
+source "$UTILS_DIR/common.sh"
 
 # Default backup directory
 DEFAULT_BACKUP_DIR="$HOME/.susa/backups/vscode"
@@ -28,17 +30,6 @@ get_vscode_config_paths() {
             return 1
             ;;
     esac
-
-    return 0
-}
-
-# Check if VSCode is installed
-check_vscode_installation() {
-    if ! command -v code &> /dev/null; then
-        log_error "VS Code não está instalado"
-        log_info "Use: susa setup vscode"
-        return 1
-    fi
 
     return 0
 }
@@ -137,7 +128,9 @@ restore_backup() {
     local skip_confirm="${3:-false}"
 
     # Check if VSCode is installed
-    if ! check_vscode_installation; then
+    if ! check_installation; then
+        log_error "VS Code não está instalado"
+        log_info "Use: susa setup vscode install"
         return 1
     fi
 

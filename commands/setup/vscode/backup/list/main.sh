@@ -14,9 +14,6 @@ BACKUP_DIR="${VSCODE_BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
 show_complement_help() {
     log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --dir <dir>       Diretório de backups (padrão: ~/.susa/backups/vscode)"
-    log_output ""
-    log_output "${LIGHT_GREEN}Exemplo:${NC}"
-    log_output "  susa setup vscode backup list"
 }
 
 # List available backups
