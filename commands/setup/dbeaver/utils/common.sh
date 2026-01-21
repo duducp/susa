@@ -15,27 +15,21 @@ FLATPAK_APP_ID="io.dbeaver.DBeaverCommunity"
 
 # Get latest version
 get_latest_version() {
-    case "$OS_TYPE" in
-        macos)
-            homebrew_get_latest_version "$DBEAVER_HOMEBREW_CASK"
-            ;;
-        *)
-            flatpak_get_latest_version "$FLATPAK_APP_ID"
-            ;;
-    esac
+    if is_mac; then
+        homebrew_get_latest_version "$DBEAVER_HOMEBREW_CASK"
+    else
+        flatpak_get_latest_version "$FLATPAK_APP_ID"
+    fi
 }
 
 # Get installed DBeaver version
 get_current_version() {
     if check_installation; then
-        case "$OS_TYPE" in
-            macos)
-                homebrew_get_installed_version "$DBEAVER_HOMEBREW_CASK"
-                ;;
-            *)
-                flatpak_get_installed_version "$FLATPAK_APP_ID"
-                ;;
-        esac
+        if is_mac; then
+            homebrew_get_installed_version "$DBEAVER_HOMEBREW_CASK"
+        else
+            flatpak_get_installed_version "$FLATPAK_APP_ID"
+        fi
     else
         echo "desconhecida"
     fi
@@ -43,12 +37,9 @@ get_current_version() {
 
 # Check if DBeaver is installed
 check_installation() {
-    case "$OS_TYPE" in
-        macos)
-            homebrew_is_installed "$DBEAVER_HOMEBREW_CASK"
-            ;;
-        *)
-            flatpak_is_installed "$FLATPAK_APP_ID"
-            ;;
-    esac
+    if is_mac; then
+        homebrew_is_installed "$DBEAVER_HOMEBREW_CASK"
+    else
+        flatpak_is_installed "$FLATPAK_APP_ID"
+    fi
 }

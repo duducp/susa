@@ -342,18 +342,11 @@ install_podman() {
     log_info "Iniciando instalação do Podman..."
 
     # Detect OS
-    case "$OS_TYPE" in
-        macos)
-            install_podman_macos
-            ;;
-        debian | fedora)
-            install_podman_linux
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $OS_TYPE"
-            return 1
-            ;;
-    esac
+    if is_mac; then
+        install_podman_macos
+    else
+        install_podman_linux
+    fi
 
     local install_result=$?
 

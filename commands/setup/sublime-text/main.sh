@@ -22,6 +22,7 @@ SUBLIME_ARCH_AUR="sublime-text-4"
 SUBLIME_ARCH_COMMUNITY="sublime-text-dev"
 
 SKIP_CONFIRM=false
+
 # Help function
 show_complement_help() {
     log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
@@ -228,18 +229,11 @@ install_sublime() {
     log_info "Iniciando instalação do Sublime Text..."
 
     # Detect OS
-    case "$OS_TYPE" in
-        macos)
-            install_sublime_macos
-            ;;
-        debian | fedora)
-            install_sublime_linux
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $OS_TYPE"
-            return 1
-            ;;
-    esac
+    if is_mac; then
+        install_sublime_macos
+    else
+        install_sublime_linux
+    fi
 
     local install_result=$?
 
@@ -282,58 +276,51 @@ update_sublime() {
     log_info "Versão atual: $current_version"
 
     # Detect OS and update
-    case "$OS_TYPE" in
-        macos)
-            if ! homebrew_is_available; then
-                log_error "Homebrew não está instalado"
-                return 1
-            fi
-
-            log_info "Atualizando Sublime Text via Homebrew..."
-            homebrew_update "$SUBLIME_HOMEBREW_CASK" "Sublime Text" || {
-                log_info "Sublime Text já está na versão mais recente"
-                return 0
-            }
-            ;;
-        debian | fedora)
-            local distro=$(get_distro_id)
-            log_debug "Distribuição detectada: $distro"
-
-            case "$distro" in
-                ubuntu | debian | pop | linuxmint | elementary)
-                    log_info "Atualizando Sublime Text via apt..."
-                    sudo apt-get update > /dev/null 2>&1
-                    sudo apt-get install --only-upgrade -y $SUBLIME_DEB_PACKAGE > /dev/null 2>&1
-                    ;;
-                fedora | rhel | centos | rocky | almalinux)
-                    log_info "Atualizando Sublime Text via dnf/yum..."
-                    if command -v dnf &> /dev/null; then
-                        sudo dnf upgrade -y $SUBLIME_RPM_PACKAGE > /dev/null 2>&1
-                    else
-                        sudo yum update -y $SUBLIME_RPM_PACKAGE > /dev/null 2>&1
-                    fi
-                    ;;
-                arch | manjaro | endeavouros)
-                    log_info "Atualizando Sublime Text via pacman/AUR..."
-                    if command -v yay &> /dev/null; then
-                        yay -Syu --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1
-                    elif command -v paru &> /dev/null; then
-                        paru -Syu --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1
-                    else
-                        sudo pacman -Syu --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
-                    fi
-                    ;;
-                *)
-                    log_error "Distribuição não suportada: $distro"
-                    return 1
-                    ;;
-            esac
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $os_name"
+    if is_mac; then
+        if ! homebrew_is_available; then
+            log_error "Homebrew não está instalado"
             return 1
-            ;;
-    esac
+        fi
+
+        log_info "Atualizando Sublime Text via Homebrew..."
+        homebrew_update "$SUBLIME_HOMEBREW_CASK" "Sublime Text" || {
+            log_info "Sublime Text já está na versão mais recente"
+            return 0
+        }
+    else
+        local distro=$(get_distro_id)
+        log_debug "Distribuição detectada: $distro"
+
+        case "$distro" in
+            ubuntu | debian | pop | linuxmint | elementary)
+                log_info "Atualizando Sublime Text via apt..."
+                sudo apt-get update > /dev/null 2>&1
+                sudo apt-get install --only-upgrade -y $SUBLIME_DEB_PACKAGE > /dev/null 2>&1
+                ;;
+            fedora | rhel | centos | rocky | almalinux)
+                log_info "Atualizando Sublime Text via dnf/yum..."
+                if command -v dnf &> /dev/null; then
+                    sudo dnf upgrade -y $SUBLIME_RPM_PACKAGE > /dev/null 2>&1
+                else
+                    sudo yum update -y $SUBLIME_RPM_PACKAGE > /dev/null 2>&1
+                fi
+                ;;
+            arch | manjaro | endeavouros)
+                log_info "Atualizando Sublime Text via pacman/AUR..."
+                if command -v yay &> /dev/null; then
+                    yay -Syu --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1
+                elif command -v paru &> /dev/null; then
+                    paru -Syu --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1
+                else
+                    sudo pacman -Syu --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
+                fi
+                ;;
+            *)
+                log_error "Distribuição não suportada: $distro"
+                return 1
+                ;;
+        esac
+    fi
 
     # Verify update
     if check_installation; then
@@ -377,52 +364,49 @@ uninstall_sublime() {
         fi
     fi
 
-    case "$OS_TYPE" in
-        macos)
-            # Uninstall via Homebrew
-            if homebrew_is_available; then
-                log_info "Removendo Sublime Text via Homebrew..."
-                homebrew_uninstall "$SUBLIME_HOMEBREW_CASK" "Sublime Text" 2> /dev/null || log_debug "Sublime Text não instalado via Homebrew"
-            fi
-            ;;
-        debian | fedora)
-            local distro=$(get_distro_id)
-            log_debug "Distribuição detectada: $distro"
+    if is_mac; then
+        # Uninstall via Homebrew
+        if homebrew_is_available; then
+            log_info "Removendo Sublime Text via Homebrew..."
+            homebrew_uninstall "$SUBLIME_HOMEBREW_CASK" "Sublime Text" 2> /dev/null || log_debug "Sublime Text não instalado via Homebrew"
+        fi
+    else
+        local distro=$(get_distro_id)
+        log_debug "Distribuição detectada: $distro"
 
-            case "$distro" in
-                ubuntu | debian | pop | linuxmint | elementary)
-                    log_info "Removendo Sublime Text via apt..."
-                    sudo apt-get purge -y $SUBLIME_DEB_PACKAGE > /dev/null 2>&1
-                    sudo apt-get autoremove -y > /dev/null 2>&1
+        case "$distro" in
+            ubuntu | debian | pop | linuxmint | elementary)
+                log_info "Removendo Sublime Text via apt..."
+                sudo apt-get purge -y $SUBLIME_DEB_PACKAGE > /dev/null 2>&1
+                sudo apt-get autoremove -y > /dev/null 2>&1
 
-                    # Remove repository
-                    sudo rm -f /etc/apt/sources.list.d/${SUBLIME_DEB_PACKAGE}.list
-                    sudo rm -f /etc/apt/trusted.gpg.d/sublimehq-archive.gpg
-                    ;;
-                fedora | rhel | centos | rocky | almalinux)
-                    log_info "Removendo Sublime Text via dnf/yum..."
-                    if command -v dnf &> /dev/null; then
-                        sudo dnf remove -y sublime-text > /dev/null 2>&1
-                    else
-                        sudo yum remove -y sublime-text > /dev/null 2>&1
-                    fi
+                # Remove repository
+                sudo rm -f /etc/apt/sources.list.d/${SUBLIME_DEB_PACKAGE}.list
+                sudo rm -f /etc/apt/trusted.gpg.d/sublimehq-archive.gpg
+                ;;
+            fedora | rhel | centos | rocky | almalinux)
+                log_info "Removendo Sublime Text via dnf/yum..."
+                if command -v dnf &> /dev/null; then
+                    sudo dnf remove -y sublime-text > /dev/null 2>&1
+                else
+                    sudo yum remove -y sublime-text > /dev/null 2>&1
+                fi
 
-                    # Remove repository
-                    sudo rm -f /etc/yum.repos.d/${SUBLIME_RPM_PACKAGE}.repo
-                    ;;
-                arch | manjaro | endeavouros)
-                    log_info "Removendo Sublime Text via pacman..."
-                    if command -v yay &> /dev/null; then
-                        yay -Rns --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1 || sudo pacman -Rns --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
-                    elif command -v paru &> /dev/null; then
-                        paru -Rns --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1 || sudo pacman -Rns --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
-                    else
-                        sudo pacman -Rns --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
-                    fi
-                    ;;
-            esac
-            ;;
-    esac
+                # Remove repository
+                sudo rm -f /etc/yum.repos.d/${SUBLIME_RPM_PACKAGE}.repo
+                ;;
+            arch | manjaro | endeavouros)
+                log_info "Removendo Sublime Text via pacman..."
+                if command -v yay &> /dev/null; then
+                    yay -Rns --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1 || sudo pacman -Rns --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
+                elif command -v paru &> /dev/null; then
+                    paru -Rns --noconfirm $SUBLIME_ARCH_AUR > /dev/null 2>&1 || sudo pacman -Rns --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
+                else
+                    sudo pacman -Rns --noconfirm $SUBLIME_ARCH_COMMUNITY > /dev/null 2>&1
+                fi
+                ;;
+        esac
+    fi
 
     # Verify uninstallation
     if ! check_installation; then
@@ -443,17 +427,14 @@ uninstall_sublime() {
     if [[ "$response" =~ ^[sSyY]$ ]]; then
         log_info "Removendo configurações..."
 
-        case "$os_name" in
-            darwin)
-                rm -rf "$HOME/Library/Application Support/Sublime Text" 2> /dev/null || true
-                rm -rf "$HOME/Library/Caches/Sublime Text" 2> /dev/null || true
-                ;;
-            linux)
-                rm -rf "$HOME/.config/sublime-text" 2> /dev/null || true
-                rm -rf "$HOME/.config/sublime-text-3" 2> /dev/null || true
-                rm -rf "$HOME/.cache/sublime-text" 2> /dev/null || true
-                ;;
-        esac
+        if is_mac; then
+            rm -rf "$HOME/Library/Application Support/Sublime Text" 2> /dev/null || true
+            rm -rf "$HOME/Library/Caches/Sublime Text" 2> /dev/null || true
+        else
+            rm -rf "$HOME/.config/sublime-text" 2> /dev/null || true
+            rm -rf "$HOME/.config/sublime-text-3" 2> /dev/null || true
+            rm -rf "$HOME/.cache/sublime-text" 2> /dev/null || true
+        fi
 
         log_info "Configurações removidas"
     else

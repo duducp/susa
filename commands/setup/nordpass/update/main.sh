@@ -38,14 +38,11 @@ update_nordpass() {
     log_info "Atualizando $NORDPASS_NAME..."
 
     # Update based on OS
-    case "$OS_TYPE" in
-        macos)
-            update_nordpass_macos
-            ;;
-        *)
-            update_nordpass_linux
-            ;;
-    esac
+    if is_mac; then
+        update_nordpass_macos
+    else
+        update_nordpass_linux
+    fi
 
     local update_result=$?
 

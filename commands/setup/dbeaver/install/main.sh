@@ -49,14 +49,11 @@ install_dbeaver() {
     log_info "Iniciando instalação do DBeaver..."
 
     # Detect OS and install
-    case "$OS_TYPE" in
-        macos)
-            install_dbeaver_macos
-            ;;
-        *)
-            install_dbeaver_linux
-            ;;
-    esac
+    if is_mac; then
+        install_dbeaver_macos
+    else
+        install_dbeaver_linux
+    fi
 
     local install_result=$?
 

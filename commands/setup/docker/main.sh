@@ -293,22 +293,11 @@ install_docker() {
     log_info "Iniciando instalação do Docker..."
 
     # Detect OS
-    case "$OS_TYPE" in
-        macos)
-            install_docker_macos
-            ;;
-        debian | fedora)
-            install_docker_linux
-            ;;
-        *)
-            if is_arch; then
-                install_docker_linux
-            else
-                log_error "Sistema operacional não suportado: $OS_TYPE"
-                return 1
-            fi
-            ;;
-    esac
+    if is_mac; then
+        install_docker_macos
+    else
+        install_docker_linux
+    fi
 
     local install_result=$?
 
@@ -354,64 +343,53 @@ update_docker() {
     log_info "Atualizando Docker..."
 
     # Detect OS and update
-    case "$OS_TYPE" in
-        macos)
-            if ! homebrew_is_available; then
-                log_error "Homebrew não está instalado"
-                return 1
-            fi
+    if is_mac; then
+        if ! homebrew_is_available; then
+            log_error "Homebrew não está instalado"
+            return 1
+        fi
 
-            homebrew_update_formula "docker" "Docker" || {
-                log_error "Falha ao atualizar Docker"
-                return 1
-            }
+        homebrew_update_formula "docker" "Docker" || {
+            log_error "Falha ao atualizar Docker"
+            return 1
+        }
 
-            # Update docker-compose if installed
-            if homebrew_is_installed_formula "docker-compose"; then
-                homebrew_update_formula "docker-compose" "docker-compose" || log_debug "docker-compose já está atualizado"
-            fi
-            ;;
-        debian | fedora)
-            # Detect Linux distribution
-            local distro=$(get_distro_id)
-            log_debug "Distribuição detectada: $distro"
+        # Update docker-compose if installed
+        if homebrew_is_installed_formula "docker-compose"; then
+            homebrew_update_formula "docker-compose" "docker-compose" || log_debug "docker-compose já está atualizado"
+        fi
+    else
+        # Detect Linux distribution
+        local distro=$(get_distro_id)
+        log_debug "Distribuição detectada: $distro"
 
-            case "$distro" in
-                ubuntu | debian | pop | linuxmint)
-                    sudo apt-get update > /dev/null 2>&1
-                    sudo apt-get install --only-upgrade -y \
-                        docker-ce \
-                        docker-ce-cli \
-                        containerd.io \
-                        docker-buildx-plugin \
-                        docker-compose-plugin > /dev/null 2>&1
-                    ;;
-                fedora | rhel | centos | rocky | almalinux)
-                    sudo dnf upgrade -y \
-                        docker-ce \
-                        docker-ce-cli \
-                        containerd.io \
-                        docker-buildx-plugin \
-                        docker-compose-plugin > /dev/null 2>&1
-                    ;;
-                arch | manjaro)
-                    sudo pacman -Syu --noconfirm docker docker-compose > /dev/null 2>&1
-                    ;;
-                *)
-                    log_error "Distribuição não suportada: $distro"
-                    return 1
-                    ;;
-            esac
-            ;;
-        *)
-            if is_arch; then
+        case "$distro" in
+            ubuntu | debian | pop | linuxmint)
+                sudo apt-get update > /dev/null 2>&1
+                sudo apt-get install --only-upgrade -y \
+                    docker-ce \
+                    docker-ce-cli \
+                    containerd.io \
+                    docker-buildx-plugin \
+                    docker-compose-plugin > /dev/null 2>&1
+                ;;
+            fedora | rhel | centos | rocky | almalinux)
+                sudo dnf upgrade -y \
+                    docker-ce \
+                    docker-ce-cli \
+                    containerd.io \
+                    docker-buildx-plugin \
+                    docker-compose-plugin > /dev/null 2>&1
+                ;;
+            arch | manjaro)
                 sudo pacman -Syu --noconfirm docker docker-compose > /dev/null 2>&1
-            else
-                log_error "Sistema operacional não suportado: $OS_TYPE"
+                ;;
+            *)
+                log_error "Distribuição não suportada: $distro"
                 return 1
-            fi
-            ;;
-    esac
+                ;;
+        esac
+    fi
 
     # Verify update
     if check_installation; then
@@ -448,51 +426,50 @@ uninstall_docker() {
         fi
     fi
 
-    case "$OS_TYPE" in
-        macos)
-            # Uninstall via Homebrew
-            if homebrew_is_available; then
-                homebrew_uninstall_formula "docker" "Docker" || log_debug "Docker não instalado via Homebrew"
-                homebrew_uninstall_formula "docker-compose" "docker-compose" || log_debug "docker-compose não instalado"
-            fi
-            ;;
-        debian | fedora)
-            # Detect Linux distribution
-            local distro=$(get_distro_id)
-            log_debug "Distribuição detectada: $distro" # Stop Docker service
-            sudo systemctl stop docker > /dev/null 2>&1 || log_debug "Serviço já parado"
-            sudo systemctl disable docker > /dev/null 2>&1 || log_debug "Serviço não estava habilitado"
+    if is_mac; then
+        # Uninstall via Homebrew
+        if homebrew_is_available; then
+            homebrew_uninstall_formula "docker" "Docker" || log_debug "Docker não instalado via Homebrew"
+            homebrew_uninstall_formula "docker-compose" "docker-compose" || log_debug "docker-compose não instalado"
+        fi
+    else
+        # Detect Linux distribution
+        local distro=$(get_distro_id)
+        log_debug "Distribuição detectada: $distro"
 
-            case "$distro" in
-                ubuntu | debian | pop | linuxmint)
-                    sudo apt-get purge -y \
-                        docker-ce \
-                        docker-ce-cli \
-                        containerd.io \
-                        docker-buildx-plugin \
-                        docker-compose-plugin > /dev/null 2>&1
-                    sudo apt-get autoremove -y > /dev/null 2>&1
-                    ;;
-                fedora | rhel | centos | rocky | almalinux)
-                    sudo dnf remove -y \
-                        docker-ce \
-                        docker-ce-cli \
-                        containerd.io \
-                        docker-buildx-plugin \
-                        docker-compose-plugin > /dev/null 2>&1
-                    ;;
-                arch | manjaro)
-                    sudo pacman -Rns --noconfirm docker docker-compose > /dev/null 2>&1
-                    ;;
-            esac
+        # Stop Docker service
+        sudo systemctl stop docker > /dev/null 2>&1 || log_debug "Serviço já parado"
+        sudo systemctl disable docker > /dev/null 2>&1 || log_debug "Serviço não estava habilitado"
 
-            # Remove user from docker group
-            local current_user=$(whoami)
-            if groups "$current_user" | grep -q docker; then
-                sudo gpasswd -d "$current_user" docker > /dev/null 2>&1 || log_debug "Não foi possível remover do grupo"
-            fi
-            ;;
-    esac
+        case "$distro" in
+            ubuntu | debian | pop | linuxmint)
+                sudo apt-get purge -y \
+                    docker-ce \
+                    docker-ce-cli \
+                    containerd.io \
+                    docker-buildx-plugin \
+                    docker-compose-plugin > /dev/null 2>&1
+                sudo apt-get autoremove -y > /dev/null 2>&1
+                ;;
+            fedora | rhel | centos | rocky | almalinux)
+                sudo dnf remove -y \
+                    docker-ce \
+                    docker-ce-cli \
+                    containerd.io \
+                    docker-buildx-plugin \
+                    docker-compose-plugin > /dev/null 2>&1
+                ;;
+            arch | manjaro)
+                sudo pacman -Rns --noconfirm docker docker-compose > /dev/null 2>&1
+                ;;
+        esac
+
+        # Remove user from docker group
+        local current_user=$(whoami)
+        if groups "$current_user" | grep -q docker; then
+            sudo gpasswd -d "$current_user" docker > /dev/null 2>&1 || log_debug "Não foi possível remover do grupo"
+        fi
+    fi
 
     # Verify uninstallation
     if ! check_installation; then

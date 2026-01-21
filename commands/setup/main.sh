@@ -21,52 +21,43 @@ show_complement_help() {
 
 # Update system dependencies based on OS
 update_system_dependencies() {
-    local os_type=$(uname -s)
-
     log_output "${LIGHT_GREEN}📦 Atualizando dependências do sistema operacional...${NC}"
     echo ""
 
-    case "$os_type" in
-        Linux)
-            # Detect package manager
-            if command -v apt-get &> /dev/null; then
-                log_info "Atualizando pacotes APT..."
-                sudo apt-get update 2>&1 | sed 's/^/    /'
-                sudo apt-get upgrade -y 2>&1 | sed 's/^/    /'
-                log_success "✓ Pacotes APT atualizados"
-            elif command -v dnf &> /dev/null; then
-                log_info "Atualizando pacotes DNF..."
-                sudo dnf upgrade -y 2>&1 | sed 's/^/    /'
-                log_success "✓ Pacotes DNF atualizados"
-            elif command -v yum &> /dev/null; then
-                log_info "Atualizando pacotes YUM..."
-                sudo yum update -y 2>&1 | sed 's/^/    /'
-                log_success "✓ Pacotes YUM atualizados"
-            elif command -v pacman &> /dev/null; then
-                log_info "Atualizando pacotes Pacman..."
-                sudo pacman -Syu --noconfirm 2>&1 | sed 's/^/    /'
-                log_success "✓ Pacotes Pacman atualizados"
-            else
-                log_warning "Gerenciador de pacotes não identificado"
-                return 1
-            fi
-            ;;
-        Darwin)
-            if command -v brew &> /dev/null; then
-                log_info "Atualizando Homebrew..."
-                brew update 2>&1 | sed 's/^/    /'
-                brew upgrade 2>&1 | sed 's/^/    /'
-                log_success "✓ Homebrew atualizado"
-            else
-                log_warning "Homebrew não está instalado"
-                return 1
-            fi
-            ;;
-        *)
-            log_warning "Sistema operacional não suportado: $os_type"
+    if is_mac; then
+        if command -v brew &> /dev/null; then
+            log_info "Atualizando Homebrew..."
+            brew update 2>&1 | sed 's/^/    /'
+            brew upgrade 2>&1 | sed 's/^/    /'
+            log_success "✓ Homebrew atualizado"
+        else
+            log_warning "Homebrew não está instalado"
             return 1
-            ;;
-    esac
+        fi
+    else
+        # Detect package manager
+        if command -v apt-get &> /dev/null; then
+            log_info "Atualizando pacotes APT..."
+            sudo apt-get update 2>&1 | sed 's/^/    /'
+            sudo apt-get upgrade -y 2>&1 | sed 's/^/    /'
+            log_success "✓ Pacotes APT atualizados"
+        elif command -v dnf &> /dev/null; then
+            log_info "Atualizando pacotes DNF..."
+            sudo dnf upgrade -y 2>&1 | sed 's/^/    /'
+            log_success "✓ Pacotes DNF atualizados"
+        elif command -v yum &> /dev/null; then
+            log_info "Atualizando pacotes YUM..."
+            sudo yum update -y 2>&1 | sed 's/^/    /'
+            log_success "✓ Pacotes YUM atualizados"
+        elif command -v pacman &> /dev/null; then
+            log_info "Atualizando pacotes Pacman..."
+            sudo pacman -Syu --noconfirm 2>&1 | sed 's/^/    /'
+            log_success "✓ Pacotes Pacman atualizados"
+        else
+            log_warning "Gerenciador de pacotes não identificado"
+            return 1
+        fi
+    fi
 
     echo ""
     return 0

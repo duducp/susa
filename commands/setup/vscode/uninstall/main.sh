@@ -54,30 +54,34 @@ uninstall_vscode() {
     fi
 
     # Uninstall based on OS
-    case "$OS_TYPE" in
-        macos)
-            if homebrew_is_available; then
-                log_info "Removendo VS Code via Homebrew..."
-                homebrew_uninstall "$VSCODE_HOMEBREW_CASK" "VS Code" || log_debug "VS Code não instalado via Homebrew"
-            fi
-            ;;
-        debian | fedora)
-            local distro=$(get_distro_id)
-            log_debug "Distribuição detectada: $distro"
+    if is_mac; then
+        if homebrew_is_available; then
+            log_info "Removendo VS Code via Homebrew..."
+            homebrew_uninstall "$VSCODE_HOMEBREW_CASK" "VS Code" || log_debug "VS Code não instalado via Homebrew"
+        else
+            log_warning "Homebrew não disponível. VS Code pode estar instalado manualmente."
+            log_info "Verifique: /Applications/Visual Studio Code.app"
+        fi
+    else
+        local distro=$(get_distro_id)
+        log_debug "Distribuição detectada: $distro"
 
-            case "$distro" in
-                ubuntu | debian | pop | linuxmint | elementary)
-                    uninstall_vscode_debian
-                    ;;
-                fedora | rhel | centos | rocky | almalinux)
-                    uninstall_vscode_rhel
-                    ;;
-                arch | manjaro | endeavouros)
-                    uninstall_vscode_arch
-                    ;;
-            esac
-            ;;
-    esac
+        case "$distro" in
+            ubuntu | debian | pop | linuxmint | elementary)
+                uninstall_vscode_debian
+                ;;
+            fedora | rhel | centos | rocky | almalinux)
+                uninstall_vscode_rhel
+                ;;
+            arch | manjaro | endeavouros)
+                uninstall_vscode_arch
+                ;;
+            *)
+                log_error "Sistema Linux não suportado. Suportados: Debian/Ubuntu, Fedora/RHEL, Arch"
+                return 1
+                ;;
+        esac
+    fi
 
     # Verify uninstallation
     if ! check_installation; then

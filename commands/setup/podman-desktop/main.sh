@@ -42,36 +42,30 @@ show_complement_help() {
 
 # Get latest version
 get_latest_version() {
-    case "$OS_TYPE" in
-        macos)
-            # Get from GitHub releases for macOS
-            github_get_latest_version "$REPO"
-            ;;
-        *)
-            # Get from Flathub for Linux
-            flatpak_get_latest_version "$FLATPAK_APP_ID"
-            ;;
-    esac
+    if is_mac; then
+        # Get from GitHub releases for macOS
+        github_get_latest_version "$REPO"
+    else
+        # Get from Flathub for Linux
+        flatpak_get_latest_version "$FLATPAK_APP_ID"
+    fi
 }
 
 # Get installed version
 get_current_version() {
     if check_installation; then
-        case "$OS_TYPE" in
-            macos)
-                if [ -d "$APP_MACOS" ]; then
-                    # Try to get version from Info.plist
-                    local version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_MACOS/Contents/Info.plist" 2> /dev/null || echo "desconhecida")
-                    echo "$version"
-                else
-                    echo "desconhecida"
-                fi
-                ;;
-            *)
-                # Get version from Flatpak
-                flatpak_get_installed_version "$FLATPAK_APP_ID"
-                ;;
-        esac
+        if is_mac; then
+            if [ -d "$APP_MACOS" ]; then
+                # Try to get version from Info.plist
+                local version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_MACOS/Contents/Info.plist" 2> /dev/null || echo "desconhecida")
+                echo "$version"
+            else
+                echo "desconhecida"
+            fi
+        else
+            # Get version from Flatpak
+            flatpak_get_installed_version "$FLATPAK_APP_ID"
+        fi
     else
         echo "desconhecida"
     fi
@@ -79,14 +73,11 @@ get_current_version() {
 
 # Check if Podman Desktop is installed
 check_installation() {
-    case "$OS_TYPE" in
-        macos)
-            [ -d "$APP_MACOS" ]
-            ;;
-        *)
-            flatpak_is_installed "$FLATPAK_APP_ID"
-            ;;
-    esac
+    if is_mac; then
+        [ -d "$APP_MACOS" ]
+    else
+        flatpak_is_installed "$FLATPAK_APP_ID"
+    fi
 }
 
 # Install on macOS
@@ -152,30 +143,19 @@ install_podman_desktop() {
     log_info "Iniciando instalação do $APP_NAME..."
 
     # Install based on OS
-    case "$OS_TYPE" in
-        macos)
-            # Get latest version for macOS
-            local version=$(get_latest_version)
-            if [ $? -ne 0 ] || [ -z "$version" ]; then
-                log_error "Não foi possível obter a versão mais recente"
-                return 1
-            fi
-            # Remove 'v' prefix if present
-            version="${version#v}"
-            install_macos "$version"
-            ;;
-        debian | fedora)
-            install_linux
-            ;;
-        *)
-            if is_arch; then
-                install_linux
-            else
-                log_error "Sistema operacional não suportado: $OS_TYPE"
-                return 1
-            fi
-            ;;
-    esac
+    if is_mac; then
+        # Get latest version for macOS
+        local version=$(get_latest_version)
+        if [ $? -ne 0 ] || [ -z "$version" ]; then
+            log_error "Não foi possível obter a versão mais recente"
+            return 1
+        fi
+        # Remove 'v' prefix if present
+        version="${version#v}"
+        install_macos "$version"
+    else
+        install_linux
+    fi
 
     local install_result=$?
 
@@ -225,21 +205,18 @@ update_podman_desktop() {
     log_info "Atualizando $APP_NAME..."
 
     # Update based on OS
-    case "$OS_TYPE" in
-        macos)
-            # Uninstall old version (without confirmation)
-            SKIP_CONFIRM=true
-            remove_podman_desktop_internal
-            # Install new version
-            install_macos "$latest_version"
-            ;;
-        *)
-            # Use flatpak update
-            if ! flatpak_update "$FLATPAK_APP_ID" "$APP_NAME"; then
-                return 1
-            fi
-            ;;
-    esac
+    if is_mac; then
+        # Uninstall old version (without confirmation)
+        SKIP_CONFIRM=true
+        remove_podman_desktop_internal
+        # Install new version
+        install_macos "$latest_version"
+    else
+        # Use flatpak update
+        if ! flatpak_update "$FLATPAK_APP_ID" "$APP_NAME"; then
+            return 1
+        fi
+    fi
 
     # Verify update
     if check_installation; then
@@ -257,16 +234,13 @@ update_podman_desktop() {
 
 # Internal uninstall (without prompts)
 remove_podman_desktop_internal() {
-    case "$OS_TYPE" in
-        macos)
-            if [ -d "$APP_MACOS" ]; then
-                sudo rm -rf "$APP_MACOS"
-            fi
-            ;;
-        *)
-            flatpak_uninstall "$FLATPAK_APP_ID" "$APP_NAME" > /dev/null 2>&1 || true
-            ;;
-    esac
+    if is_mac; then
+        if [ -d "$APP_MACOS" ]; then
+            sudo rm -rf "$APP_MACOS"
+        fi
+    else
+        flatpak_uninstall "$FLATPAK_APP_ID" "$APP_NAME" > /dev/null 2>&1 || true
+    fi
 }
 
 # Uninstall Podman Desktop

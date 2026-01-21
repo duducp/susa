@@ -60,7 +60,7 @@ main() {
 
     if is_mac; then
         uninstall_postman_macos
-    elif is_linux; then
+    else
         uninstall_postman_linux
     fi
 

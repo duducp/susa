@@ -2,29 +2,6 @@
 
 Detecção de sistema operacional e funções relacionadas.
 
-## Variáveis
-
-### `OS_TYPE`
-
-Tipo do sistema operacional detectado.
-
-**Valores possíveis:**
-
-- `macos` - macOS / Darwin
-- `debian` - Ubuntu, Debian e derivados
-- `fedora` - Fedora, RHEL, CentOS, Rocky, AlmaLinux
-- `unknown` - Sistema não reconhecido
-
-**Exemplo:**
-
-```bash
-source "$LIB_DIR/os.sh"
-
-if [ "$OS_TYPE" = "macos" ]; then
-    echo "Executando no macOS"
-fi
-```
-
 ## Funções
 
 ### `get_simple_os()`

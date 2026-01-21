@@ -57,30 +57,24 @@ show_complement_help() {
 
 # Get latest version
 get_latest_version() {
-    case "$OS_TYPE" in
-        macos)
-            # Get from GitHub releases for macOS
-            github_get_latest_version "$REPO"
-            ;;
-        *)
-            # Get from Flathub for Linux
-            flatpak_get_latest_version "$FLATPAK_APP_ID"
-            ;;
-    esac
+    if is_mac; then
+        # Get from GitHub releases for macOS
+        github_get_latest_version "$REPO"
+    else
+        # Get from Flathub for Linux
+        flatpak_get_latest_version "$FLATPAK_APP_ID"
+    fi
 }
 
 # Get installed version
 get_current_version() {
     if check_installation; then
-        case "$OS_TYPE" in
-            macos)
-                homebrew_get_installed_version "$HOMEBREW_CASK"
-                ;;
-            *)
-                # Get version from Flatpak
-                flatpak_get_installed_version "$FLATPAK_APP_ID"
-                ;;
-        esac
+        if is_mac; then
+            homebrew_get_installed_version "$HOMEBREW_CASK"
+        else
+            # Get version from Flatpak
+            flatpak_get_installed_version "$FLATPAK_APP_ID"
+        fi
     else
         echo "desconhecida"
     fi
@@ -88,14 +82,11 @@ get_current_version() {
 
 # Check if Bruno is installed
 check_installation() {
-    case "$OS_TYPE" in
-        macos)
-            homebrew_is_installed "$HOMEBREW_CASK"
-            ;;
-        *)
-            flatpak_is_installed "$FLATPAK_APP_ID"
-            ;;
-    esac
+    if is_mac; then
+        homebrew_is_installed "$HOMEBREW_CASK"
+    else
+        flatpak_is_installed "$FLATPAK_APP_ID"
+    fi
 }
 
 # Install on macOS
@@ -134,22 +125,11 @@ install_bruno() {
     log_info "Iniciando instalação do $APP_NAME..."
 
     # Install based on OS
-    case "$OS_TYPE" in
-        macos)
-            install_macos
-            ;;
-        debian | fedora)
-            install_linux
-            ;;
-        *)
-            if is_arch; then
-                install_linux
-            else
-                log_error "Sistema operacional não suportado: $OS_TYPE"
-                return 1
-            fi
-            ;;
-    esac
+    if is_mac; then
+        install_macos
+    else
+        install_linux
+    fi
 
     local install_result=$?
 
@@ -199,21 +179,18 @@ update_bruno() {
     log_info "Atualizando $APP_NAME..."
 
     # Update based on OS
-    case "$OS_TYPE" in
-        macos)
-            # Use Homebrew upgrade
-            log_info "Atualizando via Homebrew..."
-            homebrew_update "$HOMEBREW_CASK" "$APP_NAME" || {
-                log_info "$APP_NAME já está na versão mais recente"
-            }
-            ;;
-        *)
-            # Use flatpak update
-            if ! flatpak_update "$FLATPAK_APP_ID" "$APP_NAME"; then
-                return 1
-            fi
-            ;;
-    esac
+    if is_mac; then
+        # Use Homebrew upgrade
+        log_info "Atualizando via Homebrew..."
+        homebrew_update "$HOMEBREW_CASK" "$APP_NAME" || {
+            log_info "$APP_NAME já está na versão mais recente"
+        }
+    else
+        # Use flatpak update
+        if ! flatpak_update "$FLATPAK_APP_ID" "$APP_NAME"; then
+            return 1
+        fi
+    fi
 
     # Verify update
     if check_installation; then
@@ -231,14 +208,11 @@ update_bruno() {
 
 # Internal uninstall (without prompts)
 remove_bruno_internal() {
-    case "$OS_TYPE" in
-        macos)
-            homebrew_uninstall "$HOMEBREW_CASK" "$APP_NAME" > /dev/null 2>&1 || true
-            ;;
-        *)
-            flatpak_uninstall "$FLATPAK_APP_ID" "$APP_NAME" > /dev/null 2>&1 || true
-            ;;
-    esac
+    if is_mac; then
+        homebrew_uninstall "$HOMEBREW_CASK" "$APP_NAME" > /dev/null 2>&1 || true
+    else
+        flatpak_uninstall "$FLATPAK_APP_ID" "$APP_NAME" > /dev/null 2>&1 || true
+    fi
 }
 
 # Uninstall Bruno

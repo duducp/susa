@@ -322,36 +322,29 @@ install_flameshot_arch() {
 
 # Install Flameshot on Linux
 install_flameshot_linux() {
-    local distro=$(get_distro_id)
-    log_debug "Distribuição detectada: $distro"
+    if is_linux_debian; then
+        install_flameshot_debian
+    elif is_linux_redhat; then
+        install_flameshot_rhel
+    elif is_linux_arch; then
+        install_flameshot_arch
+    else
+        local distro=$(get_distro_id)
+        log_warning "Distribuição não reconhecida: $distro"
+        log_info "Tentando instalar via gerenciador de pacotes genérico..."
 
-    case "$distro" in
-        ubuntu | debian | pop | linuxmint | elementary)
+        if command -v apt-get &> /dev/null; then
             install_flameshot_debian
-            ;;
-        fedora | rhel | centos | rocky | almalinux)
+        elif command -v dnf &> /dev/null || command -v yum &> /dev/null; then
             install_flameshot_rhel
-            ;;
-        arch | manjaro | endeavouros)
+        elif command -v pacman &> /dev/null; then
             install_flameshot_arch
-            ;;
-        *)
-            log_warning "Distribuição não reconhecida: $distro"
-            log_info "Tentando instalar via gerenciador de pacotes genérico..."
-
-            if command -v apt-get &> /dev/null; then
-                install_flameshot_debian
-            elif command -v dnf &> /dev/null || command -v yum &> /dev/null; then
-                install_flameshot_rhel
-            elif command -v pacman &> /dev/null; then
-                install_flameshot_arch
-            else
-                log_error "Nenhum gerenciador de pacotes suportado encontrado"
-                log_info "Visite https://flameshot.org para instruções manuais"
-                return 1
-            fi
-            ;;
-    esac
+        else
+            log_error "Nenhum gerenciador de pacotes suportado encontrado"
+            log_info "Visite https://flameshot.org para instruções manuais"
+            return 1
+        fi
+    fi
 }
 
 # Main installation function
@@ -361,15 +354,10 @@ install_flameshot() {
         exit 0
     fi
 
-    local os_type=$(get_simple_os)
-
-    if [ "$os_type" = "mac" ]; then
+    if is_mac; then
         install_flameshot_macos
-    elif [ "$os_type" = "linux" ]; then
-        install_flameshot_linux
     else
-        log_error "Sistema operacional não suportado: $os_type"
-        return 1
+        install_flameshot_linux
     fi
 
     # Mark as installed
@@ -389,14 +377,12 @@ update_flameshot() {
     local current_version=$(get_current_version)
     log_info "Versão atual: $current_version"
 
-    local os_type=$(get_simple_os)
-
-    if [ "$os_type" = "mac" ]; then
+    if is_mac; then
         log_info "Atualizando via Homebrew..."
         homebrew_update_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot" || {
             log_info "Flameshot já está na versão mais recente"
         }
-    elif [ "$os_type" = "linux" ]; then
+    else
         # Get latest version from GitHub
         log_info "Buscando última versão disponível..."
         local latest_version=$(get_latest_version)
@@ -419,19 +405,14 @@ update_flameshot() {
 
         # Uninstall current version
         log_debug "Removendo versão antiga..."
-        local distro=$(get_distro_id)
 
-        case "$distro" in
-            ubuntu | debian | pop | linuxmint | elementary)
-                sudo dpkg -r flameshot 2> /dev/null || true
-                ;;
-            fedora | rhel | centos | rocky | almalinux)
-                sudo rpm -e flameshot 2> /dev/null || true
-                ;;
-            arch | manjaro | endeavouros)
-                sudo pacman -R --noconfirm flameshot 2> /dev/null || true
-                ;;
-        esac
+        if is_linux_debian; then
+            sudo dpkg -r flameshot 2> /dev/null || true
+        elif is_linux_redhat; then
+            sudo rpm -e flameshot 2> /dev/null || true
+        elif is_linux_arch; then
+            sudo pacman -R --noconfirm flameshot 2> /dev/null || true
+        fi
 
         # Reinstall with latest version
         install_flameshot_linux
@@ -470,41 +451,32 @@ uninstall_flameshot() {
         fi
     fi
 
-    local os_type=$(get_simple_os)
-
-    if [ "$os_type" = "mac" ]; then
+    if is_mac; then
         log_info "Desinstalando via Homebrew..."
         homebrew_uninstall_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot"
-    elif [ "$os_type" = "linux" ]; then
-        local distro=$(get_distro_id)
-
-        case "$distro" in
-            ubuntu | debian | pop | linuxmint | elementary)
-                log_info "Removendo pacote .deb..."
+    else
+        if is_linux_debian; then
+            log_info "Removendo pacote .deb..."
+            sudo dpkg -r flameshot 2> /dev/null || sudo apt-get remove -y flameshot 2> /dev/null
+        elif is_linux_redhat; then
+            log_info "Removendo pacote .rpm..."
+            sudo rpm -e flameshot 2> /dev/null || {
+                local pkg_manager=$(get_redhat_pkg_manager)
+                sudo $pkg_manager remove -y flameshot 2> /dev/null
+            }
+        elif is_linux_arch; then
+            log_info "Desinstalando via pacman..."
+            sudo pacman -R --noconfirm flameshot
+        else
+            log_warning "Distribuição não reconhecida, tentando desinstalação genérica..."
+            if command -v dpkg &> /dev/null; then
                 sudo dpkg -r flameshot 2> /dev/null || sudo apt-get remove -y flameshot 2> /dev/null
-                ;;
-            fedora | rhel | centos | rocky | almalinux)
-                log_info "Removendo pacote .rpm..."
-                sudo rpm -e flameshot 2> /dev/null || {
-                    local pkg_manager=$(get_redhat_pkg_manager)
-                    sudo $pkg_manager remove -y flameshot 2> /dev/null
-                }
-                ;;
-            arch | manjaro | endeavouros)
-                log_info "Desinstalando via pacman..."
+            elif command -v rpm &> /dev/null; then
+                sudo rpm -e flameshot 2> /dev/null || sudo dnf remove -y flameshot 2> /dev/null
+            elif command -v pacman &> /dev/null; then
                 sudo pacman -R --noconfirm flameshot
-                ;;
-            *)
-                log_warning "Distribuição não reconhecida, tentando desinstalação genérica..."
-                if command -v dpkg &> /dev/null; then
-                    sudo dpkg -r flameshot 2> /dev/null || sudo apt-get remove -y flameshot 2> /dev/null
-                elif command -v rpm &> /dev/null; then
-                    sudo rpm -e flameshot 2> /dev/null || sudo dnf remove -y flameshot 2> /dev/null
-                elif command -v pacman &> /dev/null; then
-                    sudo pacman -R --noconfirm flameshot
-                fi
-                ;;
-        esac
+            fi
+        fi
 
         # Remove version info directory
         if [ -d "$FLAMESHOT_INSTALL_DIR" ]; then

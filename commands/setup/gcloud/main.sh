@@ -112,11 +112,8 @@ detect_os_and_arch() {
     local os_name
     if is_mac; then
         os_name="darwin"
-    elif is_linux; then
-        os_name="linux"
     else
-        log_error "Sistema operacional não suportado: $(uname -s)"
-        return 1
+        os_name="linux"
     fi
 
     local arch=$(uname -m)

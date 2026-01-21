@@ -45,14 +45,11 @@ install_nordpass() {
     log_info "Iniciando instalação do NordPass..."
 
     # Detect OS and install
-    case "$OS_TYPE" in
-        macos)
-            install_nordpass_macos
-            ;;
-        *)
-            install_nordpass_linux
-            ;;
-    esac
+    if is_mac; then
+        install_nordpass_macos
+    else
+        install_nordpass_linux
+    fi
 
     local install_result=$?
 

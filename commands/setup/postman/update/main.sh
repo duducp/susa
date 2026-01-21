@@ -25,7 +25,7 @@ main() {
 
     if is_mac; then
         update_postman_macos
-    elif is_linux; then
+    else
         update_postman_linux
     fi
 

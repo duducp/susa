@@ -33,44 +33,37 @@ update_vscode() {
     log_info "Versão atual: $current_version"
 
     # Detect OS and update
-    case "$OS_TYPE" in
-        macos)
-            if ! homebrew_is_available; then
-                log_error "Homebrew não está instalado"
-                return 1
-            fi
-
-            log_info "Atualizando VS Code via Homebrew..."
-            homebrew_update "$VSCODE_HOMEBREW_CASK" "VS Code" || {
-                log_info "VS Code já está na versão mais recente"
-                return 0
-            }
-            ;;
-        debian | fedora)
-            local distro=$(get_distro_id)
-            log_debug "Distribuição detectada: $distro"
-
-            case "$distro" in
-                ubuntu | debian | pop | linuxmint | elementary)
-                    update_vscode_debian
-                    ;;
-                fedora | rhel | centos | rocky | almalinux)
-                    update_vscode_rhel
-                    ;;
-                arch | manjaro | endeavouros)
-                    update_vscode_arch
-                    ;;
-                *)
-                    log_error "Distribuição não suportada: $distro"
-                    return 1
-                    ;;
-            esac
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $OS_TYPE"
+    if is_mac; then
+        if ! homebrew_is_available; then
+            log_error "Homebrew não está instalado"
             return 1
-            ;;
-    esac
+        fi
+
+        log_info "Atualizando VS Code via Homebrew..."
+        homebrew_update "$VSCODE_HOMEBREW_CASK" "VS Code" || {
+            log_info "VS Code já está na versão mais recente"
+            return 0
+        }
+    else
+        local distro=$(get_distro_id)
+        log_debug "Distribuição detectada: $distro"
+
+        case "$distro" in
+            ubuntu | debian | pop | linuxmint | elementary)
+                update_vscode_debian
+                ;;
+            fedora | rhel | centos | rocky | almalinux)
+                update_vscode_rhel
+                ;;
+            arch | manjaro | endeavouros)
+                update_vscode_arch
+                ;;
+            *)
+                log_error "Distribuição não suportada: $distro"
+                return 1
+                ;;
+        esac
+    fi
 
     # Verify update
     if check_installation; then

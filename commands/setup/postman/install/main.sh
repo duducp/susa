@@ -29,11 +29,8 @@ main() {
 
     if is_mac; then
         install_postman_macos
-    elif is_linux; then
-        install_postman_linux
     else
-        log_error "Sistema operacional não suportado: $OS_TYPE"
-        return 1
+        install_postman_linux
     fi
 
     # Mark as installed

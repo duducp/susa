@@ -50,7 +50,7 @@ check_dependencies() {
         missing_deps+=("bash")
         reasons+=("Bash 4.0+ é necessário para arrays associativos usados pelo sistema de cache")
 
-        if [[ "$OS_TYPE" == "macos" ]]; then
+        if is_mac; then
             install_commands+=("brew install bash && sudo bash -c 'echo /opt/homebrew/bin/bash >> /etc/shells' && chsh -s /opt/homebrew/bin/bash")
         else
             install_commands+=("sudo apt update && sudo apt install -y bash")
@@ -62,11 +62,11 @@ check_dependencies() {
         missing_deps+=("jq")
         reasons+=("jq é necessário para processar arquivos JSON (cache, configurações, plugins)")
 
-        if [[ "$OS_TYPE" == "macos" ]]; then
+        if is_mac; then
             install_commands+=("brew install jq")
-        elif [[ "$OS_TYPE" == "debian" ]]; then
+        elif is_linux_debian; then
             install_commands+=("sudo apt update && sudo apt install -y jq")
-        elif [[ "$OS_TYPE" == "fedora" ]]; then
+        elif is_linux_redhat; then
             install_commands+=("sudo dnf install -y jq")
         else
             install_commands+=("Instale jq manualmente para seu sistema")

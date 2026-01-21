@@ -34,14 +34,11 @@ update_dbeaver() {
     log_info "Versão atual: $current_version"
 
     # Detect OS and update
-    case "$OS_TYPE" in
-        macos)
-            update_dbeaver_macos
-            ;;
-        *)
-            update_dbeaver_linux
-            ;;
-    esac
+    if is_mac; then
+        update_dbeaver_macos
+    else
+        update_dbeaver_linux
+    fi
 
     # Verify update
     if check_installation; then

@@ -51,14 +51,11 @@ uninstall_dbeaver() {
     fi
 
     # Uninstall based on OS
-    case "$OS_TYPE" in
-        macos)
-            uninstall_dbeaver_macos
-            ;;
-        *)
-            uninstall_dbeaver_linux
-            ;;
-    esac
+    if is_mac; then
+        uninstall_dbeaver_macos
+    else
+        uninstall_dbeaver_linux
+    fi
 
     # Verify uninstallation
     if ! check_installation; then

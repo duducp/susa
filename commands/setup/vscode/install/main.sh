@@ -45,18 +45,11 @@ install_vscode() {
     log_info "Iniciando instalação do VS Code..."
 
     # Detect OS and install
-    case "$OS_TYPE" in
-        macos)
-            install_vscode_macos
-            ;;
-        debian | fedora)
-            install_vscode_linux
-            ;;
-        *)
-            log_error "Sistema operacional não suportado: $OS_TYPE"
-            return 1
-            ;;
-    esac
+    if is_mac; then
+        install_vscode_macos
+    else
+        install_vscode_linux
+    fi
 
     local install_result=$?
 
