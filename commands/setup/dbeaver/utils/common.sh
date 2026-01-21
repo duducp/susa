@@ -101,13 +101,10 @@ get_dbeaver_config_paths() {
     case "$os_name" in
         darwin)
             DBEAVER_CONFIG_DIR="$HOME/Library/DBeaverData/workspace6"
-            DBEAVER_SCRIPTS_DIR="$HOME/Library/DBeaverData/workspace6/scripts"
-            DBEAVER_CONNECTIONS_FILE="$HOME/Library/DBeaverData/workspace6/.metadata/.plugins/org.jkiss.dbeaver.core/data-sources.json"
             ;;
         linux)
             # Check if DBeaver is installed via Snap
             if snap_is_installed "$SNAP_PACKAGE_NAME"; then
-                # Snap installations store data in ~/snap/app-name/
                 local snap_base="$HOME/snap/dbeaver-ce"
 
                 if [ "$mode" = "restore" ]; then
@@ -116,10 +113,6 @@ get_dbeaver_config_paths() {
                     log_debug "Modo restore: usando diretório persistente common/"
                 else
                     # For backup, find where data currently is
-                    # Priority order:
-                    # 1. common/ - persistent data across updates
-                    # 2. current/ - symlink to current revision
-                    # 3. Find the actual revision number directory
                     if [ -d "$snap_base/common/.local/share/DBeaverData/workspace6" ]; then
                         DBEAVER_CONFIG_DIR="$snap_base/common/.local/share/DBeaverData/workspace6"
                         log_debug "Usando dados persistentes: common/"
@@ -133,31 +126,18 @@ get_dbeaver_config_paths() {
                             DBEAVER_CONFIG_DIR="$latest_revision/.local/share/DBeaverData/workspace6"
                             log_debug "Usando revisão específica: $(basename "$latest_revision")/"
                         else
-                            # Fallback to common even if it doesn't exist yet
                             DBEAVER_CONFIG_DIR="$snap_base/common/.local/share/DBeaverData/workspace6"
                             log_debug "Usando diretório padrão (pode não existir): common/"
                         fi
                     fi
                 fi
-
-                DBEAVER_SCRIPTS_DIR="$DBEAVER_CONFIG_DIR/scripts"
-                DBEAVER_CONNECTIONS_FILE="$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.jkiss.dbeaver.core/data-sources.json"
-
-                log_debug "Usando diretório Snap: $DBEAVER_CONFIG_DIR"
             # Check if DBeaver is installed via Flatpak
             elif flatpak_is_installed "$FLATPAK_APP_ID"; then
-                # Flatpak installations store data in ~/.var/app/
                 DBEAVER_CONFIG_DIR="$HOME/.var/app/$FLATPAK_APP_ID/data/DBeaverData/workspace6"
-                DBEAVER_SCRIPTS_DIR="$DBEAVER_CONFIG_DIR/scripts"
-                DBEAVER_CONNECTIONS_FILE="$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.jkiss.dbeaver.core/data-sources.json"
-
                 log_debug "Usando diretório Flatpak: $DBEAVER_CONFIG_DIR"
             else
                 # Standard Linux installation
                 DBEAVER_CONFIG_DIR="$HOME/.local/share/DBeaverData/workspace6"
-                DBEAVER_SCRIPTS_DIR="$HOME/.local/share/DBeaverData/workspace6/scripts"
-                DBEAVER_CONNECTIONS_FILE="$HOME/.local/share/DBeaverData/workspace6/.metadata/.plugins/org.jkiss.dbeaver.core/data-sources.json"
-
                 log_debug "Usando diretório padrão: $DBEAVER_CONFIG_DIR"
             fi
             ;;

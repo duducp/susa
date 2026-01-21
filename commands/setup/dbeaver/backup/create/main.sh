@@ -19,23 +19,20 @@ BACKUP_DIR="${DBEAVER_BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
 show_complement_help() {
     log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --name <nome>           Nome do backup (padrão: dbeaver-backup-YYYYMMDD-HHMMSS)"
-    log_output "  --no-scripts            Não incluir scripts no backup"
-    log_output "  --no-connections        Não incluir configurações de conexões"
     log_output "  --dir <diretório>       Diretório onde salvar o backup"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup dbeaver backup create                       # Cria backup com nome automático"
     log_output "  susa setup dbeaver backup create --name my-backup      # Cria backup com nome específico"
-    log_output "  susa setup dbeaver backup create --no-scripts          # Backup sem scripts"
-    log_output "  susa setup dbeaver backup create --no-connections      # Backup sem conexões"
+    log_output "  susa setup dbeaver backup create --dir /caminho        # Salva em diretório específico"
     log_output ""
     log_output "${LIGHT_GREEN}O que é incluído no backup:${NC}"
-    log_output "  • Configurações do workspace"
-    log_output "  • Preferências e configurações do usuário"
+    log_output "  • Workspace completo (pasta workspace6)"
+    log_output "  • Todas as configurações e preferências"
     log_output "  • Scripts SQL salvos"
-    log_output "  • Configurações de conexões (data-sources.json)"
+    log_output "  • Configurações de conexões"
     log_output "  • Drivers personalizados"
-    log_output "  • Metadados do backup (data, versão, etc.)"
+    log_output "  • Metadados e histórico"
     log_output ""
     log_output "${LIGHT_GREEN}Nota:${NC}"
     log_output "  Senhas de conexões não são incluídas no backup por questões de segurança."
@@ -44,8 +41,6 @@ show_complement_help() {
 # Create backup of DBeaver configurations
 create_backup() {
     local backup_name="${1:-}"
-    local include_scripts="${2:-true}"
-    local include_connections="${3:-true}"
 
     # Check if DBeaver is installed (via Flatpak, Homebrew, or alternative methods)
     if ! check_installation; then
@@ -100,58 +95,16 @@ create_backup() {
     local backup_content_dir="$temp_backup_dir/dbeaver-backup"
     mkdir -p "$backup_content_dir"
 
-    # Backup workspace configuration
-    if [ -d "$DBEAVER_CONFIG_DIR/.metadata/.plugins" ]; then
-        log_info "Copiando configurações do workspace..."
-        mkdir -p "$backup_content_dir/.metadata/.plugins"
+    # Backup entire workspace6 directory
+    log_info "Copiando workspace completo do DBeaver..."
+    log_debug "Origem: $DBEAVER_CONFIG_DIR"
+    log_debug "Destino: $backup_content_dir/workspace6"
 
-        # Backup DBeaver core configurations
-        if [ -d "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.jkiss.dbeaver.core" ]; then
-            cp -r "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.jkiss.dbeaver.core" \
-                "$backup_content_dir/.metadata/.plugins/" 2> /dev/null || true
-        fi
-
-        # Backup DBeaver UI configurations
-        if [ -d "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.eclipse.core.runtime" ]; then
-            cp -r "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.eclipse.core.runtime" \
-                "$backup_content_dir/.metadata/.plugins/" 2> /dev/null || true
-        fi
-
-        # Backup DBeaver SQL Editor configurations
-        if [ -d "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.jkiss.dbeaver.sql.editor" ]; then
-            cp -r "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.jkiss.dbeaver.sql.editor" \
-                "$backup_content_dir/.metadata/.plugins/" 2> /dev/null || true
-        fi
-    fi
-
-    # Backup general workspace settings
-    if [ -f "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.jkiss.dbeaver.core.prefs" ]; then
-        log_info "Copiando preferências gerais..."
-        mkdir -p "$backup_content_dir/.metadata/.plugins/org.eclipse.core.runtime/.settings"
-        cp "$DBEAVER_CONFIG_DIR/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.jkiss.dbeaver.core.prefs" \
-            "$backup_content_dir/.metadata/.plugins/org.eclipse.core.runtime/.settings/" 2> /dev/null || true
-    fi
-
-    # Backup scripts
-    if [ "$include_scripts" = "true" ] && [ -d "$DBEAVER_SCRIPTS_DIR" ]; then
-        log_info "Copiando scripts SQL..."
-        mkdir -p "$backup_content_dir/scripts"
-        cp -r "$DBEAVER_SCRIPTS_DIR"/* "$backup_content_dir/scripts/" 2> /dev/null || true
-    fi
-
-    # Backup connections
-    if [ "$include_connections" = "true" ] && [ -f "$DBEAVER_CONNECTIONS_FILE" ]; then
-        log_info "Copiando configurações de conexões..."
-        mkdir -p "$(dirname "$backup_content_dir/data-sources.json")"
-        cp "$DBEAVER_CONNECTIONS_FILE" "$backup_content_dir/data-sources.json" 2> /dev/null || true
-    fi
-
-    # Backup custom drivers
-    if [ -d "$DBEAVER_CONFIG_DIR/drivers" ]; then
-        log_info "Copiando drivers personalizados..."
-        mkdir -p "$backup_content_dir/drivers"
-        cp -r "$DBEAVER_CONFIG_DIR/drivers"/* "$backup_content_dir/drivers/" 2> /dev/null || true
-    fi
+    cp -r "$DBEAVER_CONFIG_DIR" "$backup_content_dir/workspace6" 2> /dev/null || {
+        log_error "Falha ao copiar workspace completo"
+        rm -rf "$temp_backup_dir"
+        return 1
+    }
 
     # Create metadata file
     log_info "Criando arquivo de metadados..."
@@ -166,8 +119,7 @@ create_backup() {
   "os": "$(uname -s)",
   "dbeaver_version": "$dbeaver_version",
   "backup_name": "$backup_name",
-  "include_scripts": $include_scripts,
-  "include_connections": $include_connections
+  "backup_type": "full_workspace"
 }
 EOF
 
@@ -197,8 +149,6 @@ EOF
 # Main function
 main() {
     local backup_name=""
-    local include_scripts="true"
-    local include_connections="true"
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -206,14 +156,6 @@ main() {
             --name)
                 backup_name="$2"
                 shift 2
-                ;;
-            --no-scripts)
-                include_scripts="false"
-                shift
-                ;;
-            --no-connections)
-                include_connections="false"
-                shift
                 ;;
             --dir)
                 BACKUP_DIR="$2"
@@ -228,7 +170,7 @@ main() {
     done
 
     # Create backup
-    create_backup "$backup_name" "$include_scripts" "$include_connections"
+    create_backup "$backup_name"
 }
 
 # Run main function (skip if showing help)

@@ -18,8 +18,6 @@ BACKUP_DIR="${DBEAVER_BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
 # Show help
 show_complement_help() {
     log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
-    log_output "  --no-scripts            Não restaurar scripts"
-    log_output "  --no-connections        Não restaurar configurações de conexões"
     log_output "  -y, --yes               Pula confirmação"
     log_output "  --info                  Mostra informações do backup sem restaurar"
     log_output "  --dir <diretório>       Diretório de onde restaurar o backup"
@@ -28,14 +26,14 @@ show_complement_help() {
     log_output "  <nome-do-backup>        Nome do backup a ser restaurado"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
-    log_output "  susa setup dbeaver backup restore my-backup                  # Restaura backup específico"
-    log_output "  susa setup dbeaver backup restore my-backup -y               # Restaura sem confirmação"
-    log_output "  susa setup dbeaver backup restore my-backup --info           # Mostra info do backup"
-    log_output "  susa setup dbeaver backup restore my-backup --no-scripts     # Restaura sem scripts"
+    log_output "  susa setup dbeaver backup restore my-backup        # Restaura backup específico"
+    log_output "  susa setup dbeaver backup restore my-backup -y     # Restaura sem confirmação"
+    log_output "  susa setup dbeaver backup restore my-backup --info # Mostra info do backup"
     log_output ""
     log_output "${LIGHT_GREEN}Nota:${NC}"
     log_output "  Um backup de segurança das configurações atuais é criado automaticamente"
     log_output "  antes da restauração, permitindo reverter se necessário."
+    log_output "  O restore sobrescreve completamente o workspace6 existente."
 }
 
 # Find backup file
@@ -156,9 +154,7 @@ create_safety_backup() {
 # Restore backup
 restore_backup() {
     local backup_name="$1"
-    local restore_scripts="${2:-true}"
-    local restore_connections="${3:-true}"
-    local skip_confirm="${4:-false}"
+    local skip_confirm="${2:-false}"
 
     # Check if DBeaver is installed
     if ! check_installation; then
@@ -210,36 +206,34 @@ restore_backup() {
         return 1
     }
 
-    # Ensure DBeaver config directory exists
-    mkdir -p "$DBEAVER_CONFIG_DIR"
-
-    # Restore workspace configuration
-    if [ -d "$temp_dir/dbeaver-backup/.metadata" ]; then
-        log_info "Restaurando configurações do workspace..."
-        mkdir -p "$DBEAVER_CONFIG_DIR/.metadata"
-        cp -r "$temp_dir/dbeaver-backup/.metadata"/* "$DBEAVER_CONFIG_DIR/.metadata/" 2> /dev/null || true
+    # Check if workspace6 exists in backup
+    if [ ! -d "$temp_dir/dbeaver-backup/workspace6" ]; then
+        log_error "Backup não contém pasta workspace6"
+        rm -rf "$temp_dir"
+        return 1
     fi
 
-    # Restore scripts
-    if [ "$restore_scripts" = "true" ] && [ -d "$temp_dir/dbeaver-backup/scripts" ]; then
-        log_info "Restaurando scripts SQL..."
-        mkdir -p "$DBEAVER_SCRIPTS_DIR"
-        cp -r "$temp_dir/dbeaver-backup/scripts"/* "$DBEAVER_SCRIPTS_DIR/" 2> /dev/null || true
+    # Get parent directory of DBEAVER_CONFIG_DIR to restore workspace6
+    local parent_dir=$(dirname "$DBEAVER_CONFIG_DIR")
+
+    log_info "Restaurando workspace completo do DBeaver..."
+    log_debug "Destino: $DBEAVER_CONFIG_DIR"
+
+    # Remove existing workspace6 directory
+    if [ -d "$DBEAVER_CONFIG_DIR" ]; then
+        log_debug "Removendo workspace6 existente"
+        rm -rf "$DBEAVER_CONFIG_DIR"
     fi
 
-    # Restore connections
-    if [ "$restore_connections" = "true" ] && [ -f "$temp_dir/dbeaver-backup/data-sources.json" ]; then
-        log_info "Restaurando configurações de conexões..."
-        mkdir -p "$(dirname "$DBEAVER_CONNECTIONS_FILE")"
-        cp "$temp_dir/dbeaver-backup/data-sources.json" "$DBEAVER_CONNECTIONS_FILE" 2> /dev/null || true
-    fi
+    # Ensure parent directory exists
+    mkdir -p "$parent_dir"
 
-    # Restore custom drivers
-    if [ -d "$temp_dir/dbeaver-backup/drivers" ]; then
-        log_info "Restaurando drivers personalizados..."
-        mkdir -p "$DBEAVER_CONFIG_DIR/drivers"
-        cp -r "$temp_dir/dbeaver-backup/drivers"/* "$DBEAVER_CONFIG_DIR/drivers/" 2> /dev/null || true
-    fi
+    # Restore entire workspace6 directory
+    cp -r "$temp_dir/dbeaver-backup/workspace6" "$DBEAVER_CONFIG_DIR" 2> /dev/null || {
+        log_error "Falha ao restaurar workspace completo"
+        rm -rf "$temp_dir"
+        return 1
+    }
 
     # Clean up
     rm -rf "$temp_dir"
@@ -257,22 +251,12 @@ restore_backup() {
 # Main function
 main() {
     local backup_name=""
-    local restore_scripts="true"
-    local restore_connections="true"
     local skip_confirm="false"
     local show_info="false"
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --no-scripts)
-                restore_scripts="false"
-                shift
-                ;;
-            --no-connections)
-                restore_connections="false"
-                shift
-                ;;
             -y | --yes)
                 skip_confirm="true"
                 shift
@@ -310,7 +294,7 @@ main() {
     if [ "$show_info" = "true" ]; then
         show_backup_info "$backup_name"
     else
-        restore_backup "$backup_name" "$restore_scripts" "$restore_connections" "$skip_confirm"
+        restore_backup "$backup_name" "$skip_confirm"
     fi
 }
 
