@@ -2,6 +2,9 @@
 # VSCode Common Utilities
 # Shared functions used across install, update and uninstall
 
+# Source homebrew library
+source "$LIB_DIR/homebrew.sh"
+
 # Constants
 VSCODE_NAME="Visual Studio Code"
 VSCODE_REPO="microsoft/vscode"

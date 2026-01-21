@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
 
@@ -151,22 +152,22 @@ configure_docker_group() {
 # Install Docker on macOS using Homebrew
 install_docker_macos() {
     # Check if Homebrew is installed
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL $DOCKER_HOMEBREW_INSTALL_URL)\""
         return 1
     fi
 
     # Install or upgrade Docker
-    if brew list docker &> /dev/null; then
-        brew upgrade docker || true
+    if homebrew_is_installed_formula "docker"; then
+        homebrew_update_formula "docker" "Docker" || true
     else
-        brew install docker
+        homebrew_install_formula "docker" "Docker"
     fi
 
     # Install docker-compose if not present
-    if ! brew list docker-compose &> /dev/null 2>&1; then
-        brew install docker-compose || log_debug "docker-compose não disponível via brew"
+    if ! homebrew_is_installed_formula "docker-compose"; then
+        homebrew_install_formula "docker-compose" "docker-compose" || log_debug "docker-compose não disponível via homebrew"
     fi
 
     return 0
@@ -362,19 +363,19 @@ update_docker() {
     # Detect OS and update
     case "$OS_TYPE" in
         macos)
-            if ! command -v brew &> /dev/null; then
+            if ! homebrew_is_available; then
                 log_error "Homebrew não está instalado"
                 return 1
             fi
 
-            brew upgrade docker || {
+            homebrew_update_formula "docker" "Docker" || {
                 log_error "Falha ao atualizar Docker"
                 return 1
             }
 
             # Update docker-compose if installed
-            if brew list docker-compose &> /dev/null 2>&1; then
-                brew upgrade docker-compose || log_debug "docker-compose já está atualizado"
+            if homebrew_is_installed_formula "docker-compose"; then
+                homebrew_update_formula "docker-compose" "docker-compose" || log_debug "docker-compose já está atualizado"
             fi
             ;;
         debian | fedora)
@@ -457,9 +458,9 @@ uninstall_docker() {
     case "$OS_TYPE" in
         macos)
             # Uninstall via Homebrew
-            if command -v brew &> /dev/null; then
-                brew uninstall docker 2> /dev/null || log_debug "Docker não instalado via Homebrew"
-                brew uninstall docker-compose 2> /dev/null || log_debug "docker-compose não instalado"
+            if homebrew_is_available; then
+                homebrew_uninstall_formula "docker" "Docker" || log_debug "Docker não instalado via Homebrew"
+                homebrew_uninstall_formula "docker-compose" "docker-compose" || log_debug "docker-compose não instalado"
             fi
             ;;
         debian | fedora)

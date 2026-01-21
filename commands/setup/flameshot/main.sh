@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/github.sh"
 
@@ -87,22 +88,21 @@ install_flameshot_macos() {
     log_info "Instalando Flameshot no macOS..."
 
     # Check if Homebrew is installed
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         return 1
     fi
 
     # Install or upgrade Flameshot
-    log_debug "Executando: brew install $FLAMESHOT_HOMEBREW_FORMULA"
-    if brew list "$FLAMESHOT_HOMEBREW_FORMULA" &> /dev/null; then
+    if homebrew_is_installed_formula "$FLAMESHOT_HOMEBREW_FORMULA"; then
         log_info "Atualizando Flameshot via Homebrew..."
-        brew upgrade "$FLAMESHOT_HOMEBREW_FORMULA" || {
+        homebrew_update_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot" || {
             log_warning "Flameshot já está na versão mais recente"
         }
     else
         log_info "Instalando Flameshot via Homebrew..."
-        brew install "$FLAMESHOT_HOMEBREW_FORMULA"
+        homebrew_install_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot"
     fi
 
     log_success "Flameshot instalado com sucesso!"
@@ -399,7 +399,7 @@ update_flameshot() {
 
     if [ "$os_type" = "mac" ]; then
         log_info "Atualizando via Homebrew..."
-        brew upgrade "$FLAMESHOT_HOMEBREW_FORMULA" || {
+        homebrew_update_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot" || {
             log_info "Flameshot já está na versão mais recente"
         }
     elif [ "$os_type" = "linux" ]; then
@@ -480,7 +480,7 @@ uninstall_flameshot() {
 
     if [ "$os_type" = "mac" ]; then
         log_info "Desinstalando via Homebrew..."
-        brew uninstall "$FLAMESHOT_HOMEBREW_FORMULA"
+        homebrew_uninstall_formula "$FLAMESHOT_HOMEBREW_FORMULA" "Flameshot"
     elif [ "$os_type" = "linux" ]; then
         local distro=$(get_distro_id)
 

@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
 
@@ -13,25 +14,19 @@ GCLOUD_BIN_NAME="gcloud"
 GCLOUD_SDK_BASE_URL="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads"
 
 SKIP_CONFIRM=false
+
 # Help function
-show_help() {
-    show_description
-    log_output ""
-    show_usage
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info            Mostra informações sobre a instalação do gcloud"
+    log_output "  --uninstall       Desinstala o Google Cloud SDK do sistema"
+    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
+    log_output "  -u, --upgrade     Atualiza o gcloud para a versão mais recente"
     log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $GCLOUD_NAME ($GCLOUD_BIN_NAME) é um conjunto de ferramentas de linha"
     log_output "  de comando para gerenciar recursos e aplicações hospedadas no"
     log_output "  Google Cloud Platform. Inclui $GCLOUD_BIN_NAME, gsutil e bq."
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções:${NC}"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  --info            Mostra informações sobre a instalação do gcloud"
-    log_output "  --uninstall       Desinstala o Google Cloud SDK do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o gcloud para a versão mais recente"
-    log_output "  -v, --verbose     Habilita saída detalhada para depuração"
-    log_output "  -q, --quiet       Minimiza a saída, desabilita mensagens de depuração"
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa setup gcloud              # Instala o $GCLOUD_NAME"
@@ -170,18 +165,18 @@ install_gcloud_macos_brew() {
     log_info "Instalando Google Cloud SDK via Homebrew..."
 
     # Check if Homebrew is installed
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_warning "Homebrew não está instalado. Instalando via tarball..."
         return 1
     fi
 
     # Install or upgrade gcloud
-    if brew list google-cloud-sdk &> /dev/null 2>&1; then
+    if homebrew_is_installed_formula "google-cloud-sdk"; then
         log_info "Atualizando Google Cloud SDK via Homebrew..."
-        brew upgrade google-cloud-sdk || true
+        homebrew_update_formula "google-cloud-sdk" "Google Cloud SDK" || true
     else
         log_info "Instalando Google Cloud SDK via Homebrew..."
-        brew install google-cloud-sdk
+        homebrew_install_formula "google-cloud-sdk" "Google Cloud SDK"
     fi
 
     return 0
@@ -337,9 +332,9 @@ update_gcloud() {
     # Detect OS
     if is_mac; then
         # Check if installed via Homebrew
-        if brew list google-cloud-sdk &> /dev/null 2>&1; then
+        if homebrew_is_installed_formula "google-cloud-sdk"; then
             log_info "Atualizando via Homebrew..."
-            brew upgrade google-cloud-sdk || {
+            homebrew_update_formula "google-cloud-sdk" "Google Cloud SDK" || {
                 log_warning "Homebrew não atualizou. Tentando gcloud components update..."
                 gcloud components update --quiet 2> /dev/null || true
             }
@@ -402,9 +397,9 @@ uninstall_gcloud() {
     # Detect OS
     if is_mac; then
         # Check if installed via Homebrew
-        if brew list google-cloud-sdk &> /dev/null 2>&1; then
+        if homebrew_is_installed_formula "google-cloud-sdk"; then
             log_info "Desinstalando via Homebrew..."
-            brew uninstall google-cloud-sdk || {
+            homebrew_uninstall_formula "google-cloud-sdk" "Google Cloud SDK" || {
                 log_error "Falha ao desinstalar via Homebrew"
                 return 1
             }

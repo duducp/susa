@@ -293,3 +293,291 @@ homebrew_uninstall() {
         return 1
     fi
 }
+
+# ============================================================================
+# Formula Functions (não-cask)
+# ============================================================================
+
+# Check if a Homebrew formula (not cask) is installed
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq, postgresql)
+#
+# Returns:
+#   0 if the formula is installed
+#   1 if the formula is not installed or error
+homebrew_is_installed_formula() {
+    local formula_name="${1:-}"
+
+    if [ -z "$formula_name" ]; then
+        return 1
+    fi
+
+    if ! homebrew_is_available; then
+        return 1
+    fi
+
+    brew list "$formula_name" &> /dev/null
+}
+
+# Get the installed version of a Homebrew formula
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq, postgresql)
+#
+# Output:
+#   Installed version or "unknown" if not installed/not found
+#
+# Returns:
+#   0 always
+homebrew_get_installed_version_formula() {
+    local formula_name="${1:-}"
+
+    if [ -z "$formula_name" ]; then
+        echo "unknown"
+        return 0
+    fi
+
+    if ! homebrew_is_installed_formula "$formula_name"; then
+        echo "unknown"
+        return 0
+    fi
+
+    local version=$(brew list --versions "$formula_name" 2> /dev/null | awk '{print $2}' | head -1 || echo "unknown")
+    echo "$version"
+}
+
+# Get the latest available version of a formula from Homebrew
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq, postgresql)
+#
+# Output:
+#   Latest version or "unknown" if not found
+#
+# Returns:
+#   0 if version was found
+#   1 on error
+homebrew_get_latest_version_formula() {
+    local formula_name="${1:-}"
+
+    if [ -z "$formula_name" ]; then
+        echo "unknown"
+        return 1
+    fi
+
+    if ! homebrew_is_available; then
+        echo "unknown"
+        return 1
+    fi
+
+    local version=$(brew info --json=v2 "$formula_name" 2> /dev/null | grep -oE '"stable":"[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+' | head -1 || echo "unknown")
+
+    if [ "$version" = "unknown" ] || [ -z "$version" ]; then
+        echo "unknown"
+        return 1
+    fi
+
+    echo "$version"
+    return 0
+}
+
+# Install a formula from Homebrew
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq, postgresql)
+#   $2 - (Optional) Friendly name for logs (default: use formula name)
+#
+# Returns:
+#   0 if installation was successful
+#   1 on error
+homebrew_install_formula() {
+    local formula_name="${1:-}"
+    local app_name="${2:-$formula_name}"
+
+    if [ -z "$formula_name" ]; then
+        log_error "Nome da formula é obrigatório"
+        return 1
+    fi
+
+    if ! homebrew_is_available; then
+        log_error "Homebrew não está instalado. Por favor, instale-o primeiro:"
+        log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        return 1
+    fi
+
+    # Check if already installed
+    if homebrew_is_installed_formula "$formula_name"; then
+        local version=$(homebrew_get_installed_version_formula "$formula_name")
+        log_info "$app_name $version já está instalado"
+        return 0
+    fi
+
+    # Install the formula
+    log_info "Instalando $app_name via Homebrew..."
+    log_debug "Formula: $formula_name"
+
+    if ! brew install "$formula_name" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
+        log_error "Falha ao instalar $app_name via Homebrew"
+        return 1
+    fi
+
+    # Verify installation
+    if homebrew_is_installed_formula "$formula_name"; then
+        local version=$(homebrew_get_installed_version_formula "$formula_name")
+        log_success "$app_name $version instalado com sucesso!"
+        return 0
+    else
+        log_error "$app_name foi instalado mas não está disponível"
+        return 1
+    fi
+}
+
+# Update an installed Homebrew formula
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq, postgresql)
+#   $2 - (Optional) Friendly name for logs (default: use formula name)
+#
+# Returns:
+#   0 if update was successful or already up to date
+#   1 on error
+homebrew_update_formula() {
+    local formula_name="${1:-}"
+    local app_name="${2:-$formula_name}"
+
+    if [ -z "$formula_name" ]; then
+        log_error "Nome da formula é obrigatório"
+        return 1
+    fi
+
+    if ! homebrew_is_available; then
+        log_error "Homebrew não está instalado"
+        return 1
+    fi
+
+    # Check if installed
+    if ! homebrew_is_installed_formula "$formula_name"; then
+        log_error "$app_name não está instalado"
+        return 1
+    fi
+
+    local current_version=$(homebrew_get_installed_version_formula "$formula_name")
+    log_debug "Versão atual: $current_version"
+
+    # Update the formula
+    log_info "Atualizando $app_name via Homebrew..."
+
+    if brew upgrade "$formula_name" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
+        local new_version=$(homebrew_get_installed_version_formula "$formula_name")
+
+        if [ "$current_version" = "$new_version" ]; then
+            log_info "$app_name já estava na versão mais recente ($new_version)"
+        else
+            log_success "$app_name atualizado com sucesso para versão $new_version!"
+        fi
+        return 0
+    else
+        # If upgrade fails, it might already be up to date
+        local new_version=$(homebrew_get_installed_version_formula "$formula_name")
+        if [ "$current_version" = "$new_version" ]; then
+            log_info "$app_name já está na versão mais recente ($new_version)"
+            return 0
+        else
+            log_error "Falha ao atualizar $app_name via Homebrew"
+            return 1
+        fi
+    fi
+}
+
+# Remove an installed Homebrew formula
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq, postgresql)
+#   $2 - (Optional) Friendly name for logs (default: use formula name)
+#
+# Returns:
+#   0 if removal was successful or formula was not installed
+#   1 on error
+homebrew_uninstall_formula() {
+    local formula_name="${1:-}"
+    local app_name="${2:-$formula_name}"
+
+    if [ -z "$formula_name" ]; then
+        log_error "Nome da formula é obrigatório"
+        return 1
+    fi
+
+    if ! homebrew_is_available; then
+        log_error "Homebrew não está instalado"
+        return 1
+    fi
+
+    # Check if installed
+    if ! homebrew_is_installed_formula "$formula_name"; then
+        log_debug "$app_name não está instalado"
+        return 0
+    fi
+
+    log_info "Removendo $app_name..."
+    log_debug "Formula: $formula_name"
+
+    if ! brew uninstall "$formula_name" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
+        log_error "Falha ao remover $app_name via Homebrew"
+        return 1
+    fi
+
+    # Verify removal
+    if ! homebrew_is_installed_formula "$formula_name"; then
+        log_success "$app_name removido com sucesso!"
+        return 0
+    else
+        log_error "Falha ao remover $app_name completamente"
+        return 1
+    fi
+}
+
+# Link a Homebrew formula to make its binaries available
+#
+# Arguments:
+#   $1 - Formula name (e.g.: libpq)
+#   $2 - (Optional) Force linking (default: false, pass "true" to force)
+#
+# Returns:
+#   0 if link was successful
+#   1 on error
+homebrew_link_formula() {
+    local formula_name="${1:-}"
+    local force="${2:-false}"
+
+    if [ -z "$formula_name" ]; then
+        log_error "Nome da formula é obrigatório"
+        return 1
+    fi
+
+    if ! homebrew_is_available; then
+        log_error "Homebrew não está instalado"
+        return 1
+    fi
+
+    if ! homebrew_is_installed_formula "$formula_name"; then
+        log_error "$formula_name não está instalado"
+        return 1
+    fi
+
+    log_debug "Criando links para $formula_name..."
+
+    local link_args=("link" "$formula_name")
+    if [ "$force" = "true" ]; then
+        link_args+=("--force")
+        log_debug "Usando --force para sobrescrever links existentes"
+    fi
+
+    if brew "${link_args[@]}" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
+        log_debug "Links criados com sucesso"
+        return 0
+    else
+        log_debug "Falha ao criar links"
+        return 1
+    fi
+}

@@ -5,6 +5,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/shell.sh"
@@ -87,25 +88,25 @@ install_podman_macos() {
 
     # Check if Homebrew is installed
 
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL $PODMAN_HOMEBREW_INSTALL_URL)\""
         return 1
     fi
 
     # Install or upgrade Podman
-    if brew list $PODMAN_HOMEBREW_PKG &> /dev/null; then
+    if homebrew_is_installed_formula "$PODMAN_HOMEBREW_PKG"; then
         log_info "Atualizando Podman via Homebrew..."
-        brew upgrade $PODMAN_HOMEBREW_PKG || true
+        homebrew_update_formula "$PODMAN_HOMEBREW_PKG" "Podman" || true
     else
         log_info "Instalando Podman via Homebrew..."
-        brew install $PODMAN_HOMEBREW_PKG
+        homebrew_install_formula "$PODMAN_HOMEBREW_PKG" "Podman"
     fi
 
     # Install podman-compose if not present
-    if ! brew list $PODMAN_HOMEBREW_COMPOSE_PKG &> /dev/null 2>&1; then
+    if ! homebrew_is_installed_formula "$PODMAN_HOMEBREW_COMPOSE_PKG"; then
         log_info "Instalando podman-compose..."
-        brew install $PODMAN_HOMEBREW_COMPOSE_PKG || log_debug "$PODMAN_COMPOSE_BIN não disponível via brew"
+        homebrew_install_formula "$PODMAN_HOMEBREW_COMPOSE_PKG" "podman-compose" || log_debug "$PODMAN_COMPOSE_BIN não disponível via homebrew"
     fi
 
     # Initialize podman machine
@@ -421,20 +422,20 @@ update_podman() {
 
     # Detect OS and update
     if is_mac; then
-        if ! command -v brew &> /dev/null; then
+        if ! homebrew_is_available; then
             log_error "Homebrew não está instalado"
             return 1
         fi
 
         log_info "Atualizando Podman via Homebrew..."
-        brew upgrade $PODMAN_HOMEBREW_PKG || {
+        homebrew_update_formula "$PODMAN_HOMEBREW_PKG" "Podman" || {
             log_error "Falha ao atualizar Podman"
             return 1
         }
         # Update podman-compose if installed
-        if brew list $PODMAN_HOMEBREW_COMPOSE_PKG &> /dev/null 2>&1; then
+        if homebrew_is_installed_formula "$PODMAN_HOMEBREW_COMPOSE_PKG"; then
             log_info "Atualizando podman-compose..."
-            brew upgrade $PODMAN_HOMEBREW_COMPOSE_PKG || log_debug "$PODMAN_COMPOSE_BIN já está atualizado"
+            homebrew_update_formula "$PODMAN_HOMEBREW_COMPOSE_PKG" "podman-compose" || log_debug "$PODMAN_COMPOSE_BIN já está atualizado"
         fi
     else
         # Remove old binary
@@ -498,10 +499,10 @@ uninstall_podman() {
         fi
 
         # Uninstall via Homebrew
-        if command -v brew &> /dev/null; then
+        if homebrew_is_available; then
             log_info "Removendo Podman via Homebrew..."
-            brew uninstall $PODMAN_HOMEBREW_PKG 2> /dev/null || log_debug "Podman não instalado via Homebrew"
-            brew uninstall $PODMAN_HOMEBREW_COMPOSE_PKG 2> /dev/null || log_debug "$PODMAN_COMPOSE_BIN não instalado"
+            homebrew_uninstall_formula "$PODMAN_HOMEBREW_PKG" "Podman" || log_debug "Podman não instalado via Homebrew"
+            homebrew_uninstall_formula "$PODMAN_HOMEBREW_COMPOSE_PKG" "podman-compose" || log_debug "$PODMAN_COMPOSE_BIN não instalado"
         fi
     else
         local podman_location=$(which podman 2> /dev/null)

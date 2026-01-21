@@ -23,10 +23,10 @@ get_latest_version() {
     case "$os_name" in
         darwin)
             # Homebrew
-            if command -v brew &> /dev/null; then
-                version=$(brew info --json=v2 mysql-client | grep -oP '"versions":\s*\{[^}]*"stable":\s*"\K[0-9]+(\.[0-9]+)+' | head -1)
+            if homebrew_is_available; then
+                version=$(homebrew_get_latest_version_formula "mysql-client")
                 log_debug "Última versão via Homebrew: $version"
-                if [ -n "$version" ]; then
+                if [ -n "$version" ] && [ "$version" != "unknown" ]; then
                     echo "$version"
                     return 0
                 fi
@@ -95,153 +95,6 @@ get_current_version() {
 # Check if MySQL client is installed
 check_installation() {
     command -v ${MYSQL_UTILS[0]} &> /dev/null
-}
-
-# Helper: Get latest version for Homebrew formula (not cask)
-homebrew_get_latest_version_formula() {
-    local formula_name="${1:-}"
-
-    if [ -z "$formula_name" ]; then
-        echo "unknown"
-        return 1
-    fi
-
-    if ! homebrew_is_available; then
-        echo "unknown"
-        return 1
-    fi
-
-    local version=$(brew info --json=v2 "$formula_name" 2> /dev/null | grep -oP '"versions":\s*\{[^}]*"stable":\s*"\K[0-9]+(\.[0-9]+)+' | head -1 || echo "unknown")
-
-    if [ "$version" = "unknown" ] || [ -z "$version" ]; then
-        echo "unknown"
-        return 1
-    fi
-
-    echo "$version"
-    return 0
-}
-
-# Helper: Check if Homebrew formula is installed
-homebrew_is_installed_formula() {
-    local formula_name="${1:-}"
-
-    if [ -z "$formula_name" ]; then
-        return 1
-    fi
-
-    if ! homebrew_is_available; then
-        return 1
-    fi
-
-    brew list "$formula_name" &> /dev/null
-}
-
-# Helper: Get installed version of Homebrew formula
-homebrew_get_installed_version_formula() {
-    local formula_name="${1:-}"
-
-    if [ -z "$formula_name" ]; then
-        echo "unknown"
-        return 0
-    fi
-
-    if ! homebrew_is_installed_formula "$formula_name"; then
-        echo "unknown"
-        return 0
-    fi
-
-    local version=$(brew list --versions "$formula_name" 2> /dev/null | awk '{print $2}' | head -1 || echo "unknown")
-    echo "$version"
-}
-
-# Helper: Install Homebrew formula
-homebrew_install_formula() {
-    local formula_name="${1:-}"
-    local app_name="${2:-$formula_name}"
-
-    if [ -z "$formula_name" ]; then
-        log_error "Nome da formula é obrigatório"
-        return 1
-    fi
-
-    if ! homebrew_is_available; then
-        log_error "Homebrew não está instalado"
-        return 1
-    fi
-
-    # Check if already installed
-    if homebrew_is_installed_formula "$formula_name"; then
-        local version=$(homebrew_get_installed_version_formula "$formula_name")
-        log_info "$app_name $version já está instalado"
-        return 0
-    fi
-
-    log_debug "Instalando formula: $formula_name"
-    if ! brew install "$formula_name" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
-        log_error "Falha ao instalar $app_name via Homebrew"
-        return 1
-    fi
-
-    return 0
-}
-
-# Helper: Update Homebrew formula
-homebrew_update_formula() {
-    local formula_name="${1:-}"
-    local app_name="${2:-$formula_name}"
-
-    if [ -z "$formula_name" ]; then
-        log_error "Nome da formula é obrigatório"
-        return 1
-    fi
-
-    if ! homebrew_is_available; then
-        log_error "Homebrew não está instalado"
-        return 1
-    fi
-
-    if ! homebrew_is_installed_formula "$formula_name"; then
-        log_error "$app_name não está instalado"
-        return 1
-    fi
-
-    log_debug "Atualizando formula: $formula_name"
-    if brew upgrade "$formula_name" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
-        return 0
-    else
-        # Pode já estar atualizado
-        return 0
-    fi
-}
-
-# Helper: Uninstall Homebrew formula
-homebrew_uninstall_formula() {
-    local formula_name="${1:-}"
-    local app_name="${2:-$formula_name}"
-
-    if [ -z "$formula_name" ]; then
-        log_error "Nome da formula é obrigatório"
-        return 1
-    fi
-
-    if ! homebrew_is_available; then
-        log_error "Homebrew não está instalado"
-        return 1
-    fi
-
-    if ! homebrew_is_installed_formula "$formula_name"; then
-        log_debug "$app_name não está instalado"
-        return 0
-    fi
-
-    log_debug "Desinstalando formula: $formula_name"
-    if ! brew uninstall "$formula_name" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
-        log_error "Falha ao desinstalar $app_name via Homebrew"
-        return 1
-    fi
-
-    return 0
 }
 
 # Show additional MySQL-specific information

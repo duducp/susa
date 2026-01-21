@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
 
@@ -104,19 +105,19 @@ install_sublime_macos() {
     log_info "Instalando Sublime Text no macOS..."
 
     # Check if Homebrew is installed
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         return 1
     fi
 
     # Install or upgrade Sublime Text
-    if brew list --cask $SUBLIME_HOMEBREW_CASK &> /dev/null 2>&1; then
+    if homebrew_is_installed "$SUBLIME_HOMEBREW_CASK"; then
         log_info "Atualizando Sublime Text via Homebrew..."
-        brew upgrade --cask $SUBLIME_HOMEBREW_CASK || true
+        homebrew_update "$SUBLIME_HOMEBREW_CASK" "Sublime Text" || true
     else
         log_info "Instalando Sublime Text via Homebrew..."
-        brew install --cask $SUBLIME_HOMEBREW_CASK
+        homebrew_install "$SUBLIME_HOMEBREW_CASK" "Sublime Text"
     fi
 
     return 0
@@ -290,13 +291,13 @@ update_sublime() {
     # Detect OS and update
     case "$OS_TYPE" in
         macos)
-            if ! command -v brew &> /dev/null; then
+            if ! homebrew_is_available; then
                 log_error "Homebrew não está instalado"
                 return 1
             fi
 
             log_info "Atualizando Sublime Text via Homebrew..."
-            brew upgrade --cask $SUBLIME_HOMEBREW_CASK || {
+            homebrew_update "$SUBLIME_HOMEBREW_CASK" "Sublime Text" || {
                 log_info "Sublime Text já está na versão mais recente"
                 return 0
             }
@@ -386,9 +387,9 @@ uninstall_sublime() {
     case "$OS_TYPE" in
         macos)
             # Uninstall via Homebrew
-            if command -v brew &> /dev/null; then
+            if homebrew_is_available; then
                 log_info "Removendo Sublime Text via Homebrew..."
-                brew uninstall --cask $SUBLIME_HOMEBREW_CASK 2> /dev/null || log_debug "Sublime Text não instalado via Homebrew"
+                homebrew_uninstall "$SUBLIME_HOMEBREW_CASK" "Sublime Text" 2> /dev/null || log_debug "Sublime Text não instalado via Homebrew"
             fi
             ;;
         debian | fedora)

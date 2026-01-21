@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 
 # Constants
 ITERM_NAME="iTerm2"
@@ -52,15 +53,15 @@ show_help() {
 # Get latest iTerm2 version
 get_latest_version() {
     # Check if Homebrew is available
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado" >&2
         return 1
     fi
 
     # Try to get the latest version via Homebrew
-    local latest_version=$(brew info --cask iterm2 2> /dev/null | grep -E "^iterm2:" | sed -E 's/^iterm2: ([^ ]+).*/\1/' | head -1)
+    local latest_version=$(homebrew_get_latest_version "$ITERM_HOMEBREW_CASK")
 
-    if [ -n "$latest_version" ]; then
+    if [ -n "$latest_version" ] && [ "$latest_version" != "unknown" ]; then
         log_debug "Versão obtida via Homebrew: $latest_version" >&2
         echo "$latest_version"
         return 0
@@ -84,8 +85,8 @@ get_latest_version() {
 
 # Get installed iTerm2 version
 get_current_version() {
-    if brew list --cask iterm2 &> /dev/null; then
-        brew list --cask iterm2 --versions 2> /dev/null | awk '{print $2}' || echo "desconhecida"
+    if homebrew_is_installed "$ITERM_HOMEBREW_CASK"; then
+        homebrew_get_installed_version "$ITERM_HOMEBREW_CASK"
     else
         echo "desconhecida"
     fi
@@ -98,11 +99,10 @@ check_installation() {
 
 # Check if Homebrew is installed
 check_homebrew() {
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado"
         return 1
     fi
-    log_debug "Homebrew encontrado: $(brew --version | head -1)"
     return 0
 }
 
@@ -125,13 +125,14 @@ install_iterm() {
 
     # Update Homebrew
     log_info "Atualizando Homebrew..."
-    log_debug "Executando: brew update"
-    brew update 2>&1 | while read -r line; do log_debug "brew: $line"; done || true
+    homebrew_update_metadata
 
     # Install or reinstall iTerm2
     log_info "Instalando iTerm2 via Homebrew..."
-    log_debug "Executando: brew install --cask iterm2"
-    brew install --cask iterm2 2>&1 | while read -r line; do log_debug "brew: $line"; done
+    if ! homebrew_install "$ITERM_HOMEBREW_CASK" "iTerm2"; then
+        log_error "Falha ao instalar iTerm2"
+        return 1
+    fi
 
     # Verify installation
     if check_installation; then
@@ -156,7 +157,7 @@ update_iterm() {
     fi
 
     # Check if iTerm2 is installed
-    if ! brew list --cask iterm2 &> /dev/null; then
+    if ! homebrew_is_installed "$ITERM_HOMEBREW_CASK"; then
         log_error "iTerm2 não está instalado"
         echo ""
         log_output "${YELLOW}Para instalar, execute:${NC}"
@@ -180,13 +181,14 @@ update_iterm() {
 
     # Update Homebrew
     log_info "Atualizando Homebrew..."
-    log_debug "Executando: brew update"
-    brew update 2>&1 | while read -r line; do log_debug "brew: $line"; done || true
+    homebrew_update_metadata
 
     # Upgrade iTerm2
     log_info "Atualizando iTerm2 para a versão mais recente..."
-    log_debug "Executando: brew upgrade --cask iterm2"
-    brew upgrade --cask iterm2 2>&1 | while read -r line; do log_debug "brew: $line"; done
+    if ! homebrew_update "$ITERM_HOMEBREW_CASK" "iTerm2"; then
+        log_error "Falha ao atualizar iTerm2"
+        return 1
+    fi
 
     local new_version=$(get_current_version)
     log_success "iTerm2 atualizado de $current_version para $new_version"
@@ -204,7 +206,7 @@ uninstall_iterm() {
     fi
 
     # Check if iTerm2 is installed
-    if ! brew list --cask iterm2 &> /dev/null; then
+    if ! homebrew_is_installed "$ITERM_HOMEBREW_CASK"; then
         log_warning "iTerm2 não está instalado via Homebrew"
 
         # Check if app exists manually
@@ -245,8 +247,10 @@ uninstall_iterm() {
 
     # Uninstall iTerm2
     log_info "Removendo iTerm2..."
-    log_debug "Executando: brew uninstall --cask iterm2"
-    brew uninstall --cask iterm2 2>&1 | while read -r line; do log_debug "brew: $line"; done
+    if ! homebrew_uninstall "$ITERM_HOMEBREW_CASK" "iTerm2"; then
+        log_error "Falha ao desinstalar iTerm2"
+        return 1
+    fi
 
     # Verify removal
     if ! check_installation; then

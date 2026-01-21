@@ -44,13 +44,13 @@ update_vscode() {
     # Detect OS and update
     case "$OS_TYPE" in
         macos)
-            if ! command -v brew &> /dev/null; then
+            if ! homebrew_is_available; then
                 log_error "Homebrew não está instalado"
                 return 1
             fi
 
             log_info "Atualizando VS Code via Homebrew..."
-            brew upgrade --cask $VSCODE_HOMEBREW_CASK || {
+            homebrew_update "$VSCODE_HOMEBREW_CASK" "VS Code" || {
                 log_info "VS Code já está na versão mais recente"
                 return 0
             }

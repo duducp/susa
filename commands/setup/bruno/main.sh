@@ -2,6 +2,7 @@
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/os.sh"
 source "$LIB_DIR/flatpak.sh"
@@ -80,11 +81,7 @@ get_current_version() {
     if check_installation; then
         case "$OS_TYPE" in
             macos)
-                if brew list --cask "$HOMEBREW_CASK" &> /dev/null; then
-                    brew list --cask "$HOMEBREW_CASK" --versions | awk '{print $2}'
-                else
-                    echo "desconhecida"
-                fi
+                homebrew_get_installed_version "$HOMEBREW_CASK"
                 ;;
             *)
                 # Get version from Flatpak
@@ -100,7 +97,7 @@ get_current_version() {
 check_installation() {
     case "$OS_TYPE" in
         macos)
-            brew list --cask "$HOMEBREW_CASK" &> /dev/null
+            homebrew_is_installed "$HOMEBREW_CASK"
             ;;
         *)
             flatpak_is_installed "$FLATPAK_APP_ID"
@@ -113,16 +110,18 @@ install_macos() {
     log_info "Instalando $APP_NAME no macOS..."
 
     # Check if Homebrew is installed
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         return 1
     fi
 
     # Install Bruno
-    log_debug "Executando: brew install --cask $HOMEBREW_CASK"
     log_info "Instalando $APP_NAME via Homebrew..."
-    brew install --cask "$HOMEBREW_CASK"
+    if ! homebrew_install "$HOMEBREW_CASK" "$APP_NAME"; then
+        log_error "Falha ao instalar $APP_NAME"
+        return 1
+    fi
 
     return 0
 }
@@ -211,7 +210,7 @@ update_bruno() {
         macos)
             # Use Homebrew upgrade
             log_info "Atualizando via Homebrew..."
-            brew upgrade --cask "$HOMEBREW_CASK" || {
+            homebrew_update "$HOMEBREW_CASK" "$APP_NAME" || {
                 log_info "$APP_NAME já está na versão mais recente"
             }
             ;;
@@ -241,7 +240,7 @@ update_bruno() {
 remove_bruno_internal() {
     case "$OS_TYPE" in
         macos)
-            brew uninstall --cask "$HOMEBREW_CASK" > /dev/null 2>&1 || true
+            homebrew_uninstall "$HOMEBREW_CASK" "$APP_NAME" > /dev/null 2>&1 || true
             ;;
         *)
             flatpak_uninstall "$FLATPAK_APP_ID" "$APP_NAME" > /dev/null 2>&1 || true

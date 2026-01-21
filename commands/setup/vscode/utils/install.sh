@@ -6,18 +6,18 @@
 install_vscode_macos() {
     log_info "Instalando VS Code no macOS..."
 
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         return 1
     fi
 
-    if brew list --cask $VSCODE_HOMEBREW_CASK &> /dev/null 2>&1; then
+    if homebrew_is_installed "$VSCODE_HOMEBREW_CASK"; then
         log_info "Atualizando VS Code via Homebrew..."
-        brew upgrade --cask $VSCODE_HOMEBREW_CASK || true
+        homebrew_update "$VSCODE_HOMEBREW_CASK" "VS Code" || true
     else
         log_info "Instalando VS Code via Homebrew..."
-        brew install --cask $VSCODE_HOMEBREW_CASK
+        homebrew_install "$VSCODE_HOMEBREW_CASK" "VS Code"
     fi
 
     return 0

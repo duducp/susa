@@ -63,9 +63,9 @@ uninstall_vscode() {
     # Uninstall based on OS
     case "$OS_TYPE" in
         macos)
-            if command -v brew &> /dev/null; then
+            if homebrew_is_available; then
                 log_info "Removendo VS Code via Homebrew..."
-                brew uninstall --cask $VSCODE_HOMEBREW_CASK 2> /dev/null || log_debug "VS Code não instalado via Homebrew"
+                homebrew_uninstall "$VSCODE_HOMEBREW_CASK" "VS Code" || log_debug "VS Code não instalado via Homebrew"
             fi
             ;;
         debian | fedora)

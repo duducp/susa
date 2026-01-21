@@ -5,6 +5,7 @@ IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/homebrew.sh"
 source "$LIB_DIR/os.sh"
 
 # Constants
@@ -71,8 +72,8 @@ get_current_version() {
 
     if [ "$os_type" = "mac" ]; then
         # Try to get version via Homebrew
-        if command -v brew &> /dev/null && brew list --cask "$POSTMAN_HOMEBREW_CASK" &> /dev/null; then
-            brew list --cask "$POSTMAN_HOMEBREW_CASK" --versions 2> /dev/null | awk '{print $2}' || echo "desconhecida"
+        if homebrew_is_installed "$POSTMAN_HOMEBREW_CASK"; then
+            homebrew_get_installed_version "$POSTMAN_HOMEBREW_CASK"
         else
             echo "desconhecida"
         fi
@@ -98,22 +99,21 @@ install_postman_macos() {
     log_info "Instalando Postman no macOS..."
 
     # Check if Homebrew is installed
-    if ! command -v brew &> /dev/null; then
+    if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         return 1
     fi
 
     # Install or upgrade Postman
-    log_debug "Executando: brew install --cask $POSTMAN_HOMEBREW_CASK"
-    if brew list --cask "$POSTMAN_HOMEBREW_CASK" &> /dev/null; then
+    if homebrew_is_installed "$POSTMAN_HOMEBREW_CASK"; then
         log_info "Atualizando Postman via Homebrew..."
-        brew upgrade --cask "$POSTMAN_HOMEBREW_CASK" || {
+        homebrew_update "$POSTMAN_HOMEBREW_CASK" "Postman" || {
             log_warning "Postman já está na versão mais recente"
         }
     else
         log_info "Instalando Postman via Homebrew..."
-        brew install --cask "$POSTMAN_HOMEBREW_CASK"
+        homebrew_install "$POSTMAN_HOMEBREW_CASK" "Postman"
     fi
 
     log_success "Postman instalado com sucesso!"
@@ -225,7 +225,7 @@ update_postman() {
 
     if [ "$os_type" = "mac" ]; then
         log_info "Atualizando via Homebrew..."
-        brew upgrade --cask "$POSTMAN_HOMEBREW_CASK" || {
+        homebrew_update "$POSTMAN_HOMEBREW_CASK" "Postman" || {
             log_info "$POSTMAN_BIN_NAME já está na versão mais recente"
         }
     elif [ "$os_type" = "linux" ]; then
@@ -265,7 +265,7 @@ uninstall_postman() {
 
     if [ "$os_type" = "mac" ]; then
         log_info "Desinstalando via Homebrew..."
-        brew uninstall --cask "$POSTMAN_HOMEBREW_CASK"
+        homebrew_uninstall "$POSTMAN_HOMEBREW_CASK" "Postman"
     elif [ "$os_type" = "linux" ]; then
         log_info "Removendo arquivos do $POSTMAN_BIN_NAME..."
         sudo rm -rf "$POSTMAN_INSTALL_DIR"

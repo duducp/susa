@@ -24,8 +24,7 @@ install_mysql_macos() {
 
     if ! command -v ${MYSQL_UTILS[0]} &> /dev/null; then
         log_info "Configurando binários no PATH..."
-        log_debug "Executando: brew link --force $MYSQL_CLIENT_PKG_HOMEBREW"
-        if ! brew link --force "$MYSQL_CLIENT_PKG_HOMEBREW" 2>&1 | while read -r line; do log_debug "brew: $line"; done; then
+        if ! homebrew_link_formula "$MYSQL_CLIENT_PKG_HOMEBREW" "true"; then
             log_warning "Não foi possível criar links automaticamente"
             log_output "Adicione manualmente ao seu PATH:"
             log_output "  export PATH=\"$MYSQL_HOMEBREW_PATH:\$PATH\""
