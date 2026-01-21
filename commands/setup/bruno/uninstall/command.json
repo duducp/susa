@@ -1,0 +1,5 @@
+{
+  "name": "Desinstalar",
+  "description": "Remove o Bruno do sistema",
+  "entrypoint": "main.sh"
+}

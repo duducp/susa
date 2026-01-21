@@ -1,0 +1,5 @@
+{
+  "name": "Instalar",
+  "description": "Instala o Bruno (cliente de API)",
+  "entrypoint": "main.sh"
+}
