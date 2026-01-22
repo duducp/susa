@@ -23,6 +23,7 @@ PODMAN_HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/
 LOCAL_BIN_DIR="$HOME/.local/bin"
 
 SKIP_CONFIRM=false
+DOCKER_COMPAT_MODE="" # empty=ask, "yes"=enable, "no"=disable
 
 # Help function
 show_complement_help() {
@@ -56,6 +57,9 @@ show_complement_help() {
     log_output "${LIGHT_GREEN}Interface Gráfica:${NC}"
     log_output "  Se preferir gerenciar containers com interface gráfica:"
     log_output "    ${LIGHT_CYAN}susa setup podman-desktop${NC}     # Instala Podman Desktop"
+    log_output ""
+    log_output "${LIGHT_GREEN}Compatibilidade com Docker:${NC}"
+    log_output "  Para usar comandos Docker com Podman, configure via Podman Desktop (Preferences > Docker Compatibility)"
 }
 
 get_latest_version() {
