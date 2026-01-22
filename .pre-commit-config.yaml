@@ -30,8 +30,8 @@ repos:
       - id: shellcheck
         name: ShellCheck
         args: ["-x", "--severity=warning"]
-        types: [shell]
-        exclude: ^(\.git|\.vscode|docs)/
+        types_or: [shell, bash]
+        exclude: ^(\.git|\.vscode|docs|node_modules)/
         stages: [pre-commit, manual]
 
   - repo: https://github.com/scop/pre-commit-shfmt
@@ -40,8 +40,8 @@ repos:
       - id: shfmt
         name: shfmt
         args: ["-i", "4", "-ci", "-sr", "-d"]
-        types: [shell]
-        exclude: ^(\.git|\.vscode|docs)/
+        types_or: [shell, bash]
+        exclude: ^(\.git|\.vscode|docs|node_modules)/
         stages: [pre-commit, manual]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

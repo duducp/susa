@@ -2,7 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Source completion library
+# Source required libraries
+source "$LIB_DIR/shell.sh"
 source "$LIB_DIR/internal/completion.sh"
 
 # Help function
@@ -724,6 +725,33 @@ install_bash_completion() {
     chmod +x "$completion_file"
 
     log_success "   ✅ Instalado: $completion_file"
+
+    # Try to reload completion in current shell (only works if already in bash)
+    if [ -n "${BASH_VERSION:-}" ]; then
+        log_debug "Detectado shell bash, recarregando completion..."
+
+        # Source the completion file in current session
+        if [ -f "$completion_file" ]; then
+            source "$completion_file" 2> /dev/null || true
+            log_debug "Completion carregado"
+        fi
+
+        # Verify if completion was loaded
+        if type _susa_completion &> /dev/null; then
+            log_success "   ✅ Completion carregado na sessão atual!"
+            log_output ""
+            log_output "${LIGHT_GREEN}Pronto!${NC} Teste agora: ${LIGHT_CYAN}susa <TAB>${NC}"
+        else
+            log_output ""
+            log_output "${LIGHT_YELLOW}⚠️  Para ativar no terminal atual:${NC}"
+            log_output "   ${LIGHT_CYAN}exec bash${NC}  ou abra um novo terminal"
+        fi
+    else
+        log_output ""
+        log_output "${LIGHT_YELLOW}⚠️  Para ativar:${NC}"
+        log_output "   ${LIGHT_CYAN}exec bash${NC}  ou abra um novo terminal"
+    fi
+
     return 0
 }
 
@@ -752,22 +780,58 @@ install_zsh_completion() {
 
     # Add to path if necessary
     if [ -f "$shell_config" ]; then
-        # Verifica e adiciona fpath se necessário
-        if ! grep -q "fpath=.*$completion_dir" "$shell_config"; then
-            echo "" >> "$shell_config"
-            echo "# Susa CLI completion" >> "$shell_config"
-            echo "fpath=($completion_dir \$fpath)" >> "$shell_config"
-            log_debug "fpath adicionado ao shell config"
-        else
-            log_debug "fpath já existe no shell config"
+        local has_fpath=$(grep -q "fpath=.*$completion_dir" "$shell_config" 2> /dev/null && echo "yes" || echo "no")
+        local has_compinit=$(grep -q "compinit" "$shell_config" 2> /dev/null && echo "yes" || echo "no")
+        local needs_fix="no"
+
+        # Verifica se fpath existe mas está depois do compinit (precisa corrigir)
+        if [ "$has_fpath" = "yes" ] && [ "$has_compinit" = "yes" ]; then
+            local fpath_line=$(grep -n "fpath=.*$completion_dir" "$shell_config" | cut -d: -f1 | head -1)
+            local compinit_line=$(grep -n "compinit" "$shell_config" | cut -d: -f1 | head -1)
+
+            if [ -n "$fpath_line" ] && [ -n "$compinit_line" ] && [ "$fpath_line" -gt "$compinit_line" ]; then
+                needs_fix="yes"
+                log_debug "fpath está depois do compinit (linha $fpath_line > $compinit_line), corrigindo..."
+            fi
         fi
 
-        # Verifica e adiciona compinit se necessário (independente do fpath)
-        if ! grep -q "compinit" "$shell_config"; then
-            echo "autoload -Uz compinit && compinit" >> "$shell_config"
-            log_debug "compinit adicionado ao shell config"
+        # Se precisa corrigir ou não existe fpath
+        if [ "$needs_fix" = "yes" ] || [ "$has_fpath" = "no" ]; then
+            # Cria backup
+            cp "$shell_config" "${shell_config}.backup" 2> /dev/null || true
+
+            # Remove linhas antigas do Susa CLI completion
+            local temp_file=$(mktemp)
+            grep -v "# Susa CLI completion" "$shell_config" |
+                grep -v "fpath=(.*$completion_dir" > "$temp_file" || cat "$shell_config" > "$temp_file"
+
+            # Se já tem compinit, adiciona fpath ANTES dele
+            if [ "$has_compinit" = "yes" ]; then
+                local final_file=$(mktemp)
+                awk -v completion_dir="$completion_dir" '
+                    /compinit/ && !added {
+                        print ""
+                        print "# Susa CLI completion"
+                        print "fpath=(" completion_dir " $fpath)"
+                        added=1
+                    }
+                    { print }
+                ' "$temp_file" > "$final_file"
+                mv "$final_file" "$shell_config"
+                rm -f "$temp_file"
+                log_debug "fpath adicionado antes do compinit existente"
+            else
+                # Se não tem compinit, adiciona fpath e compinit no final
+                cat "$temp_file" > "$shell_config"
+                rm -f "$temp_file"
+                echo "" >> "$shell_config"
+                echo "# Susa CLI completion" >> "$shell_config"
+                echo "fpath=($completion_dir \$fpath)" >> "$shell_config"
+                echo "autoload -Uz compinit && compinit" >> "$shell_config"
+                log_debug "fpath e compinit adicionados ao shell config"
+            fi
         else
-            log_debug "compinit já existe no shell config"
+            log_debug "fpath já configurado corretamente"
         fi
     fi
 
@@ -775,6 +839,37 @@ install_zsh_completion() {
     rm -f ~/.zcompdump* 2> /dev/null || true
 
     log_success "   ✅ Instalado: $completion_file"
+
+    # Try to reload completion in current shell (only works if already in zsh)
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        log_debug "Detectado shell zsh, recarregando completion..."
+
+        # Add completion dir to fpath in current session
+        if [[ ! "$fpath" =~ $completion_dir ]]; then
+            fpath=("$completion_dir" "${fpath[@]}")
+            log_debug "fpath atualizado na sessão atual"
+        fi
+
+        # Reload completion system
+        autoload -Uz compinit
+        compinit -i 2> /dev/null || true
+
+        # Verify if completion was loaded
+        if type _susa &> /dev/null; then
+            log_success "   ✅ Completion carregado na sessão atual!"
+            log_output ""
+            log_output "${LIGHT_GREEN}Pronto!${NC} Teste agora: ${LIGHT_CYAN}susa <TAB>${NC}"
+        else
+            log_output ""
+            log_output "${LIGHT_YELLOW}⚠️  Para ativar no terminal atual:${NC}"
+            log_output "   ${LIGHT_CYAN}exec zsh${NC}  ou abra um novo terminal"
+        fi
+    else
+        log_output ""
+        log_output "${LIGHT_YELLOW}⚠️  Para ativar:${NC}"
+        log_output "   ${LIGHT_CYAN}exec zsh${NC}  ou abra um novo terminal"
+    fi
+
     return 0
 }
 
@@ -801,6 +896,20 @@ install_fish_completion() {
     chmod +x "$completion_file"
 
     log_success "   ✅ Instalado: $completion_file"
+
+    # Try to reload completion in current shell (only works if already in fish)
+    if [ -n "${FISH_VERSION:-}" ]; then
+        log_debug "Detectado shell fish, completion será carregado automaticamente"
+        log_success "   ✅ Completion disponível imediatamente!"
+        log_output ""
+        log_output "${LIGHT_GREEN}Pronto!${NC} Teste agora: ${LIGHT_CYAN}susa <TAB>${NC}"
+    else
+        log_output ""
+        log_output "${LIGHT_YELLOW}⚠️  Para ativar:${NC}"
+        log_output "   Abra um novo terminal Fish"
+        log_output "   ${LIGHT_CYAN}(Fish carrega completions automaticamente)${NC}"
+    fi
+
     return 0
 }
 

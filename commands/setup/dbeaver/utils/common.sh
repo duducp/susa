@@ -121,7 +121,7 @@ get_dbeaver_config_paths() {
                         log_debug "Usando revisão atual via symlink: current/"
                     else
                         # Find the most recent revision directory
-                        local latest_revision=$(ls -1d "$snap_base"/[0-9]* 2> /dev/null | sort -V | tail -1)
+                        local latest_revision=$(find "$snap_base" -maxdepth 1 -type d -name '[0-9]*' 2> /dev/null | sort -V | tail -1)
                         if [ -n "$latest_revision" ] && [ -d "$latest_revision/.local/share/DBeaverData/workspace6" ]; then
                             DBEAVER_CONFIG_DIR="$latest_revision/.local/share/DBeaverData/workspace6"
                             log_debug "Usando revisão específica: $(basename "$latest_revision")/"

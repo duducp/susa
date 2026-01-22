@@ -60,29 +60,24 @@ cli-uninstall: ## Remove o CLI do sistema
 
 # Quality Assurance
 lint: ## Executa ShellCheck, shfmt em todos os arquivos
-	@echo "$(BLUE)🔍 Verificando scripts com ShellCheck...$(NC)"
-	@if shellcheck -x core/susa core/lib/*.sh core/lib/internal/*.sh install*.sh uninstall*.sh $$(find commands -name "*.sh" -type f | grep -v "/node_modules/"); then \
-		echo "$(GREEN)✅ Todos os scripts passaram na verificação do ShellCheck!$(NC)"; \
+	@echo "$(BLUE)🔍 Executando verificações via pre-commit...$(NC)"
+	@if command -v pre-commit >/dev/null 2>&1; then \
+		pre-commit run --all-files; \
 	else \
-		echo "$(RED)❌ Alguns scripts falharam na verificação do ShellCheck$(NC)"; \
-		exit 1; \
-	fi
-	@echo ""
-	@echo "$(BLUE)🔍 Verificando formatação com shfmt...$(NC)"
-	@SHELL_FILES="core/susa core/lib/*.sh core/lib/internal/*.sh install*.sh uninstall*.sh $$(find commands -name '*.sh' -type f)"; \
-	if shfmt -d -i 4 -ci -sr $$SHELL_FILES; then \
-		echo "$(GREEN)✅ Todos os scripts passaram na verificação de formatação do shfmt!$(NC)"; \
-	else \
-		echo "$(RED)❌ Alguns scripts falharam na verificação de formatação do shfmt$(NC)"; \
-		echo "$(YELLOW)💡 Execute 'make format' para corrigir automaticamente$(NC)"; \
+		echo "$(RED)❌ pre-commit não está instalado$(NC)"; \
+		echo "$(YELLOW)💡 Instale com: pip install pre-commit$(NC)"; \
 		exit 1; \
 	fi
 
 format: ## Formata automaticamente todos os scripts com shfmt
 	@echo "$(GREEN)✨ Formatando scripts com shfmt...$(NC)"
 	@command -v shfmt >/dev/null 2>&1 || { echo "$(RED)❌ shfmt não está instalado. Instale com: sudo apt install shfmt ou brew install shfmt$(NC)"; exit 1; }
-	@SHELL_FILES="core/susa core/lib/*.sh core/lib/internal/*.sh install*.sh uninstall*.sh $$(find commands -name '*.sh' -type f)"; \
-	shfmt -w -i 4 -ci -sr $$SHELL_FILES
+	@shfmt -w -i 4 -ci -sr \
+		core/susa \
+		$$(find core/lib -name "*.sh" -type f 2>/dev/null) \
+		$$(find . -maxdepth 1 -name "install*.sh" -o -name "uninstall*.sh" 2>/dev/null) \
+		$$(find commands -name "*.sh" -type f 2>/dev/null | grep -v "/node_modules/") \
+		$$(find plugins -name "*.sh" -type f 2>/dev/null | grep -v "/node_modules/" || true)
 	@echo "$(GREEN)✅ Scripts formatados com sucesso!$(NC)"
 
 test: ## Executa todos os testes

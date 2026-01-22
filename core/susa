@@ -227,6 +227,7 @@ _load_and_display_help() {
     # Load script and call display_help in the same context
     (
         export CORE_DIR LIB_DIR CLI_DIR
+        # shellcheck disable=SC2031
         export SUSA_SHOW_HELP=1
 
         # Source the script to make show_help and show_complement_help available
