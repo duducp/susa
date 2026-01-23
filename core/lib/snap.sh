@@ -278,7 +278,7 @@ snap_uninstall() {
     log_info "Removendo $friendly_name..."
     log_debug "Nome da aplicação: $app_name"
 
-    if ! sudo snap remove "$app_name" 2> /dev/null; then
+    if ! sudo snap remove --purge "$app_name" 2> /dev/null; then
         log_error "Falha ao remover $friendly_name via Snap"
         return 1
     fi

@@ -1,5 +1,5 @@
 {
   "name": "Setup",
-  "description": "Instalação e atualização de softwares e ferramentas",
+  "description": "Instalação e gerenciamento de softwares e ferramentas",
   "entrypoint": "main.sh"
 }

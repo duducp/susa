@@ -279,13 +279,15 @@ homebrew_uninstall() {
     log_info "Removendo $app_name..."
     log_debug "Cask: $cask_name"
 
-    if ! brew uninstall --cask "$cask_name" 2> /dev/null; then
+    if ! brew uninstall --zap --cask "$cask_name" 2> /dev/null; then
         log_error "Falha ao remover $app_name via Homebrew"
         return 1
     fi
 
     # Verify removal
     if ! homebrew_is_installed "$cask_name"; then
+        log_debug "Limpando cache de $app_name..."
+        brew cleanup "$cask_name" 2> /dev/null || true
         log_success "$app_name removido com sucesso!"
         return 0
     else
@@ -529,6 +531,8 @@ homebrew_uninstall_formula() {
 
     # Verify removal
     if ! homebrew_is_installed_formula "$formula_name"; then
+        log_debug "Limpando cache de $app_name..."
+        brew cleanup "$formula_name" 2> /dev/null || true
         log_success "$app_name removido com sucesso!"
         return 0
     else

@@ -312,7 +312,11 @@ flatpak_uninstall() {
     log_info "Removendo $app_name..."
     log_debug "ID da aplicação: $app_id"
 
-    if ! flatpak uninstall -y --user "$app_id" 2> /dev/null; then
+    # Encerra processos da aplicação antes de desinstalar
+    log_debug "Encerrando processos de $app_name..."
+    flatpak kill --user "$app_id" 2> /dev/null || true
+
+    if ! flatpak uninstall --delete-data -y --user "$app_id" 2> /dev/null; then
         log_error "Falha ao remover $app_name via Flatpak"
         return 1
     fi
