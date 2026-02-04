@@ -1,0 +1,5 @@
+{
+  "name": "Docker",
+  "description": "Plataforma de containers para desenvolvimento e execução de aplicações",
+  "entrypoint": "main.sh"
+}

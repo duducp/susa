@@ -1,0 +1,10 @@
+{
+  "name": "Uninstall",
+  "description": "Remove Tilix do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "group": "terminal",
+  "os": [
+    "linux"
+  ]
+}

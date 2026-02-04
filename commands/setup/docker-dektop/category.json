@@ -1,0 +1,5 @@
+{
+  "name": "Docker Desktop",
+  "description": "Interface gráfica completa para gerenciar containers Docker",
+  "entrypoint": "main.sh"
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Google Cloud SDK",
+  "description": "Ferramenta CLI para gerenciamento de recursos GCP",
+  "entrypoint": "main.sh"
+}

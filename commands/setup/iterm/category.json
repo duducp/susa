@@ -1,0 +1,5 @@
+{
+  "name": "iTerm2",
+  "description": "Emulador de terminal avançado para macOS",
+  "entrypoint": "main.sh"
+}

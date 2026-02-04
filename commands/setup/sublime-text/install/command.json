@@ -1,0 +1,11 @@
+{
+  "name": "Install",
+  "description": "Instala Sublime Text no sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "group": "editor",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

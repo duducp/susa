@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
 
 UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
 

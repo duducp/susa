@@ -1,0 +1,8 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala o iTerm2 do macOS",
+  "entrypoint": "main.sh",
+  "os": [
+    "mac"
+  ]
+}

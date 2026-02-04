@@ -1,0 +1,10 @@
+{
+  "name": "Install",
+  "description": "Instala Tilix no sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "group": "terminal",
+  "os": [
+    "linux"
+  ]
+}

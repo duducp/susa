@@ -1,0 +1,5 @@
+{
+  "name": "JetBrains Toolbox",
+  "description": "Gerenciador de IDEs da JetBrains (IntelliJ IDEA, PyCharm, etc)",
+  "entrypoint": "main.sh"
+}

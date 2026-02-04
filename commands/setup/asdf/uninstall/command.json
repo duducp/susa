@@ -1,0 +1,9 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala o ASDF do sistema",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

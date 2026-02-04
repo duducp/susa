@@ -1,0 +1,11 @@
+{
+  "name": "Uninstall",
+  "description": "Remove Sublime Text do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "group": "editor",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

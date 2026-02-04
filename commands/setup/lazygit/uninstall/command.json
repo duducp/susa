@@ -1,0 +1,5 @@
+{
+  "name": "Uninstall",
+  "description": "Remove o Lazygit do sistema",
+  "entrypoint": "main.sh"
+}

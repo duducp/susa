@@ -32,8 +32,8 @@ show_complement_help() {
     log_output "  pg_isready    Verificar status do servidor"
 }
 
-# Main installation function
-install_postgres() {
+# Main execution
+main() {
     if check_installation; then
         log_info "PostgreSQL Client $(get_current_version) já está instalado."
         log_info "Use 'susa setup postgres update' para atualizar."
@@ -106,11 +106,6 @@ install_postgres() {
         log_error "Falha na instalação do PostgreSQL Client"
         return $install_result
     fi
-}
-
-# Main execution
-main() {
-    install_postgres
 }
 
 # Run main function (skip if showing help)

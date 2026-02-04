@@ -1,0 +1,6 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala o Mise",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

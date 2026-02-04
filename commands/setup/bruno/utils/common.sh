@@ -26,8 +26,6 @@ get_current_version() {
         else
             flatpak_get_installed_version "$FLATPAK_APP_ID"
         fi
-    else
-        echo "desconhecida"
     fi
 }
 

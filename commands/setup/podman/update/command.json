@@ -1,0 +1,7 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Podman",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"],
+  "sudo": true
+}

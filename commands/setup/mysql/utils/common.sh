@@ -100,13 +100,66 @@ show_additional_info() {
     if ! check_installation; then
         return
     fi
-    local util_lines=""
+
+    # Check if MySQL server is running
+    local server_status="indisponível (client-only)"
+    local server_type=""
+
+    # Check native installation
+    if command -v mysqladmin &> /dev/null && mysqladmin ping -u root 2> /dev/null | grep -q "alive"; then
+        server_status="${GREEN}disponível${NC}"
+        server_type=" (nativo)"
+    else
+        # Check Docker containers
+        if command -v docker &> /dev/null; then
+            local mysql_containers=$(docker ps --filter "ancestor=mysql" --filter "ancestor=mariadb" --format "{{.Names}}" 2> /dev/null)
+            if [ -n "$mysql_containers" ]; then
+                server_status="${GREEN}disponível${NC}"
+                server_type=" (Docker)"
+            fi
+        fi
+
+        # Check Podman containers
+        if [ "$server_status" = "indisponível (client-only)" ] && command -v podman &> /dev/null; then
+            local mysql_containers=$(podman ps --filter "ancestor=mysql" --filter "ancestor=mariadb" --format "{{.Names}}" 2> /dev/null)
+            if [ -n "$mysql_containers" ]; then
+                server_status="${GREEN}disponível${NC}"
+                server_type=" (Podman)"
+            fi
+        fi
+    fi
+
+    log_output "  ${CYAN}Server:${NC} $server_status$server_type"
+
+    # Detect MySQL port
+    local port="N/A"
+    if [[ "$server_status" != "indisponível"* ]]; then
+        if [[ "$server_type" == " (nativo)" ]] && command -v mysqladmin &> /dev/null; then
+            # Native installation
+            port=$(mysqladmin variables -u root 2> /dev/null | grep -E "^\| port" | awk '{print $4}')
+        elif [[ "$server_type" == " (Docker)" ]]; then
+            # Docker container
+            port=$(docker ps --filter "ancestor=mysql" --filter "ancestor=mariadb" --format "{{.Ports}}" 2> /dev/null | head -n1 | grep -oP '\d+(?=->3306)')
+            [ -z "$port" ] && port="3306" # Default MySQL port
+        elif [[ "$server_type" == " (Podman)" ]]; then
+            # Podman container
+            port=$(podman ps --filter "ancestor=mysql" --filter "ancestor=mariadb" --format "{{.Ports}}" 2> /dev/null | head -n1 | grep -oP '\d+(?=->3306)')
+            [ -z "$port" ] && port="3306" # Default MySQL port
+        fi
+    fi
+    [ -n "$port" ] && [ "$port" != "N/A" ] && log_output "  ${CYAN}Porta:${NC} $port"
+
+    # List available utilities
+    local utils_found=()
     for util in "${MYSQL_UTILS[@]}"; do
         if command -v "$util" &> /dev/null; then
-            util_lines+="    • $util\n"
+            utils_found+=("$util")
         fi
     done
-    if [ -n "$util_lines" ]; then
-        log_output "  ${CYAN}Utilitários:${NC}\n$util_lines"
+
+    if [ ${#utils_found[@]} -gt 0 ]; then
+        local utils_list=$(printf "%s, " "${utils_found[@]}")
+        utils_list="${utils_list%, }" # Remove trailing comma
+        log_output "  ${CYAN}Utilitários:${NC} $utils_list"
     fi
 }

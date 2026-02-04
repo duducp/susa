@@ -1,0 +1,11 @@
+{
+  "name": "Update",
+  "description": "Atualiza UV para a versão mais recente",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": "python",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

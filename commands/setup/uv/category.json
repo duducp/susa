@@ -1,0 +1,5 @@
+{
+  "name": "UV",
+  "description": "Gerenciador de pacotes e projetos Python extremamente rápido",
+  "entrypoint": "main.sh"
+}

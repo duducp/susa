@@ -1,0 +1,6 @@
+{
+  "name": "Install",
+  "description": "Instala o Mise",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

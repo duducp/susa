@@ -1,0 +1,6 @@
+{
+  "name": "Instalar",
+  "description": "Instala o JetBrains Toolbox (gerenciador de IDEs)",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Sublime Text",
+  "description": "Editor de texto avançado para código, markup e prosa",
+  "entrypoint": "main.sh"
+}

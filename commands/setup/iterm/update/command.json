@@ -1,0 +1,8 @@
+{
+  "name": "Update",
+  "description": "Atualiza o iTerm2 para a versão mais recente",
+  "entrypoint": "main.sh",
+  "os": [
+    "mac"
+  ]
+}

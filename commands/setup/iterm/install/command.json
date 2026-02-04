@@ -1,0 +1,8 @@
+{
+  "name": "Install",
+  "description": "Instala o iTerm2 no macOS",
+  "entrypoint": "main.sh",
+  "os": [
+    "mac"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Atualizar",
+  "description": "Atualiza o JetBrains Toolbox para a versão mais recente",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

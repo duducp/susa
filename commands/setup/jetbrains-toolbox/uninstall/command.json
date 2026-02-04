@@ -1,0 +1,6 @@
+{
+  "name": "Desinstalar",
+  "description": "Remove o JetBrains Toolbox do sistema",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

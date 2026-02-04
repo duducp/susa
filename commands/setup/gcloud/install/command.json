@@ -1,0 +1,9 @@
+{
+  "name": "Install",
+  "description": "Instala o Google Cloud SDK no sistema",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

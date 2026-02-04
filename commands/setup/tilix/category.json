@@ -1,0 +1,5 @@
+{
+  "name": "Tilix",
+  "description": "Emulador de terminal avançado com suporte a tiles",
+  "entrypoint": "main.sh"
+}

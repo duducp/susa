@@ -1,0 +1,6 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Mise",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

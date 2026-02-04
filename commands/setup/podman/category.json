@@ -1,0 +1,5 @@
+{
+  "name": "Podman",
+  "description": "Motor de containers open-source (alternativa ao Docker)",
+  "entrypoint": "main.sh"
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Poetry",
+  "description": "Gerenciador de dependências e empacotamento Python",
+  "entrypoint": "main.sh"
+}

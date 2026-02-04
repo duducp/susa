@@ -1,0 +1,5 @@
+{
+  "name": "Lazygit",
+  "description": "Interface TUI (Terminal User Interface) para Git",
+  "entrypoint": "main.sh"
+}

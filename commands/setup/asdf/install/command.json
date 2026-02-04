@@ -1,0 +1,9 @@
+{
+  "name": "Install",
+  "description": "Instala o ASDF no sistema",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

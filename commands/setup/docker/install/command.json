@@ -1,0 +1,10 @@
+{
+  "name": "Install",
+  "description": "Instala Docker CLI e Engine no sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

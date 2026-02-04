@@ -65,7 +65,6 @@ main() {
 
     if ! check_installation; then
         remove_software_in_lock "flameshot"
-        log_success "Flameshot desinstalado com sucesso!"
     else
         log_error "Falha ao desinstalar Flameshot completamente"
         return 1

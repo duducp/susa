@@ -1,0 +1,6 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Poetry",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
+}

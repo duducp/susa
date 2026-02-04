@@ -1,0 +1,11 @@
+{
+  "name": "Install",
+  "description": "Instala Docker Desktop no sistema",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": "container",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

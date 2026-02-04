@@ -1,0 +1,9 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Google Cloud SDK para a versão mais recente",
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

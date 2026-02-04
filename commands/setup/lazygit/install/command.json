@@ -1,0 +1,5 @@
+{
+  "name": "Install",
+  "description": "Instala o Lazygit no sistema",
+  "entrypoint": "main.sh"
+}

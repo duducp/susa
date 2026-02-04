@@ -1,0 +1,11 @@
+{
+  "name": "Install",
+  "description": "Instala UV no sistema",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": "python",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

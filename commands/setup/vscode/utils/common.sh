@@ -2,8 +2,10 @@
 # VSCode Common Utilities
 # Shared functions used across install, update and uninstall
 
-# Source homebrew library
+# Source libraries
 source "$LIB_DIR/homebrew.sh"
+source "$LIB_DIR/flatpak.sh"
+source "$LIB_DIR/snap.sh"
 
 # Constants
 VSCODE_NAME="Visual Studio Code"
@@ -88,6 +90,34 @@ check_installation() {
         fi
 
         check_installation_alternative
+    fi
+}
+
+# Show additional VS Code-specific information
+show_additional_info() {
+    if ! check_installation; then
+        return
+    fi
+
+    # Count installed extensions
+    if command -v code &> /dev/null; then
+        local extensions=$(code --list-extensions 2> /dev/null | wc -l | xargs)
+        if [ "$extensions" != "0" ]; then
+            log_output "  ${CYAN}Extensões:${NC} $extensions instaladas"
+        fi
+    fi
+
+    # Check installation method
+    if is_mac; then
+        if homebrew_is_installed "$VSCODE_HOMEBREW_CASK"; then
+            log_output "  ${CYAN}Método:${NC} Homebrew"
+        fi
+    else
+        if flatpak_is_installed "$FLATPAK_APP_ID"; then
+            log_output "  ${CYAN}Método:${NC} Flatpak"
+        elif snap_is_installed "$SNAP_PACKAGE_NAME"; then
+            log_output "  ${CYAN}Método:${NC} Snap"
+        fi
     fi
 }
 

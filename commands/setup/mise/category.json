@@ -1,0 +1,5 @@
+{
+  "name": "Mise",
+  "description": "Gerenciador de versões polyglot (substituto do ASDF)",
+  "entrypoint": "main.sh"
+}

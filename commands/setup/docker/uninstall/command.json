@@ -1,0 +1,10 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala o Docker do sistema",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

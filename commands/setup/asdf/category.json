@@ -1,0 +1,5 @@
+{
+  "name": "ASDF",
+  "description": "Gerenciador de versões universal para múltiplas linguagens",
+  "entrypoint": "main.sh"
+}

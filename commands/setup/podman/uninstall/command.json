@@ -1,0 +1,7 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala o Podman",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"],
+  "sudo": true
+}

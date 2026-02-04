@@ -1,0 +1,11 @@
+{
+  "name": "Uninstall",
+  "description": "Remove Docker Desktop do sistema",
+  "entrypoint": "main.sh",
+  "sudo": false,
+  "group": "container",
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

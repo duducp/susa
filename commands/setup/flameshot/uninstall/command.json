@@ -1,5 +1,6 @@
 {
   "name": "Desinstalar",
   "description": "Remove o Flameshot do sistema",
-  "entrypoint": "main.sh"
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"]
 }

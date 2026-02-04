@@ -1,0 +1,10 @@
+{
+  "name": "Update",
+  "description": "Atualiza o Docker para a versão mais recente",
+  "entrypoint": "main.sh",
+  "sudo": true,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

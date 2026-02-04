@@ -1,5 +1,9 @@
 {
   "name": "Atualizar",
   "description": "Atualiza o Bruno para a versão mais recente",
-  "entrypoint": "main.sh"
+  "entrypoint": "main.sh",
+  "os": [
+    "linux",
+    "mac"
+  ]
 }

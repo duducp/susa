@@ -2,34 +2,22 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Source libraries
+UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
 source "$LIB_DIR/internal/installations.sh"
-source "$LIB_DIR/homebrew.sh"
+source "$UTILS_DIR/common.sh"
 
-# Constants
-ITERM_NAME="iTerm2"
-ITERM_BIN_NAME="iterm2"
-ITERM_HOMEBREW_CASK="iterm2"
-ITERM_GITHUB_REPO="gnachman/iTerm2"
-ITERM_HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-
-SKIP_CONFIRM=false
-# Help function
+# Optional - Additional information in help
 show_complement_help() {
-    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
-    log_output "  --uninstall       Desinstala o iTerm2 do sistema"
-    log_output "  -y, --yes         Pula confirmação (usar com --uninstall)"
-    log_output "  -u, --upgrade     Atualiza o iTerm2 para a versão mais recente"
-    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $ITERM_NAME é um substituto para o Terminal do macOS com recursos"
     log_output "  avançados como split panes, busca, autocompletar, histórico,"
     log_output "  notificações e muito mais."
     log_output ""
     log_output "${LIGHT_GREEN}Exemplos:${NC}"
-    log_output "  susa setup iterm              # Instala o $ITERM_NAME"
-    log_output "  susa setup iterm --upgrade    # Atualiza o $ITERM_NAME"
-    log_output "  susa setup iterm --uninstall  # Desinstala o $ITERM_NAME"
+    log_output "  susa setup iterm install              # Instala o $ITERM_NAME"
+    log_output "  susa setup iterm update               # Atualiza o $ITERM_NAME"
+    log_output "  susa setup iterm uninstall            # Desinstala o $ITERM_NAME"
+    log_output "  susa setup iterm --info               # Mostra status da instalação"
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
     log_output "  O iTerm2 estará disponível na pasta Aplicativos."
@@ -43,250 +31,7 @@ show_complement_help() {
     log_output "  • Triggers e notificações"
 }
 
-# Get latest iTerm2 version
-get_latest_version() {
-    # Check if Homebrew is available
-    if ! homebrew_is_available; then
-        log_error "Homebrew não está instalado" >&2
-        return 1
-    fi
-
-    # Try to get the latest version via Homebrew
-    local latest_version=$(homebrew_get_latest_version "$ITERM_HOMEBREW_CASK")
-
-    if [ -n "$latest_version" ] && [ "$latest_version" != "unknown" ]; then
-        log_debug "Versão obtida via Homebrew: $latest_version" >&2
-        echo "$latest_version"
-        return 0
-    fi
-
-    # If Homebrew fails, try via GitHub API as fallback
-    log_debug "Homebrew falhou, tentando via API do GitHub..." >&2
-    latest_version=$(curl -s --max-time 10 --connect-timeout 5 https://api.github.com/repos/gnachman/iTerm2/releases/latest 2> /dev/null | grep '"tag_name":' | sed -E 's/.*"v([0-9]+\.[0-9]+\.[0-9]+)".*/\1/')
-
-    if [ -n "$latest_version" ]; then
-        log_debug "Versão obtida via API do GitHub: $latest_version" >&2
-        echo "$latest_version"
-        return 0
-    fi
-
-    # If both methods fail, notify user
-    log_error "Não foi possível obter a versão mais recente do iTerm2" >&2
-    log_error "Verifique sua conexão com a internet e o Homebrew" >&2
-    return 1
-}
-
-# Get installed iTerm2 version
-get_current_version() {
-    if homebrew_is_installed "$ITERM_HOMEBREW_CASK"; then
-        homebrew_get_installed_version "$ITERM_HOMEBREW_CASK"
-    else
-        echo "desconhecida"
-    fi
-}
-
-# Check if iTerm2 is installed
-check_installation() {
-    [ "$(uname)" = "Darwin" ] && [ -d "/Applications/iTerm.app" ]
-}
-
-# Check if Homebrew is installed
-check_homebrew() {
-    if ! homebrew_is_available; then
-        log_error "Homebrew não está instalado"
-        return 1
-    fi
-    return 0
-}
-
-# Install iTerm2 using Homebrew
-install_iterm() {
-    # Check if Homebrew is installed
-    if ! check_homebrew; then
-        echo ""
-        log_output "${YELLOW}Para instalar o Homebrew, execute:${NC}"
-        log_output "  /bin/bash -c \"\$(curl -fsSL $ITERM_HOMEBREW_INSTALL_URL)\""
-        return 1
-    fi
-
-    if check_installation; then
-        log_info "iTerm2 $(get_current_version) já está instalado."
-        exit 0
-    fi
-
-    log_info "Iniciando instalação do iTerm2..."
-
-    # Update Homebrew
-    log_info "Atualizando Homebrew..."
-    homebrew_update_metadata
-
-    # Install or reinstall iTerm2
-    log_info "Instalando iTerm2 via Homebrew..."
-    if ! homebrew_install "$ITERM_HOMEBREW_CASK" "iTerm2"; then
-        log_error "Falha ao instalar iTerm2"
-        return 1
-    fi
-
-    # Verify installation
-    if check_installation; then
-        local version=$(get_current_version)
-        log_success "iTerm2 $version instalado com sucesso!"
-        register_or_update_software_in_lock "$COMMAND_NAME" "$version"
-        log_debug "Localização: /Applications/iTerm.app"
-        return 0
-    else
-        log_error "Falha ao verificar instalação do iTerm2"
-        return 1
-    fi
-}
-
-# Update iTerm2
-update_iterm() {
-    log_info "Atualizando iTerm2..."
-
-    # Check if Homebrew is installed
-    if ! check_homebrew; then
-        return 1
-    fi
-
-    # Check if iTerm2 is installed
-    if ! homebrew_is_installed "$ITERM_HOMEBREW_CASK"; then
-        log_error "iTerm2 não está instalado"
-        echo ""
-        log_output "${YELLOW}Para instalar, execute:${NC}"
-        echo "  susa setup iterm"
-        return 1
-    fi
-
-    local current_version=$(get_current_version)
-    log_info "Versão atual: $current_version"
-
-    # Get latest version
-    local latest_version=$(get_latest_version)
-    if [ $? -ne 0 ] || [ -z "$latest_version" ]; then
-        log_warning "Não foi possível verificar a última versão. Continuando com atualização via Homebrew..."
-    elif [ "$current_version" = "$latest_version" ]; then
-        log_info "Você já possui a versão mais recente instalada ($current_version)"
-        return 0
-    else
-        log_info "Atualizando de $current_version para $latest_version..."
-    fi
-
-    # Update Homebrew
-    log_info "Atualizando Homebrew..."
-    homebrew_update_metadata
-
-    # Upgrade iTerm2
-    log_info "Atualizando iTerm2 para a versão mais recente..."
-    if ! homebrew_update "$ITERM_HOMEBREW_CASK" "iTerm2"; then
-        log_error "Falha ao atualizar iTerm2"
-        return 1
-    fi
-
-    local new_version=$(get_current_version)
-    log_success "iTerm2 atualizado de $current_version para $new_version"
-    register_or_update_software_in_lock "$COMMAND_NAME" "$new_version"
-    log_debug "Atualização concluída com sucesso"
-}
-
-# Uninstall iTerm2
-uninstall_iterm() {
-    log_info "Desinstalando iTerm2..."
-
-    # Check if Homebrew is installed
-    if ! check_homebrew; then
-        return 1
-    fi
-
-    # Check if iTerm2 is installed
-    if ! homebrew_is_installed "$ITERM_HOMEBREW_CASK"; then
-        log_warning "iTerm2 não está instalado via Homebrew"
-
-        # Check if app exists manually
-        if check_installation; then
-            log_warning "iTerm2 encontrado em /Applications mas não via Homebrew"
-            echo ""
-            log_output "${YELLOW}Deseja remover manualmente? (s/N)${NC}"
-            read -r response
-
-            if [[ "$response" =~ ^[sSyY]$ ]]; then
-                rm -rf "/Applications/iTerm.app"
-                log_success "iTerm2 removido com sucesso"
-                return 0
-            else
-                log_info "Remoção cancelada"
-                return 1
-            fi
-        else
-            log_info "iTerm2 não está instalado"
-            return 0
-        fi
-    fi
-
-    local version=$(get_current_version)
-    log_debug "Versão a ser removida: $version"
-
-    # Confirm uninstallation
-    if [ "$SKIP_CONFIRM" = false ]; then
-        echo ""
-        log_output "${YELLOW}Deseja realmente desinstalar o iTerm2 $version? (s/N)${NC}"
-        read -r response
-
-        if [[ ! "$response" =~ ^[sSyY]$ ]]; then
-            log_info "Desinstalação cancelada"
-            return 0
-        fi
-    fi
-
-    # Uninstall iTerm2
-    log_info "Removendo iTerm2..."
-    if ! homebrew_uninstall "$ITERM_HOMEBREW_CASK" "iTerm2"; then
-        log_error "Falha ao desinstalar iTerm2"
-        return 1
-    fi
-
-    # Verify removal
-    if ! check_installation; then
-        log_success "iTerm2 desinstalado com sucesso"
-        remove_software_in_lock "$COMMAND_NAME"
-        log_debug "Aplicativo removido de /Applications"
-    else
-        log_warning "iTerm2 removido do Homebrew, mas arquivos podem permanecer"
-    fi
-
-    # Clean up preferences (optional)
-    if [ "$SKIP_CONFIRM" = false ]; then
-        echo ""
-        log_output "${YELLOW}Deseja remover as preferências e configurações do iTerm2? (s/N)${NC}"
-        read -r config_response
-
-        if [[ "$config_response" =~ ^[sSyY]$ ]]; then
-            rm -rf "$HOME/Library/Preferences/com.googlecode.iterm2.plist" 2> /dev/null || true
-            log_debug "Preferências removidas: ~/Library/Preferences/com.googlecode.iterm2.plist"
-            rm -rf "$HOME/Library/Application Support/iTerm2" 2> /dev/null || true
-            log_debug "Dados removidos: ~/Library/Application Support/iTerm2"
-            rm -rf "$HOME/Library/Saved Application State/com.googlecode.iterm2.savedState" 2> /dev/null || true
-            log_debug "Estado removido"
-            log_success "Preferências removidas"
-        else
-            log_info "Preferências mantidas"
-        fi
-    else
-        # Auto-remove when --yes is used
-        rm -rf "$HOME/Library/Preferences/com.googlecode.iterm2.plist" 2> /dev/null || true
-        log_debug "Preferências removidas: ~/Library/Preferences/com.googlecode.iterm2.plist"
-        rm -rf "$HOME/Library/Application Support/iTerm2" 2> /dev/null || true
-        log_debug "Dados removidos: ~/Library/Application Support/iTerm2"
-        rm -rf "$HOME/Library/Saved Application State/com.googlecode.iterm2.savedState" 2> /dev/null || true
-        log_debug "Estado removido"
-        log_info "Preferências removidas automaticamente"
-    fi
-}
-
-# Main function
 main() {
-    local action="install"
-
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -294,47 +39,17 @@ main() {
                 show_software_info "iterm" "$ITERM_BIN_NAME"
                 exit 0
                 ;;
-            --uninstall)
-                action="uninstall"
-                shift
-                ;;
-            -y | --yes)
-                SKIP_CONFIRM=true
-                shift
-                ;;
-            -u | --upgrade)
-                action="update"
-                shift
-                ;;
             *)
                 log_error "Opção desconhecida: $1"
-                show_usage
+                log_output "Use ${LIGHT_CYAN}susa setup iterm --help${NC} para ver opções"
                 exit 1
                 ;;
         esac
     done
 
-    # Verify it's macOS
-    if [[ "$(uname -s)" != "Darwin" ]]; then
-        log_error "iTerm2 só está disponível para macOS"
-        exit 1
-    fi
-    log_debug "Sistema operacional: macOS $(sw_vers -productVersion)"
-
-    # Execute action
-
-    case "$action" in
-        install)
-            install_iterm
-            ;;
-        update)
-            update_iterm
-            ;;
-        uninstall)
-            uninstall_iterm
-            ;;
-    esac
+    # If no arguments, show help
+    display_help
 }
 
-# Run main function (skip if showing help)
+# Execute main only if not showing help
 [ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"
