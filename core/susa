@@ -45,18 +45,6 @@ check_dependencies() {
     local install_commands=()
     local reasons=()
 
-    # Check Bash version (requires 4+ for associative arrays)
-    if ((BASH_VERSINFO[0] < 4)); then
-        missing_deps+=("bash")
-        reasons+=("Bash 4.0+ é necessário para arrays associativos usados pelo sistema de cache")
-
-        if is_mac; then
-            install_commands+=("brew install bash && sudo bash -c 'echo /opt/homebrew/bin/bash >> /etc/shells' && chsh -s /opt/homebrew/bin/bash")
-        else
-            install_commands+=("sudo apt update && sudo apt install -y bash")
-        fi
-    fi
-
     # Check jq (required for JSON parsing)
     if ! command -v jq &> /dev/null; then
         missing_deps+=("jq")

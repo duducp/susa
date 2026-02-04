@@ -39,7 +39,7 @@ O SUSA CLI requer algumas dependências para funcionar:
 
 | Dependência | Versão Mínima | Motivo | Instalação |
 |-------------|---------------|--------|------------|
-| **Bash** | 4.0+ | Arrays associativos para cache | `brew install bash` (macOS) |
+| **Bash** | 3.2+ | Shell scripting (compatível com macOS) | Nativo no macOS/Linux |
 | **jq** | 1.5+ | Processamento de JSON | `brew install jq` ou `apt install jq` |
 
 **Verificação Automática:**

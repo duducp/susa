@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O SUSA CLI implementa um sistema unificado de **caches nomeados** para máxima performance. Todos os caches usam a mesma arquitetura baseada em arrays associativos do Bash 4+, mantendo dados em memória para acesso ultrarrápido.
+O SUSA CLI implementa um sistema unificado de **caches nomeados** para máxima performance. Todos os caches mantêm dados em memória para acesso ultrarrápido, com compatibilidade para Bash 3.2+ (incluindo macOS).
 
 ## Arquitetura
 
@@ -10,7 +10,7 @@ O SUSA CLI implementa um sistema unificado de **caches nomeados** para máxima p
 
 Todos os caches (incluindo o cache do `susa.lock`) usam o mesmo sistema:
 
-- **Em memória**: Arrays associativos (`declare -A`)
+- **Em memória**: Arrays indexados compatíveis com Bash 3.2+
 - **Zero I/O durante uso**: Operações apenas em memória (~1-3ms)
 - **Isolamento**: Cada cache tem namespace próprio
 - **Persistência opcional**: Salva em disco apenas quando necessário
@@ -357,17 +357,6 @@ cache_named_save "nome_do_cache"
 ```
 
 Para apenas memória (mais comum), não salve.
-
-### Bash 4+ não disponível
-
-Caches nomeados requerem Bash 4+:
-
-```bash
-$ bash --version
-GNU bash, version 5.x.x
-```
-
-macOS: `brew install bash`
 
 ### Erro de permissão no cache dir
 

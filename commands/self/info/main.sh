@@ -2,8 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Source completion library
+# Source libraries
 source "$LIB_DIR/shell.sh"
+source "$LIB_DIR/internal/config.sh"
 source "$LIB_DIR/internal/completion.sh"
 
 # Help function
@@ -67,7 +68,7 @@ main() {
     log_output ""
 
     # Infos
-    log_output "  ${BOLD}📦 Nome:${NC}             ${GREEN}$(get_config_field \"$GLOBAL_CONFIG_FILE\" \"name\")${NC}"
+    log_output "  ${BOLD}📦 Nome:${NC}             ${GREEN}$(get_config_field $GLOBAL_CONFIG_FILE name)${NC}"
     log_output "  ${BOLD}🏷️  Versão:${NC}           ${GREEN}$(show_number_version)${NC}"
     log_output "  ${BOLD}📂 Instalação:${NC}       ${YELLOW}$CLI_DIR${NC}"
     log_output "  ${BOLD}🔗 Executável:${NC}       ${YELLOW}$SYMLINK_PATH${NC}"

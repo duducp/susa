@@ -4,17 +4,7 @@
 # Cache Management for SUSA CLI
 # ============================================================
 # Generic named cache system for fast data access in memory
-# All caches use associative arrays for maximum performance
-
-# Check Bash version (requires 4+ for associative arrays)
-if ((BASH_VERSINFO[0] < 4)); then
-    log_error "Erro: Este sistema requer Bash 4.0 ou superior" >&2
-    log_output "Versão atual: $BASH_VERSION" >&2
-    if [[ "$(uname)" == "Darwin" ]]; then
-        log_output "Para macOS, instale via: brew install bash" >&2
-    fi
-    exit 1
-fi
+# Compatible with Bash 3.2+ (macOS default)
 
 # Determine cache directory based on OS
 # Linux: Use XDG_RUNTIME_DIR or /tmp/susa-$USER
@@ -27,13 +17,74 @@ else
     CACHE_DIR="${XDG_RUNTIME_DIR:-/tmp}/susa-$USER"
 fi
 
-# Associative arrays for named caches (bash 4+)
+# Cache storage using indexed arrays (Bash 3.2+)
+# Format: "cache_name:cache_data"
 # Only declare if not already declared (prevent reset on re-source)
 if [ -z "${_SUSA_NAMED_CACHES_INITIALIZED+x}" ]; then
-    declare -gA _SUSA_NAMED_CACHES
-    declare -gA _SUSA_NAMED_CACHES_LOADED
+    declare -ga _SUSA_NAMED_CACHES
+    declare -ga _SUSA_NAMED_CACHES_LOADED
     _SUSA_NAMED_CACHES_INITIALIZED=1
 fi
+
+# Helper to get cache index by name
+_cache_get_index() {
+    local name="$1"
+    local i=0
+    for entry in "${_SUSA_NAMED_CACHES[@]}"; do
+        if [[ "$entry" == "$name:"* ]]; then
+            echo "$i"
+            return 0
+        fi
+        ((i++))
+    done
+    return 1
+}
+
+# Helper to check if cache is loaded
+_cache_is_loaded() {
+    local name="$1"
+    local i=0
+    for entry in "${_SUSA_NAMED_CACHES_LOADED[@]}"; do
+        if [[ "$entry" == "$name" ]]; then
+            return 0
+        fi
+        ((i++))
+    done
+    return 1
+}
+
+# Helper to get cache data by name
+_cache_get_data() {
+    local name="$1"
+    for entry in "${_SUSA_NAMED_CACHES[@]}"; do
+        if [[ "$entry" == "$name:"* ]]; then
+            echo "${entry#"$name:"}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Helper to set cache data by name
+_cache_set_data() {
+    local name="$1"
+    local data="$2"
+    local index
+
+    if index=$(_cache_get_index "$name"); then
+        _SUSA_NAMED_CACHES[$index]="$name:$data"
+    else
+        _SUSA_NAMED_CACHES+=("$name:$data")
+    fi
+}
+
+# Helper to mark cache as loaded
+_cache_mark_loaded() {
+    local name="$1"
+    if ! _cache_is_loaded "$name"; then
+        _SUSA_NAMED_CACHES_LOADED+=("$name")
+    fi
+}
 
 # ============================================================
 # Internal Cache Functions
@@ -76,7 +127,7 @@ cache_named_load() {
     fi
 
     # Already loaded, skip
-    if [ "${_SUSA_NAMED_CACHES_LOADED[$name]:-0}" -eq 1 ]; then
+    if _cache_is_loaded "$name"; then
         return 0
     fi
 
@@ -107,8 +158,9 @@ cache_named_load() {
                 rm -f "${cache_file}.tmp" 2> /dev/null
                 # Fallback: load directly from source
                 log_debug2 "Usando arquivo fonte diretamente: $source_file"
-                _SUSA_NAMED_CACHES[$name]=$(jq -c '.' "$source_file" 2> /dev/null)
-                _SUSA_NAMED_CACHES_LOADED[$name]=1
+                local data=$(jq -c '.' "$source_file" 2> /dev/null)
+                _cache_set_data "$name" "$data"
+                _cache_mark_loaded "$name"
                 return 0
             fi
         fi
@@ -121,8 +173,9 @@ cache_named_load() {
     fi
 
     # Load cache into memory
-    _SUSA_NAMED_CACHES[$name]=$(cat "$cache_file" 2> /dev/null)
-    _SUSA_NAMED_CACHES_LOADED[$name]=1
+    local data=$(cat "$cache_file" 2> /dev/null)
+    _cache_set_data "$name" "$data"
+    _cache_mark_loaded "$name"
     log_debug2 "Cache carregado: $name"
     return 0
 }
@@ -144,7 +197,9 @@ cache_named_query() {
     cache_named_load "$name" || return 1
 
     # Query the in-memory cache data
-    echo "${_SUSA_NAMED_CACHES[$name]}" | jq -r "$query" 2> /dev/null
+    local data
+    data=$(_cache_get_data "$name") || return 1
+    echo "$data" | jq -r "$query" 2> /dev/null
 }
 
 # Set a value in named cache
@@ -165,13 +220,14 @@ cache_named_set() {
     cache_named_load "$name" || return 1
 
     # Update in-memory cache
-    local updated_data
-    updated_data=$(echo "${_SUSA_NAMED_CACHES[$name]}" |
+    local current_data updated_data
+    current_data=$(_cache_get_data "$name") || return 1
+    updated_data=$(echo "$current_data" |
         jq --arg key "$key" --arg value "$value" \
             '. + {($key): $value}' 2> /dev/null)
 
     if [ $? -eq 0 ]; then
-        _SUSA_NAMED_CACHES[$name]="$updated_data"
+        _cache_set_data "$name" "$updated_data"
         log_debug2 "Cache atualizado: $name.$key = $value"
         return 0
     else
@@ -197,8 +253,9 @@ cache_named_get() {
     cache_named_load "$name" || return 1
 
     # Get value from in-memory cache
-    echo "${_SUSA_NAMED_CACHES[$name]}" |
-        jq -r --arg key "$key" '.[$key] // empty' 2> /dev/null || true
+    local data
+    data=$(_cache_get_data "$name") || return 1
+    echo "$data" | jq -r --arg key "$key" '.[$key] // empty' 2> /dev/null || true
 }
 
 # Check if key exists in named cache
@@ -216,8 +273,9 @@ cache_named_has() {
     cache_named_load "$name" || return 1
 
     # Check if key exists
-    local result
-    result=$(echo "${_SUSA_NAMED_CACHES[$name]}" |
+    local data result
+    data=$(_cache_get_data "$name") || return 1
+    result=$(echo "$data" |
         jq -r --arg key "$key" 'has($key)' 2> /dev/null || echo "false")
 
     [ "$result" = "true" ] && return 0 || return 1
@@ -236,7 +294,7 @@ cache_named_get_all() {
     # Ensure cache is loaded
     cache_named_load "$name" || return 1
 
-    echo "${_SUSA_NAMED_CACHES[$name]}"
+    _cache_get_data "$name"
 }
 
 # Remove a key from named cache
@@ -254,12 +312,13 @@ cache_named_remove() {
     cache_named_load "$name" || return 1
 
     # Remove key from in-memory cache
-    local updated_data
-    updated_data=$(echo "${_SUSA_NAMED_CACHES[$name]}" |
+    local current_data updated_data
+    current_data=$(_cache_get_data "$name") || return 1
+    updated_data=$(echo "$current_data" |
         jq --arg key "$key" 'del(.[$key])' 2> /dev/null)
 
     if [ $? -eq 0 ]; then
-        _SUSA_NAMED_CACHES[$name]="$updated_data"
+        _cache_set_data "$name" "$updated_data"
         log_debug "Chave removida do cache: $name.$key"
         return 0
     else
@@ -281,15 +340,17 @@ cache_named_save() {
     fi
 
     # Check if cache is loaded
-    if [ "${_SUSA_NAMED_CACHES_LOADED[$name]:-0}" -eq 0 ]; then
+    if ! _cache_is_loaded "$name"; then
         log_debug2 "Cache não carregado, nada para salvar: $name"
         return 0
     fi
 
     local cache_file=$(_cache_named_file "$name")
+    local data
+    data=$(_cache_get_data "$name") || return 1
 
     # Write to disk
-    echo "${_SUSA_NAMED_CACHES[$name]}" > "$cache_file"
+    echo "$data" > "$cache_file"
     chmod 600 "$cache_file"
     log_debug "Cache salvo em disco: $name"
     log_debug2 "Arquivo de cache: $cache_file"
@@ -307,9 +368,20 @@ cache_named_clear() {
         return 1
     fi
 
-    # Clear from memory
-    unset '_SUSA_NAMED_CACHES[$name]'
-    unset '_SUSA_NAMED_CACHES_LOADED[$name]'
+    # Clear from memory - remove entries from arrays
+    local index
+    if index=$(_cache_get_index "$name"); then
+        unset '_SUSA_NAMED_CACHES[$index]'
+        # Reindex array to remove gap
+        _SUSA_NAMED_CACHES=("${_SUSA_NAMED_CACHES[@]}")
+    fi
+
+    # Remove from loaded list
+    local new_loaded=()
+    for entry in "${_SUSA_NAMED_CACHES_LOADED[@]}"; do
+        [[ "$entry" != "$name" ]] && new_loaded+=("$entry")
+    done
+    _SUSA_NAMED_CACHES_LOADED=("${new_loaded[@]}")
 
     # Remove file
     local cache_file=$(_cache_named_file "$name")
@@ -331,7 +403,9 @@ cache_named_keys() {
     # Ensure cache is loaded
     cache_named_load "$name" || return 1
 
-    echo "${_SUSA_NAMED_CACHES[$name]}" | jq -r 'keys[]' 2> /dev/null || true
+    local data
+    data=$(_cache_get_data "$name") || return 1
+    echo "$data" | jq -r 'keys[]' 2> /dev/null || true
 }
 
 # Count keys in named cache
@@ -347,7 +421,9 @@ cache_named_count() {
     # Ensure cache is loaded
     cache_named_load "$name" || return 1
 
-    echo "${_SUSA_NAMED_CACHES[$name]}" | jq 'keys | length' 2> /dev/null || echo "0"
+    local data
+    data=$(_cache_get_data "$name") || return 1
+    echo "$data" | jq 'keys | length' 2> /dev/null || echo "0"
 }
 
 # Get cache directory path
