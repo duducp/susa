@@ -565,7 +565,7 @@ load_env_files() {
                     value="${BASH_REMATCH[1]}"
                 fi
 
-                # Only set if not already defined (respects system env vars and config envs)
+                # Only set if not already defined (respects system env vars)
                 if [ -z "${!key:-}" ]; then
                     # Expand variables like $HOME in the value
                     value=$(eval echo "$value")
@@ -577,6 +577,12 @@ load_env_files() {
 }
 
 # Load environment variables from command.json
+# Order of precedence (higher to lower):
+#   1. System environment variables (already defined)
+#   2. .env files (loaded first, higher priority)
+#   3. command.json envs section (default values, lower priority)
+# This design allows users to customize via .env files while
+# developers provide sensible defaults via command.json envs.
 load_command_envs() {
     local config_file="$1"
 
@@ -587,7 +593,7 @@ load_command_envs() {
     # Get base directory for resolving relative .env file paths
     local config_dir="$(dirname "$config_file")"
 
-    # Load environment variables from .env files first (lowest priority)
+    # Load environment variables from .env files first (higher priority - loaded before envs)
     if jq -e '.env_files' "$config_file" &> /dev/null; then
         local env_files=()
         while IFS= read -r env_file; do
@@ -599,7 +605,7 @@ load_command_envs() {
         fi
     fi
 
-    # Load environment variables from envs section (higher priority than .env files)
+    # Load environment variables from envs section (default values - lower priority than .env files)
     if jq -e '.envs' "$config_file" &> /dev/null; then
         # Get all env keys and values, export them
         while IFS='=' read -r key value; do

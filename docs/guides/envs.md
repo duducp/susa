@@ -154,9 +154,9 @@ Ordem de precedência (maior → menor):
 
 ```text
 1. Variáveis de Sistema    → export VAR=value ou VAR=value comando
-2. Envs do Comando         → command.json → envs:
-3. Variáveis Globais       → config/settings.conf
-4. Arquivos .env           → command.json → env_files: (na ordem especificada)
+2. Arquivos .env           → command.json → env_files: (na ordem especificada)
+3. Envs do Comando         → command.json → envs:
+4. Variáveis Globais       → config/settings.conf
 5. Valores Padrão          → ${VAR:-default}
 ```
 
@@ -194,9 +194,12 @@ timeout="${TIMEOUT:-10}"
 api_url="${API_URL:-https://default.com}"
 
 # Resultados:
-./susa comando                    # → TIMEOUT=60 (do command.json envs)
+./susa comando                    # → TIMEOUT=50 (do .env.local - último .env tem prioridade)
                                   # → API_URL=https://api.example.com (do .env)
 TIMEOUT=90 ./susa comando        # → TIMEOUT=90 (do sistema - maior prioridade)
+
+# Se não houvesse TIMEOUT nos arquivos .env:
+# → TIMEOUT=60 (do command.json envs - valores padrão do desenvolvedor)
 ```
 
 **Ordem de carregamento detalhada:**
@@ -206,6 +209,8 @@ TIMEOUT=90 ./susa comando        # → TIMEOUT=90 (do sistema - maior prioridade
 3. Carrega arquivos .env na ordem especificada em `env_files`
 4. Carrega variáveis da seção `envs` do `command.json`
 5. Variáveis já definidas não são sobrescritas (princípio da precedência)
+
+**Nota importante:** Como `.env` é carregado antes de `envs`, os arquivos .env têm prioridade sobre os valores definidos no `command.json`. Isso permite que usuários customizem variáveis sem modificar o comando.
 
 ## 📝 Sintaxe JSON
 

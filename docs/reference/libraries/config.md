@@ -397,7 +397,7 @@ install_app "$@"
 
 - ✅ Expansão automática de variáveis (`$HOME` → `/home/user`)
 - ✅ Isolamento entre comandos (não vazam)
-- ✅ Respeita ordem de precedência (Sistema > Config envs > Global > .env)
+- ✅ Respeita ordem de precedência (Sistema > .env > Config envs > Global)
 - ✅ Suporta qualquer variável de ambiente válida
 - ✅ Funciona em comandos built-in e plugins
 - ✅ Suporta múltiplos arquivos .env
@@ -408,11 +408,13 @@ install_app "$@"
 
 1. **Variáveis de Sistema** (maior prioridade)
    - `export VAR=value` ou `VAR=value comando`
-2. **Variáveis do Config** - `command.json` → `envs:`
-3. **Variáveis Globais** - `config/settings.conf`
-4. **Arquivos .env** (menor prioridade entre fontes configuráveis)
+2. **Arquivos .env** - `command.json` → `env_files:`
    - Na ordem especificada em `env_files:`
    - Último arquivo tem prioridade sobre anteriores
+   - Permite customização do usuário
+3. **Variáveis do Config** - `command.json` → `envs:`
+   - Valores padrão definidos pelo desenvolvedor
+4. **Variáveis Globais** - `config/settings.conf`
 5. **Valores Padrão** (mais baixa)
    - `${VAR:-default}` no script
 

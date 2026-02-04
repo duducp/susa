@@ -207,24 +207,26 @@ Quando uma mesma variável é definida em múltiplos lugares:
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
-│ 2. Envs do Comando                                          │
-│    └─ command.json → envs:                                   │
-│    • Variáveis definidas no command.json do comando          │
-│    • Funciona em comandos built-in e plugins                │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 3. Variáveis Globais                                        │
-│    └─ config/settings.conf                                  │
-│    • Compartilhadas entre todos os comandos                 │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 4. Arquivos .env                                            │
+│ 2. Arquivos .env                                            │
 │    └─ command.json → env_files:                              │
 │    • Carregados na ordem especificada                       │
 │    • Último arquivo tem prioridade sobre anteriores         │
 │    • Funciona em comandos built-in e plugins                │
+│    • Permite customização do usuário                        │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 3. Envs do Comando                                          │
+│    └─ command.json → envs:                                   │
+│    • Variáveis definidas no command.json do comando          │
+│    • Funciona como valores padrão do desenvolvedor          │
+│    • Funciona em comandos built-in e plugins                │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ 4. Variáveis Globais                                        │
+│    └─ config/settings.conf                                  │
+│    • Compartilhadas entre todos os comandos                 │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -274,9 +276,12 @@ database="${DATABASE_URL:-sqlite:///local.db}"
 ```bash
 # Sem override
 ./susa setup docker
-# → TIMEOUT=60 (do command.json envs - prioridade 2)
-# → API_URL=https://api.example.com (do .env - prioridade 4)
-# → DATABASE_URL=postgresql://localhost/mydb (do .env.local - prioridade 4)
+# → TIMEOUT=40 (do .env - prioridade 2, sobrescreve command.json envs)
+# → API_URL=https://api.example.com (do .env - prioridade 2)
+# → DATABASE_URL=postgresql://localhost/mydb (do .env.local - prioridade 2)
+
+# Se .env não definisse TIMEOUT:
+# → TIMEOUT=60 (do command.json envs - valores padrão)
 
 # Com override via sistema
 TIMEOUT=90 ./susa setup docker
@@ -593,9 +598,9 @@ REDIS_URL="redis://localhost:6379"
 
 ```text
 1. Variáveis de Sistema    → export VAR=value ou VAR=value comando
-2. Envs do Comando         → command.json → envs:
-3. Variáveis Globais       → config/settings.conf
-4. Arquivos .env           → command.json → env_files: (ordem especificada)
+2. Arquivos .env           → command.json → env_files: (ordem especificada)
+3. Envs do Comando         → command.json → envs:
+4. Variáveis Globais       → config/settings.conf
 5. Valores Padrão          → ${VAR:-default}
 ```
 
@@ -627,9 +632,11 @@ DATABASE_URL="postgresql://localhost/mydb"
 
 **Resultado:**
 
-- `TIMEOUT` = 60 (do `command.json` envs, maior prioridade que .env)
+- `TIMEOUT` = 40 (do `.env`, maior prioridade que command.json envs)
 - `API_URL` = https://api.example.com (do `.env`)
 - `DATABASE_URL` = postgresql://localhost/mydb (do `.env.local`)
+
+**Nota:** Se `.env` não definisse `TIMEOUT`, o valor seria 60 (do `command.json` envs).
 
 #### Exemplo com Múltiplos Ambientes
 
@@ -847,9 +854,10 @@ Quando a mesma variável existe em múltiplos lugares:
 
 ```text
 1. Variáveis de Ambiente do Sistema (maior precedência)
-2. Variáveis do Comando (command.json envs:)
-3. Variáveis Globais (config/settings.conf)
-4. Valores Padrão no Script (fallback)
+2. Arquivos .env (env_files:)
+3. Variáveis do Comando (command.json envs:)
+4. Variáveis Globais (config/settings.conf)
+5. Valores Padrão no Script (fallback)
 ```
 
 **Exemplo:**
@@ -1338,11 +1346,13 @@ DEBUG=true susa setup docker
 ```text
 1. Variáveis de Ambiente do Sistema (export VAR=value ou VAR=value comando)
     ↓
-2. Envs do Comando (command.json → envs:)
+2. Arquivos .env (command.json → env_files:)
     ↓
-3. Variáveis Globais (config/settings.conf)
+3. Envs do Comando (command.json → envs:)
     ↓
-4. Valores Padrão no Script (${VAR:-default})
+4. Variáveis Globais (config/settings.conf)
+    ↓
+5. Valores Padrão no Script (${VAR:-default})
 ```
 
 **Características das Envs por Comando:**
