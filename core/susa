@@ -34,7 +34,7 @@ readonly EXEC_ENTRYPOINT_MARKER="__EXEC_ENTRYPOINT__"
 # Dependency Checking
 # ============================================================
 
-# Check and prompt for missing dependencies
+# Check for missing dependencies
 check_dependencies() {
     # Skip check if explicitly requested (useful for CI/CD)
     if [ "${SUSA_SKIP_DEPS_CHECK:-}" = "1" ]; then
@@ -42,23 +42,10 @@ check_dependencies() {
     fi
 
     local missing_deps=()
-    local install_commands=()
-    local reasons=()
 
     # Check jq (required for JSON parsing)
     if ! command -v jq &> /dev/null; then
         missing_deps+=("jq")
-        reasons+=("jq é necessário para processar arquivos JSON (cache, configurações, plugins)")
-
-        if is_mac; then
-            install_commands+=("brew install jq")
-        elif is_linux_debian; then
-            install_commands+=("sudo apt update && sudo apt install -y jq")
-        elif is_linux_redhat; then
-            install_commands+=("sudo dnf install -y jq")
-        else
-            install_commands+=("Instale jq manualmente para seu sistema")
-        fi
     fi
 
     # If no missing dependencies, return success
@@ -68,69 +55,22 @@ check_dependencies() {
 
     # Display missing dependencies
     echo ""
-    log_error "Dependências faltando"
+    log_error "Dependências ausentes detectadas"
+    echo ""
+    echo "As seguintes dependências são necessárias para o Susa CLI:"
     echo ""
 
-    for i in "${!missing_deps[@]}"; do
-        local dep="${missing_deps[$i]}"
-        local reason="${reasons[$i]}"
-        local install_cmd="${install_commands[$i]}"
-
-        echo -e "${LIGHT_RED}✗ ${dep}${NC}"
-        echo -e "  ${LIGHT_GRAY}Motivo: ${reason}${NC}"
-        echo -e "  ${LIGHT_CYAN}Comando: ${install_cmd}${NC}"
-        echo ""
+    for dep in "${missing_deps[@]}"; do
+        echo -e "  ${LIGHT_RED}✗ ${dep}${NC}"
     done
 
-    # Ask user if they want to install
-    echo -e "${LIGHT_YELLOW}Deseja instalar as dependências agora? (s/N)${NC}"
-    read -r response
+    echo ""
+    echo "Por favor, execute o script de instalação para configurar as dependências:"
+    echo ""
+    echo -e "  ${LIGHT_CYAN}./install.sh${NC}"
+    echo ""
 
-    if [[ "$response" =~ ^[SsYy]$ ]]; then
-        echo ""
-        log_info "Instalando dependências..."
-        echo ""
-
-        for i in "${!missing_deps[@]}"; do
-            local dep="${missing_deps[$i]}"
-            local install_cmd="${install_commands[$i]}"
-
-            log_info "Instalando ${dep}..."
-            if eval "$install_cmd"; then
-                log_success "✓ ${dep} instalado com sucesso!"
-            else
-                log_error "✗ Falha ao instalar ${dep}"
-                echo ""
-                log_warning "Por favor, instale manualmente:"
-                echo "  $install_cmd"
-            fi
-            echo ""
-        done
-
-        # Special message for Bash upgrade
-        if [[ " ${missing_deps[*]} " =~ " bash " ]]; then
-            echo ""
-            log_warning "⚠ Bash foi atualizado!"
-            echo ""
-            echo "Para usar a nova versão:"
-            echo "  1. Feche este terminal"
-            echo "  2. Abra um novo terminal"
-            echo "  3. Execute: bash --version (deve mostrar 4.x ou superior)"
-            echo ""
-            exit 0
-        fi
-
-        log_success "Dependências instaladas! Execute o comando novamente."
-        exit 0
-    else
-        echo ""
-        log_warning "Instalação cancelada."
-        echo ""
-        log_info "O SUSA CLI requer estas dependências para funcionar corretamente."
-        log_info "Instale-as manualmente e tente novamente."
-        echo ""
-        exit 1
-    fi
+    exit 1
 }
 
 # ============================================================

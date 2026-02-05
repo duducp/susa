@@ -46,6 +46,64 @@ if [ -L "$INSTALL_DIR/$CLI_NAME" ] || [ -f "$INSTALL_DIR/$CLI_NAME" ]; then
     fi
 fi
 
+# ============================================================
+# Check and Install Dependencies
+# ============================================================
+
+check_and_install_dependencies() {
+    local missing_deps=()
+    local install_commands=()
+
+    # Check jq (required for JSON parsing)
+    if ! command -v jq &> /dev/null; then
+        missing_deps+=("jq")
+
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            install_commands+=("brew install jq")
+        elif [ -f /etc/debian_version ]; then
+            install_commands+=("sudo apt update && sudo apt install -y jq")
+        elif [ -f /etc/redhat-release ]; then
+            install_commands+=("sudo dnf install -y jq")
+        else
+            install_commands+=("echo 'Instale jq manualmente para seu sistema' && exit 1")
+        fi
+    fi
+
+    # If no missing dependencies, return
+    if [ ${#missing_deps[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    # Display and install dependencies
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Instalando Dependências"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+
+    for i in "${!missing_deps[@]}"; do
+        local dep="${missing_deps[$i]}"
+        local install_cmd="${install_commands[$i]}"
+
+        echo "→ Instalando ${dep}..."
+        if eval "$install_cmd"; then
+            echo "  ✓ ${dep} instalado com sucesso"
+        else
+            echo "  ✗ Falha ao instalar ${dep}"
+            echo ""
+            echo "Instale manualmente e execute novamente:"
+            echo "  $install_cmd"
+            echo ""
+            exit 1
+        fi
+    done
+
+    echo ""
+}
+
+# Check and install dependencies first
+check_and_install_dependencies
+
 # Create installation directory if it doesn't exist
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
