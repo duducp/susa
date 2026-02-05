@@ -25,7 +25,7 @@ main() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --info)
-                show_software_info "code" "$VSCODE_BIN_NAME"
+                show_software_info "vscode" "$VSCODE_BIN_NAME"
                 exit 0
                 ;;
             *)

@@ -59,9 +59,34 @@ print_subcategories() {
     fi
 
     log_output "${LIGHT_GREEN}Subcategories:${NC}"
+
+    # Load installations library and cache once if needed for setup categories
+    local check_installed=false
+    if [[ "$category" == "setup" ]] || [[ "$category" == setup/* ]]; then
+        # Source installations library if not already loaded
+        if ! declare -f is_installed_cached &> /dev/null; then
+            source "$LIB_DIR/internal/installations.sh" 2> /dev/null || true
+        fi
+
+        # Load cache once for all checks
+        if declare -f cache_load &> /dev/null; then
+            cache_load 2> /dev/null || true
+            check_installed=true
+        fi
+    fi
+
     for subcat in $subcategories; do
         local subcat_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$category/$subcat" "description")
-        printf "  ${LIGHT_MAGENTA}%-15s${NC} %s\n" "$subcat" "$subcat_desc"
+        local indicators=""
+
+        # Check if software is installed (use cached version for performance)
+        if [ "$check_installed" = true ] && declare -f is_installed_cached &> /dev/null; then
+            if is_installed_cached "$subcat" 2> /dev/null; then
+                indicators="${indicators} ${GREEN}✓${NC}"
+            fi
+        fi
+
+        printf "  ${LIGHT_MAGENTA}%-15s${NC} %s%b\n" "$subcat" "$subcat_desc" "$indicators"
     done
 }
 
@@ -73,15 +98,20 @@ print_command_line() {
 
     local indicators=""
 
-    # Add installed indicator for setup commands
-    if [ "$category" = "setup" ]; then
+    # Add installed indicator for setup commands (including subcategories)
+    if [[ "$category" == "setup" ]] || [[ "$category" == setup/* ]]; then
         # Source installations library if not already loaded
-        if ! declare -f is_installed &> /dev/null; then
+        if ! declare -f is_installed_cached &> /dev/null; then
             source "$LIB_DIR/internal/installations.sh" 2> /dev/null || true
         fi
 
-        # Check if software is installed
-        if declare -f is_installed &> /dev/null && is_installed "$cmd" 2> /dev/null; then
+        # Load cache if not already loaded
+        if declare -f cache_load &> /dev/null; then
+            cache_load 2> /dev/null || true
+        fi
+
+        # Check if software is installed (use cached version for performance)
+        if declare -f is_installed_cached &> /dev/null && is_installed_cached "$cmd" 2> /dev/null; then
             indicators="${indicators} ${GREEN}✓${NC}"
         fi
     fi

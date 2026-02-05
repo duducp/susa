@@ -3,6 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 source "$LIB_DIR/internal/installations.sh"
+source "$LIB_DIR/internal/display.sh"
 source "$LIB_DIR/sudo.sh"
 
 # Show complement help for the category
@@ -13,8 +14,9 @@ show_complement_help() {
     log_output "  --group 			  Agrupa a saída por status de atualização"
     log_output "  --list                 Lista todos os softwares instalados"
     log_output "  --check-updates        Lista e verifica atualizações disponíveis dos softwares"
-    log_output "  -u, --upgrade          Atualiza todos os softwares instalados ${YELLOW}[sudo]${NC}"
-    log_output "  -us, --update-system   Atualiza também dependências do sistema operacional ${YELLOW}[sudo]${NC}"
+    log_output "  -u, --upgrade          Atualiza sistema operacional e todos os softwares ${YELLOW}[sudo]${NC}"
+    log_output "  -ua, --upgrade-apps    Atualiza apenas os softwares instalados ${YELLOW}[sudo]${NC}"
+    log_output "  -us, --update-system   Atualiza apenas o sistema operacional ${YELLOW}[sudo]${NC}"
     log_output ""
     log_output "Use ${LIGHT_CYAN}susa setup <comando> --help${NC} para ver mais detalhes sobre um comando específico."
 }
@@ -25,14 +27,32 @@ update_system_dependencies() {
     echo ""
 
     if is_mac; then
+        # Update macOS system
+        log_info "Atualizando sistema macOS..."
+        sudo softwareupdate -ia 2>&1 | sed 's/^/    /'
+        log_success "✓ Sistema macOS atualizado"
+        echo ""
+
+        # Update Homebrew
         if command -v brew &> /dev/null; then
             log_info "Atualizando Homebrew..."
             brew update 2>&1 | sed 's/^/    /'
             brew upgrade 2>&1 | sed 's/^/    /'
             log_success "✓ Homebrew atualizado"
+            echo ""
         else
             log_warning "Homebrew não está instalado"
-            return 1
+            echo ""
+        fi
+
+        # Update Mac App Store apps
+        if command -v mas &> /dev/null; then
+            log_info "Atualizando aplicativos da App Store..."
+            mas upgrade 2>&1 | sed 's/^/    /'
+            log_success "✓ Aplicativos da App Store atualizados"
+        else
+            log_warning "mas-cli não está instalado"
+            log_output "    ${GRAY}Instale com: brew install mas${NC}"
         fi
     else
         # Detect package manager
@@ -109,7 +129,7 @@ upgrade_all() {
         log_output "${CYAN}[$current/$total]${NC} Atualizando ${LIGHT_CYAN}$software${NC}..."
 
         # Execute update command with --quiet flag
-        if "$CORE_DIR/susa" setup "$software" --upgrade --quiet 2>&1 | sed 's/^/    /'; then
+        if "$CORE_DIR/susa" setup "$software" update --quiet 2>&1 | sed 's/^/    /'; then
             success=$((success + 1))
             log_success "  ✓ $software atualizado com sucesso"
         else
@@ -159,8 +179,14 @@ main() {
                 update_system=true
                 shift
                 ;;
+            -ua | --upgrade-apps)
+                upgrade_mode=true
+                update_system=false # Only upgrade apps, not system
+                shift
+                ;;
             -u | --upgrade)
                 upgrade_mode=true
+                update_system=true # Upgrade both system and apps
                 shift
                 ;;
             *)
@@ -173,6 +199,12 @@ main() {
                 ;;
         esac
     done
+
+    # Execute system update if requested without upgrade mode
+    if [ "$update_system" = true ] && [ "$upgrade_mode" = false ]; then
+        update_system_dependencies
+        exit $?
+    fi
 
     # Execute upgrade if requested
     if [ "$upgrade_mode" = true ]; then
@@ -191,8 +223,8 @@ main() {
     fi
 
     # If no arguments, this shouldn't happen as CLI shows command list
-    # But just in case, show help
-    show_help
+    # But just in case, show help using the global display system
+    display_help
 }
 
 # Execute main

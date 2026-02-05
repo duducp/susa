@@ -2,6 +2,11 @@
 # Podman Common Utilities
 # Shared functions used across install, update and uninstall
 
+# Load required libraries
+source "$LIB_DIR/github.sh"
+source "$LIB_DIR/os.sh"
+source "$LIB_DIR/homebrew.sh"
+
 # Constants
 PODMAN_NAME="Podman"
 PODMAN_REPO="containers/podman"

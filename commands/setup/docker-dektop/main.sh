@@ -40,9 +40,9 @@ main() {
         case "$1" in
             --info)
                 if is_mac; then
-                    show_software_info "Docker Desktop" "/Applications/Docker.app/Contents/MacOS/Docker Desktop"
+                    show_software_info "docker-dektop" "/Applications/Docker.app/Contents/MacOS/Docker Desktop"
                 else
-                    show_software_info "docker-desktop"
+                    show_software_info "docker-dektop"
                 fi
                 exit 0
                 ;;

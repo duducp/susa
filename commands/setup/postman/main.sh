@@ -22,7 +22,7 @@ main() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --info)
-                show_software_info "$POSTMAN_NAME" "$POSTMAN_BIN_NAME"
+                show_software_info "postman" "$POSTMAN_BIN_NAME"
                 exit 0
                 ;;
             *)
