@@ -21,8 +21,8 @@ fi
 # Format: "cache_name:cache_data"
 # Only declare if not already declared (prevent reset on re-source)
 if [ -z "${_SUSA_NAMED_CACHES_INITIALIZED+x}" ]; then
-    declare -ga _SUSA_NAMED_CACHES
-    declare -ga _SUSA_NAMED_CACHES_LOADED
+    declare -a _SUSA_NAMED_CACHES
+    declare -a _SUSA_NAMED_CACHES_LOADED
     _SUSA_NAMED_CACHES_INITIALIZED=1
 fi
 
