@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -248,11 +248,12 @@ update_docker_desktop_macos() {
         return 1
     fi
 
-    log_info "Atualizando Docker Desktop via Homebrew..."
-    homebrew_update "$DOCKER_DESKTOP_HOMEBREW_CASK" "Docker Desktop" || {
-        log_info "Docker Desktop já está na versão mais recente"
+    # Update the cask (homebrew_update already shows detailed messages)
+    if homebrew_update "$DOCKER_DESKTOP_HOMEBREW_CASK" "Docker Desktop"; then
         return 0
-    }
+    else
+        return 1
+    fi
 }
 
 # Update Docker Desktop on Linux

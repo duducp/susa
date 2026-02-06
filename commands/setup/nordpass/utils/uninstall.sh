@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # NordPass Uninstall Functions
 
 # Internal uninstall (without prompts)

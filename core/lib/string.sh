@@ -1,6 +1,6 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+#!/usr/bin/env zsh
+# shellcheck shell=bash disable=SC2296
+# SC2296: Parameter expansion is zsh-specific syntax
 
 # --- String Helper Functions --- #
 
@@ -11,7 +11,10 @@ IFS=$'\n\t'
 #   result=$(string_to_upper "hello world")
 #   echo "$result"  # Output: HELLO WORLD
 string_to_upper() {
-    echo "${1^^}"
+    local input
+    input="$1"
+    # Use tr for POSIX compatibility with shfmt
+    printf '%s' "$input" | tr '[:lower:]' '[:upper:]'
 }
 
 # Converts a string to lowercase.
@@ -21,7 +24,10 @@ string_to_upper() {
 #   result=$(string_to_lower "HELLO WORLD")
 #   echo "$result"  # Output: hello world
 string_to_lower() {
-    echo "${1,,}"
+    local input
+    input="$1"
+    # Use tr for POSIX compatibility with shfmt
+    printf '%s' "$input" | tr '[:upper:]' '[:lower:]'
 }
 
 # Strips leading and trailing whitespace from a string.
@@ -64,14 +70,24 @@ string_starts_with() {
 # Example:
 #   arr=("a,b,c") -> arr=("a" "b" "c")
 parse_comma_separated() {
-    local -n arr_ref=$1
-    for i in "${!arr_ref[@]}"; do
-        if [[ "${arr_ref[$i]}" == *","* ]]; then
-            local temp="${arr_ref[$i]}"
-            IFS=',' read -r -a split_arr <<< "$temp"
-            arr_ref=("${arr_ref[@]:0:$i}" "${split_arr[@]}" "${arr_ref[@]:$((i + 1))}")
+    local arr_name=$1
+    local -a new_arr=()
+
+    # Use indirect parameter expansion with (P) flag in zsh
+    eval "local -a original_arr=(\"\${${arr_name}[@]}\")"
+
+    for element in "${original_arr[@]}"; do
+        if [[ "$element" == *","* ]]; then
+            # Split on comma
+            IFS=',' read -rA split_arr <<< "$element"
+            new_arr+=("${split_arr[@]}")
+        else
+            new_arr+=("$element")
         fi
     done
+
+    # Update the original array
+    eval "${arr_name}=(\"\${new_arr[@]}\")"
 }
 
 # Joins all elements of the referenced array into a single comma-separated string element.
@@ -80,13 +96,25 @@ parse_comma_separated() {
 # Example:
 #   arr=("a" "b" "c") -> arr=("a,b,c")
 join_to_comma_separated() {
-    local -n arr_ref=$1
+    local arr_name=$1
     local joined
-    joined="$(
-        IFS=','
-        echo "${arr_ref[*]}"
-    )"
-    arr_ref=("$joined")
+
+    # Get array elements and join with comma
+    eval "local -a arr_elements=(\"\${${arr_name}[@]}\")"
+
+    # Join array elements with comma (POSIX-compatible)
+    local first=1
+    for element in "${arr_elements[@]}"; do
+        if [ $first -eq 1 ]; then
+            joined="$element"
+            first=0
+        else
+            joined="${joined},${element}"
+        fi
+    done
+
+    # Update the original array with single joined element
+    eval "${arr_name}=(\"$joined\")"
 }
 
 # --- Boolean Helper Functions --- #

@@ -30,7 +30,10 @@ file_path=$(get_completion_file_path "bash")
 **Exemplo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/completion.sh"
 
 # Obter caminho do completion para bash
@@ -76,7 +79,10 @@ dir_path=$(get_completion_dir_path "bash")
 **Exemplo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/completion.sh"
 
 # Obter diretório para criar completion
@@ -110,7 +116,10 @@ fi
 **Exemplo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/completion.sh"
 
 # Verificar shell atual
@@ -153,7 +162,10 @@ status_info=$(get_completion_status)
 **Exemplo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/completion.sh"
 
 # Obter status completo
@@ -208,7 +220,10 @@ fi
 **Exemplo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/completion.sh"
 
 if is_completion_loaded "bash"; then
@@ -232,8 +247,9 @@ fi
 ### Verificação de Status de Completion
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+IFS=$'\n\t'
 
 source "$LIB_DIR/internal/completion.sh"
 source "$LIB_DIR/shell.sh"
@@ -275,8 +291,9 @@ main
 ### Instalação Condicional
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+IFS=$'\n\t'
 
 source "$LIB_DIR/internal/completion.sh"
 

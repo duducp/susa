@@ -1,6 +1,4 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+#!/usr/bin/env zsh
 
 # Get the lib directory
 source "$LIB_DIR/color.sh"
@@ -11,17 +9,17 @@ source "$LIB_DIR/internal/config.sh"
 # Builds the command path based on the script directory
 # Example: commands/self/plugin/add -> self plugin add
 build_command_path() {
-    # Use BASH_SOURCE to walk up the call stack and find the main.sh script
-    local i=1
+    # Use funcfiletrace (zsh-specific) to find the main.sh script
     local script_path=""
 
-    # Walk up the call stack to find a main.sh file
-    while [ -n "${BASH_SOURCE[$i]:-}" ]; do
-        if [[ "${BASH_SOURCE[$i]}" == */main.sh ]]; then
-            script_path="${BASH_SOURCE[$i]}"
+    # Walk through the call stack to find a main.sh file
+    # funcfiletrace format: "file:line"
+    for entry in "${funcfiletrace[@]}"; do
+        local file="${entry%:*}"
+        if [[ "$file" == */main.sh ]]; then
+            script_path="$file"
             break
         fi
-        ((i++))
     done
 
     # If no script path found, return empty
@@ -43,17 +41,17 @@ build_command_path() {
 
 # Gets the config file path for the calling script
 get_command_config_file() {
-    # Use BASH_SOURCE to walk up the call stack and find the main.sh script
-    local i=1
+    # Use funcfiletrace (zsh-specific) to find the main.sh script
     local script_path=""
 
-    # Walk up the call stack to find a main.sh file
-    while [ -n "${BASH_SOURCE[$i]:-}" ]; do
-        if [[ "${BASH_SOURCE[$i]}" == */main.sh ]]; then
-            script_path="${BASH_SOURCE[$i]}"
+    # Walk through the call stack to find a main.sh file
+    # funcfiletrace format: "file:line"
+    for entry in "${funcfiletrace[@]}"; do
+        local file="${entry%:*}"
+        if [[ "$file" == */main.sh ]]; then
+            script_path="$file"
             break
         fi
-        ((i++))
     done
 
     if [ -z "$script_path" ]; then

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # DBeaver Installation Functions
 
 # Install DBeaver on macOS using Homebrew

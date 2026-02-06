@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 source "$LIB_DIR/internal/json.sh"
 source "$LIB_DIR/cache.sh"
@@ -196,61 +196,61 @@ add_plugins_to_lock() {
 
         # Build plugin object based on available metadata
         if [ -n "$plugin_categories" ] && [ "$is_dev" = "true" ] && [ -n "$plugin_directory" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
                 --arg cats "$plugin_categories" \
                 --arg dir "$plugin_directory" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, directory: $dir, dev: true}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, directory: $dir, dev: true}]' <<< "$json_data")
         elif [ -n "$plugin_categories" ] && [ "$is_dev" = "true" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
                 --arg cats "$plugin_categories" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, dev: true}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, dev: true}]' <<< "$json_data")
         elif [ -n "$plugin_categories" ] && [ -n "$plugin_directory" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
                 --arg cats "$plugin_categories" \
                 --arg dir "$plugin_directory" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, directory: $dir}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats, directory: $dir}]' <<< "$json_data")
         elif [ -n "$plugin_categories" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
                 --arg cats "$plugin_categories" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, categories: $cats}]' <<< "$json_data")
         elif [ "$is_dev" = "true" ] && [ -n "$plugin_directory" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
                 --arg dir "$plugin_directory" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, directory: $dir, dev: true}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, directory: $dir, dev: true}]' <<< "$json_data")
         elif [ "$is_dev" = "true" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, dev: true}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, dev: true}]' <<< "$json_data")
         elif [ -n "$plugin_directory" ]; then
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
                 --arg dir "$plugin_directory" \
-                '.plugins += [{name: $name, version: $version, commands: $commands, directory: $dir}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands, directory: $dir}]' <<< "$json_data")
         else
-            json_data=$(echo "$json_data" | jq \
+            json_data=$(jq \
                 --arg name "$plugin_name" \
                 --arg version "$plugin_version" \
                 --argjson commands "$plugin_cmd_count" \
-                '.plugins += [{name: $name, version: $version, commands: $commands}]')
+                '.plugins += [{name: $name, version: $version, commands: $commands}]' <<< "$json_data")
         fi
     done <<< "$all_plugins"
 

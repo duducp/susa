@@ -38,7 +38,9 @@ Definidas no `command.json` do comando, disponíveis apenas durante sua execuç�
 **Uso no script:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Variáveis automaticamente disponíveis
 repo="${DOCKER_REPO_URL:-https://default.com}"
@@ -128,7 +130,9 @@ DEBUG_MODE="false"
 **Uso:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Disponíveis em todos os comandos
 echo "API: ${API_ENDPOINT}"
@@ -258,9 +262,9 @@ Variáveis suportadas para expansão:
 Sempre use valores de fallback com a sintaxe `${VAR:-default}`:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 # ✅ Bom: funciona com ou sem env
 local timeout="${TIMEOUT:-30}"
@@ -504,7 +508,9 @@ BACKUP_ENABLED="true"
 
 ```bash
 # plugins/deploy-tools/deploy/staging/main.sh
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 api_url="${STAGING_API_URL:-https://default-staging.com}"
 timeout="${STAGING_TIMEOUT:-30}"
@@ -726,7 +732,9 @@ $ susa setup project
 
 ```bash
 # plugins/deploy-tools/deploy/staging/main.sh
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 api_url="${STAGING_API_URL:-https://default-staging.com}"
 timeout="${STAGING_TIMEOUT:-30}"
@@ -776,9 +784,9 @@ Veja [Arquitetura de Plugins](../plugins/architecture.md#variaveis-de-ambiente-e
 **main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 url="${MY_URL:-https://default.com}"
 timeout="${MY_TIMEOUT:-30}"

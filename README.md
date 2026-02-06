@@ -1,6 +1,6 @@
 # Susa CLI
 
-Framework modular em Shell Script para criar CLIs extensíveis com descoberta automática de comandos, sistema de plugins e suporte a autocompletar.
+Framework para organizar e estruturar shell scripts em CLI modular e extensível, com descoberta automática de comandos, sistema de plugins e suporte a autocompletar.
 
 ![Susa CLI](cli.png)
 
@@ -12,15 +12,23 @@ Framework modular em Shell Script para criar CLIs extensíveis com descoberta au
 - 🌍 **Variáveis de Ambiente** - Configurações isoladas por comando
 - 🖥️ **Multi-plataforma** - Linux e macOS
 - 📚 **Bibliotecas Reutilizáveis** - Logger, detecção de SO, parser JSON e mais
-- ⚡ **Autocompletar** - Tab completion para bash e zsh
+- ⚡ **Autocompletar** - Tab completion para zsh (bash em breve)
 
 ## 🚀 Instalação
 
 ### Instalação Rápida (recomendado)
 
+Use `curl` ou `wget` para instalar remotamente:
+
 ```bash
-curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install-remote.sh | bash
+# Com curl
+curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash
+
+# Com wget
+wget -qO- https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash
 ```
+
+> **Nota:** O script funciona com `bash` ou `zsh`. O ZSH será instalado automaticamente se necessário.
 
 ### Instalação Manual (para desenvolvimento)
 
@@ -97,7 +105,7 @@ mkdir -p commands/setup/myapp
 
 ```bash
 # commands/setup/myapp/main.sh
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 
 install() {
@@ -229,7 +237,11 @@ Para corrigir problemas de formatação automaticamente: `make format`
 
 **Ferramentas Instaladas:**
 
-- 🔧 **bash-language-server**: Language Server Protocol para Bash
+### 🔧 Requisitos
+
+- **zsh** 5.0+ (já incluso no macOS desde 2019, disponível em todas as distros Linux)
+- **jq** 1.6+
+- **Git** 2.0+
 - 🔍 **ShellCheck**: Análise estática de código shell
 - 📝 **shfmt**: Formatação automática de scripts
 

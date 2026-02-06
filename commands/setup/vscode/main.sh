@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+UTILS_DIR="$(dirname "$0")/utils"
 
 # Source libraries only if not just showing complement help
 source "$LIB_DIR/internal/installations.sh"
@@ -14,7 +14,6 @@ source "$UTILS_DIR/common.sh"
 
 # Show additional info in category listing
 show_complement_help() {
-    log_output ""
     log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --info          Mostra informações do VS Code instalado"
 }

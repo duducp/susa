@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # MySQL Client Installation Functions
 
 # Install MySQL client on macOS using Homebrew

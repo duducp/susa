@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # flatpak.sh - Library for managing applications via Flatpak
 #
 # Functions to install, update, remove and query applications
@@ -17,9 +17,6 @@
 #   flatpak_update                 - Update an installed application
 #   flatpak_uninstall              - Remove an installed application
 #   flatpak_update_metadata        - Update Flathub metadata
-
-set -euo pipefail
-IFS=$'\n\t'
 
 # Check if Flatpak is installed on the system
 #

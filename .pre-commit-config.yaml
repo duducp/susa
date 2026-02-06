@@ -24,11 +24,13 @@ repos:
             "security",
           ]
 
+  # Note: Project uses zsh (#!/usr/bin/env zsh)
+  # ShellCheck validates with bash rules + .shellcheckrc disables for zsh-specific syntax
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        name: ShellCheck
+        name: ShellCheck (zsh as bash)
         args: ["-x", "--severity=warning"]
         types_or: [shell, bash]
         exclude: ^(\.git|\.vscode|docs|node_modules)/
@@ -38,7 +40,7 @@ repos:
     rev: v3.9.0-1
     hooks:
       - id: shfmt
-        name: shfmt
+        name: shfmt (POSIX formatting for zsh)
         args: ["-i", "4", "-ci", "-sr", "-d"]
         types_or: [shell, bash]
         exclude: ^(\.git|\.vscode|docs|node_modules)/

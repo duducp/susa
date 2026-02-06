@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # JSON utility functions using jq
 # These functions provide a consistent interface for working with JSON in shell scripts
@@ -113,9 +113,9 @@ json_create_object() {
 
         # Try to detect if value is a number, boolean or needs quotes
         if [[ "$value" =~ ^[0-9]+(\.[0-9]+)?$ ]] || [ "$value" = "true" ] || [ "$value" = "false" ] || [ "$value" = "null" ]; then
-            json=$(echo "$json" | jq --arg k "$key" --argjson v "$value" '. + {($k): $v}')
+            json=$(jq --arg k "$key" --argjson v "$value" '. + {($k): $v}' <<< "$json")
         else
-            json=$(echo "$json" | jq --arg k "$key" --arg v "$value" '. + {($k): $v}')
+            json=$(jq --arg k "$key" --arg v "$value" '. + {($k): $v}' <<< "$json")
         fi
     done
 
@@ -129,7 +129,7 @@ json_create_array() {
     local json="[]"
 
     for value in "$@"; do
-        json=$(echo "$json" | jq --arg v "$value" '. + [$v]')
+        json=$(jq --arg v "$value" '. + [$v]' <<< "$json")
     done
 
     echo "$json"
@@ -228,5 +228,5 @@ json_merge() {
     local json1="$1"
     local json2="$2"
 
-    echo "$json1" | jq --argjson obj "$json2" '. + $obj'
+    jq --argjson obj "$json2" '. + $obj' <<< "$json1"
 }

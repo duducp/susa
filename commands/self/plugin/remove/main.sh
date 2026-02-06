@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
 # Source necessary libraries
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
+source "$LIB_DIR/gum.sh"
 
 # Help function
 show_complement_help() {
@@ -85,10 +86,8 @@ main() {
     log_output ""
 
     if [ "$auto_confirm" = false ]; then
-        read -p "Deseja continuar? (s/N): " -n 1 -r
-        log_output ""
-
-        if [[ ! $REPLY =~ ^[YySs]$ ]]; then
+        if ! gum_confirm "Deseja continuar?" "no"; then
+            log_output ""
             log_info "Operação cancelada"
             exit 0
         fi

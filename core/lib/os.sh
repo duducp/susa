@@ -1,6 +1,4 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+#!/usr/bin/env zsh
 
 # Function to get the simplified name of the OS (linux or mac)
 # Usage:

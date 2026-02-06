@@ -228,7 +228,10 @@ fi
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/config.sh"
 source "$LIB_DIR/os.sh"
 
@@ -375,9 +378,9 @@ DEBUG_MODE="false"
 **Exemplo de uso no script:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 # Variáveis do command.json já estão exportadas
 install_app() {

@@ -17,6 +17,7 @@ Esta skill é **específica para comandos de setup** na categoria `setup/`. Para
 1. **Sempre mostrar resumo da análise** com:
    - ✅ Conformidades (o que está correto)
    - ⚠️ Não-conformidades e melhorias necessárias
+   - **Verificar `get_latest_version()`:** Se retorna versão válida (não apenas "N/A")
 
 2. **Se houver melhorias:**
    - Listar claramente cada correção necessária
@@ -26,17 +27,20 @@ Esta skill é **específica para comandos de setup** na categoria `setup/`. Para
 3. **Após confirmação:**
    - Aplicar todas as correções em batch (quando possível)
    - Executar comandos de finalização: `make format` → `make lint` → `susa self lock`
+   - **Testar:** Verificar se `susa setup [comando] --info` exibe "Última versão" corretamente
 
 ## ⚡ Quick Reference
 
 **Criar novo comando de setup:**
 
 1. Estrutura: `commands/setup/[nome]/` com `category.json`, `main.sh`, `utils/common.sh`, subcomandos `install/`, `update/`, `uninstall/`
-2. Funções obrigatórias em `common.sh`: `check_installation()`, `get_current_version()`, `get_latest_version()`
-3. Todo entrypoint deve ter: `[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"`
-4. Categoria principal deve ter: flag `--info` chamando `show_software_info()`
-5. Preferir bibliotecas: Homebrew → Flatpak → Snap → GitHub → apt/dnf (nessa ordem)
-6. **Finalizar:** `make format` → `make lint` → `susa self lock` (nessa ordem!)
+2. Funções obrigatórias em `common.sh`: `check_installation()`, `get_current_version()`, `get_latest_version()` (⚠️ **DEVE retornar versão válida, não apenas "N/A"**)
+3. Função opcional em `common.sh`: `show_additional_info()` se software tiver configurações/status específicos
+4. Todo entrypoint deve ter: `[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"`
+5. Categoria principal deve ter: flag `--info` chamando `show_software_info()`
+6. Preferir bibliotecas: Homebrew → Flatpak → Snap → GitHub → apt/dnf (nessa ordem)
+7. **Finalizar:** `make format` → `make lint` → `susa self lock` (nessa ordem!)
+8. **Testar:** Executar `susa setup [comando] --info` e verificar se "Última versão" mostra versão real
 
 **Ver exemplo completo:** `commands/setup/bruno/` (Desktop App) ou `commands/setup/lazypg/` (CLI Tool)
 
@@ -51,7 +55,7 @@ Esta skill é **específica para comandos de setup** na categoria `setup/`. Para
 
 | Biblioteca | Função | Quando usar |
 |------------|--------|-------------|
-| `installations.sh` | `show_software_info()` | Exibir status de instalação |
+| `installations.sh` | `show_software_info()` | Exibir status de instalação (chama `show_additional_info()` se existir) |
 | `installations.sh` | `register_or_update_software_in_lock()` | Após instalar/atualizar |
 | `installations.sh` | `remove_software_in_lock()` | Após desinstalar |
 | `homebrew.sh` | `homebrew_install()` | Instalar no macOS |
@@ -63,6 +67,12 @@ Esta skill é **específica para comandos de setup** na categoria `setup/`. Para
 | `github.sh` | `github_download_release()` | Baixar release do GitHub |
 | `os.sh` | `is_mac()` / `is_linux()` | Detectar sistema operacional |
 | `os.sh` | `get_distro_id()` | Obter distro Linux |
+
+**Funções Opcionais em common.sh:**
+
+| Função | Implementar quando | Chamada por |
+|--------|-------------------|-------------|
+| `show_additional_info()` | Software tem configurações/status específicos úteis | `show_software_info()` (automaticamente) |
 
 ---
 
@@ -333,9 +343,11 @@ main() {
 **Todo comando de setup** deve implementar a flag `--info` no entrypoint da **categoria principal**:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+UTILS_DIR="$(dirname "$0")/utils"
 source "$LIB_DIR/internal/installations.sh"
 source "$UTILS_DIR/common.sh"
 
@@ -389,10 +401,12 @@ susa setup bruno --info
 **Exemplo completo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 # commands/setup/bruno/main.sh
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+UTILS_DIR="$(dirname "$0")/utils"
 source "$LIB_DIR/internal/installations.sh"
 source "$UTILS_DIR/common.sh"
 
@@ -435,9 +449,11 @@ main() {
 - Não executa ações de instalação/desinstalação diretamente
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+UTILS_DIR="$(dirname "$0")/utils"
 
 # Source libraries (as essenciais já estão carregadas)
 source "$LIB_DIR/internal/installations.sh"  # Se gerenciar instalações
@@ -493,9 +509,11 @@ main() {
 ### main.sh (Subcomando - install)
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+UTILS_DIR="$(dirname "$0")/../utils"
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
@@ -591,9 +609,11 @@ main() {
 ### main.sh (Subcomando - update)
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+UTILS_DIR="$(dirname "$0")/../utils"
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
@@ -648,9 +668,11 @@ main() {
 ### main.sh (Subcomando - uninstall)
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+UTILS_DIR="$(dirname "$0")/../utils"
 
 # Source libraries
 source "$LIB_DIR/internal/installations.sh"
@@ -729,7 +751,9 @@ main() {
 ### utils/common.sh (Funções Compartilhadas)
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 # [Software] Common Utilities
 # Shared functions used across install, update and uninstall
 
@@ -834,6 +858,86 @@ get_latest_version() {
 - `get_current_version()` - Registra versão no lock file e exibe em `--info`
 - `get_latest_version()` - Permite verificar se há atualizações disponíveis
 
+**⚠️ IMPORTANTE: Implementação de `get_latest_version()`**
+
+A função `get_latest_version()` **DEVE retornar uma versão válida** quando possível. **NUNCA retorne apenas "N/A"** sem tentar obter a versão real.
+
+**Ordem de prioridade para obter versão:**
+
+1. **Gerenciadores de pacote** (mais confiável):
+
+   ```bash
+   get_latest_version() {
+       if is_mac; then
+           homebrew_get_latest_version "$HOMEBREW_PACKAGE"
+       else
+           flatpak_get_latest_version "$FLATPAK_APP_ID"
+       fi
+   }
+   ```
+
+2. **GitHub Releases API** (para software no GitHub):
+
+   ```bash
+   get_latest_version() {
+       github_get_latest_version "owner/repo" "true"  # true = remove prefixo 'v'
+   }
+   ```
+
+3. **Web Scraping** (quando não há API):
+
+   ```bash
+   get_latest_version() {
+       curl -fsSL "https://site-oficial.com/releases/" 2>/dev/null |
+           grep -oP 'version-\K[0-9]+\.[0-9]+\.[0-9]+' |
+           head -n 1
+   }
+   ```
+
+4. **Último recurso** (apenas quando nenhuma opção acima funciona):
+
+   ```bash
+   get_latest_version() {
+       echo "N/A"
+   }
+   ```
+
+**Exemplos práticos:**
+
+```bash
+# ✅ CORRETO - Homebrew + Flatpak
+get_latest_version() {
+    if is_mac; then
+        homebrew_get_latest_version "docker"
+    else
+        # Docker Desktop não tem Flatpak, usar web scraping
+        curl -fsSL "https://docs.docker.com/desktop/release-notes/" 2>/dev/null |
+            grep -oP 'Docker Desktop \K[0-9]+\.[0-9]+\.[0-9]+' |
+            head -n 1
+    fi
+}
+
+# ✅ CORRETO - GitHub Releases
+get_latest_version() {
+    github_get_latest_version "astral-sh/uv" "true"
+}
+
+# ❌ ERRADO - Não tenta obter versão
+get_latest_version() {
+    echo "N/A"  # Nunca faça isso sem tentar outras opções!
+}
+```
+
+**Teste sua implementação:**
+
+Sempre teste se `--info` retorna a versão correta:
+
+```bash
+susa setup [software] --info
+# Deve mostrar:
+#   Última versão: X.Y.Z  ✅ (não "N/A" ou "indisponível")
+```
+
 ### 🔧 Funções Opcionais em utils/common.sh
 
 Você pode adicionar funções auxiliares conforme necessário:
@@ -844,6 +948,142 @@ get_config_path()      # Caminho de configuração
 backup_config()        # Backup de configurações
 detect_install_method() # Para softwares com múltiplos métodos
 ```
+
+#### show_additional_info() - Informações Extras no --info (Opcional)
+
+A função `show_additional_info()` permite exibir **informações específicas do software** junto com o `--info`. Se implementada em `common.sh`, ela é **chamada automaticamente** pela biblioteca `show_software_info()`.
+
+**Quando implementar:**
+
+- Software tem **configurações específicas** que são úteis exibir (conta, projeto, região)
+- Software tem **componentes/plugins** instalados que valem mencionar
+- Software tem **status de serviço** relevante (rodando/parado, porta)
+- Software tem **informações de licença** ou autenticação
+
+**Quando NÃO implementar:**
+
+- Software não tem configurações específicas relevantes
+- Informações padrão (nome, versão, status) já são suficientes
+
+**Estrutura da função:**
+
+```bash
+# OPCIONAL - Exibe informações adicionais específicas do software
+show_additional_info() {
+    # Só executa se software estiver instalado
+    if ! check_installation; then
+        return
+    fi
+
+    # Exibir informações específicas formatadas
+    log_output "  ${CYAN}Campo:${NC} valor"
+}
+```
+
+**Exemplo 1 - Google Cloud SDK (gcloud):**
+
+```bash
+# commands/setup/gcloud/utils/common.sh
+
+show_additional_info() {
+    if ! check_installation; then
+        return
+    fi
+
+    # Conta configurada
+    local account=$(gcloud config get-value account 2>/dev/null || echo "não configurado")
+    log_output "  ${CYAN}Conta:${NC} $account"
+
+    # Projeto configurado
+    local project=$(gcloud config get-value project 2>/dev/null || echo "não configurado")
+    log_output "  ${CYAN}Projeto:${NC} $project"
+
+    # Região/zona
+    local region=$(gcloud config get-value compute/region 2>/dev/null || echo "não configurado")
+    log_output "  ${CYAN}Região:${NC} $region"
+
+    # Componentes instalados
+    local components=$(gcloud components list --filter="state.name=Installed" --format="value(id)" 2>/dev/null | wc -l | xargs)
+    log_output "  ${CYAN}Componentes:${NC} $components instalados"
+}
+```
+
+**Exemplo 2 - Redis:**
+
+```bash
+# commands/setup/redis/utils/common.sh
+
+show_additional_info() {
+    if ! check_installation; then
+        return
+    fi
+
+    # Status do serviço
+    local status="parado"
+    if systemctl is-active --quiet redis 2>/dev/null || pgrep redis-server >/dev/null; then
+        status="rodando"
+    fi
+    log_output "  ${CYAN}Status:${NC} $status"
+
+    # Porta configurada
+    local port=$(redis-cli CONFIG GET port 2>/dev/null | tail -n 1 || echo "6379 (padrão)")
+    log_output "  ${CYAN}Porta:${NC} $port"
+
+    # Modo de persistência
+    local persistence=$(redis-cli CONFIG GET save 2>/dev/null | tail -n 1 || echo "desconhecido")
+    if [ "$persistence" != "desconhecido" ]; then
+        log_output "  ${CYAN}Persistência:${NC} habilitada"
+    fi
+}
+```
+
+**Exemplo 3 - Docker:**
+
+```bash
+# commands/setup/docker/utils/common.sh
+
+show_additional_info() {
+    if ! check_installation; then
+        return
+    fi
+
+    # Número de containers
+    local containers=$(docker ps -a --format "{{.ID}}" 2>/dev/null | wc -l | xargs || echo "0")
+    log_output "  ${CYAN}Containers:${NC} $containers (total)"
+
+    # Containers rodando
+    local running=$(docker ps --format "{{.ID}}" 2>/dev/null | wc -l | xargs || echo "0")
+    log_output "  ${CYAN}Rodando:${NC} $running"
+
+    # Imagens
+    local images=$(docker images --format "{{.ID}}" 2>/dev/null | wc -l | xargs || echo "0")
+    log_output "  ${CYAN}Imagens:${NC} $images"
+}
+```
+
+**Resultado no --info:**
+
+```bash
+$ susa setup gcloud --info
+
+Informações do gcloud:
+  Nome: gcloud
+  Status: Instalado
+  Versão atual: 458.0.1
+  Última versão: 458.0.1
+  Conta: usuario@example.com
+  Projeto: meu-projeto-gcp
+  Região: us-central1
+  Componentes: 8 instalados
+```
+
+**⚠️ Importante:**
+
+- Função deve verificar se software está instalado (`check_installation()`)
+- Usar `log_output` para saída formatada
+- Tratar erros silenciosamente (não falhar se comando não funcionar)
+- Usar `2>/dev/null` para suprimir erros de comandos
+- Usar valores padrão quando informação não estiver disponível
 
 ### ❌ Funções que NÃO devem estar em common.sh
 
@@ -889,9 +1129,11 @@ Adiciona informações complementares ao help padrão **sem substituí-lo**.
 **Exemplo - main.sh da categoria principal:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+UTILS_DIR="$(dirname "$0")/utils"
 source "$LIB_DIR/internal/installations.sh"
 source "$UTILS_DIR/common.sh"
 
@@ -923,9 +1165,11 @@ main() {
 **Exemplo - main.sh do subcomando install:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+UTILS_DIR="$(dirname "$0")/../utils"
 source "$LIB_DIR/internal/installations.sh"
 source "$UTILS_DIR/common.sh"
 
@@ -987,9 +1231,11 @@ Substitui **completamente** o help padrão. Use apenas quando o padrão não ate
 **Exemplo:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/utils"
+UTILS_DIR="$(dirname "$0")/utils"
 source "$UTILS_DIR/common.sh"
 
 # Substitui COMPLETAMENTE o help padrão
@@ -1303,7 +1549,13 @@ log_trace "Trace completo (visível com -vvv)"
 - [ ] Implementar **funções obrigatórias** em `common.sh`:
   - [ ] `check_installation()` - Verifica se está instalado
   - [ ] `get_current_version()` - Obtém versão instalada
-  - [ ] `get_latest_version()` - Obtém versão mais recente
+  - [ ] `get_latest_version()` - Obtém versão mais recente (**DEVE retornar versão válida, não apenas "N/A"**)
+- [ ] **Avaliar necessidade** de `show_additional_info()` em `common.sh`:
+  - [ ] Software tem configurações específicas úteis? (conta, projeto, região)
+  - [ ] Software tem componentes/plugins instalados?
+  - [ ] Software tem status de serviço relevante? (rodando/parado, porta)
+  - [ ] Se sim, implementar `show_additional_info()` para exibir essas informações
+- [ ] **Testar `get_latest_version()`:** Executar `susa setup [comando] --info` e verificar se "Última versão" mostra versão real (não "N/A" ou "indisponível")
 - [ ] **NÃO criar** `show_software_info()` em `common.sh` (já existe na lib)
 - [ ] **NÃO criar** `display_help()` em `common.sh` (já existe na lib)
 - [ ] Criar subcomando `install/` com:

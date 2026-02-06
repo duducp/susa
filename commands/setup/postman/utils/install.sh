@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Postman Installation Functions
 
 # Install Postman on macOS using Homebrew

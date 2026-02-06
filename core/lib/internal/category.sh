@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+setopt KSH_ARRAYS # Use zero-based array indexing
 IFS=$'\n\t'
 
 # ============================================================
@@ -13,11 +14,14 @@ IFS=$'\n\t'
 resolve_category_path() {
     local category="$1"
     shift
-    local remaining_args=("$@")
+    local -a remaining_args=("$@")
 
     # Check if there are more arguments that could be subcategories
-    while [ ${#remaining_args[@]} -gt 0 ]; do
-        local next_arg="${remaining_args[0]}"
+    while ((${#remaining_args[@]} > 0)); do
+        local next_arg="${remaining_args[0]:-}"
+
+        # Safety check
+        [ -z "$next_arg" ] && break
 
         # If it's help, show help for current category
         if [ "$next_arg" = "help" ]; then

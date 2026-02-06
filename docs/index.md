@@ -8,7 +8,7 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Shell](https://img.shields.io/badge/shell-bash-orange)
+![Shell](https://img.shields.io/badge/shell-zsh-orange)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey)
 
 ## ✨ Características
@@ -27,11 +27,17 @@ Sistema modular de CLI em Shell Script para automação de tarefas e gerenciamen
 
 ### Linux and macOS
 
-Use este comando com `curl` para baixar o script e executá-lo:
+Use `curl` ou `wget` para baixar e executar o script:
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install-remote.sh | bash
+# Com curl (bash ou zsh)
+curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash
+
+# Com wget (bash ou zsh)
+wget -qO- https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash
 ```
+
+> **ℹ️ Nota:** O script funciona com `bash` ou `zsh`. O ZSH será instalado automaticamente se necessário.
 
 Para instruções completas de instalação, desinstalação e verificação, veja o [Guia de Início Rápido](quick-start.md).
 
@@ -42,14 +48,19 @@ Para instruções completas de instalação, desinstalação e verificação, ve
 susa
 
 # Executar comando
-susa setup asdf
+susa setup docker      # Instalar Docker
+susa setup poetry      # Instalar Poetry
 
 # Gerenciar plugins
 susa self plugin add user/repo
 susa self plugin list
 
 # Autocompletar
-susa self completion bash --install
+susa self completion --install
+
+# Ver informações
+susa self info
+susa self version
 ```
 
 Para exemplos detalhados e tutoriais práticos, veja o [Guia de Início Rápido](quick-start.md).
@@ -62,29 +73,43 @@ cli/
 │   ├── susa             # Entrypoint principal
 │   ├── cli.json         # Configuração global
 │   └── lib/             # Bibliotecas
-│       ├── config.sh    # Parser JSON (com jq)
-│       ├── git.sh       # Operações Git
-│       ├── plugin.sh    # Sistema de plugins
-│       ├── registry.sh  # Registro de plugins
-│       ├── dependencies.sh  # Gerenciamento de dependências
-│       └── ...
+│       ├── cache.sh     # Sistema de cache
+│       ├── cli.sh       # Funções CLI
+│       ├── color.sh     # Cores e formatação
+│       ├── context.sh   # Contexto de execução
+│       ├── github.sh    # Integração GitHub
+│       ├── logger.sh    # Sistema de logs
+│       ├── os.sh        # Detecção de SO
+│       └── internal/    # Bibliotecas internas
+│           ├── lock.sh           # Cache do susa.lock
+│           ├── registry.sh       # Gestão de plugins
+│           └── installations.sh  # Gestão de instalações
 │
-├── install.sh           # Instalador
-├── uninstall.sh         # Desinstalador
+├── install.sh           # Instalador remoto
+├── uninstall.sh         # Desinstalador remoto
 │
-├── commands/            # Comandos built-in
-│   ├── install/        # Instalação de software
+├── commands/            # Comandos nativos
+│   ├── setup/          # Instalação de software
+│   │   ├── docker/     # Docker
+│   │   ├── podman/     # Podman
+│   │   ├── poetry/     # Poetry
+│   │   └── ...
 │   └── self/           # Gerenciamento do CLI
-│       ├── plugin/     # Comandos de plugin
-│       └── version/    # Versão do CLI
+│       ├── cache/      # Gerenciamento de cache
+│       ├── completion/ # Autocompletar
+│       ├── info/       # Informações
+│       ├── lock/       # Lock file
+│       ├── plugin/     # Plugins
+│       ├── update/     # Atualizar CLI
+│       └── version/    # Versão
 │
 ├── plugins/            # Plugins externos
 │   └── registry.json  # Registro de plugins
 │
-├── config/            # Configurações de usuário
+├── config/            # Configurações
 │   └── settings.conf
 │
-└── docs/             # Documentação
+└── docs/             # Documentação (MkDocs)
 ```
 
 ## 📚 Documentação

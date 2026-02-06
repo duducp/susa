@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -66,18 +66,16 @@ main() {
         [ -f "$cache_file" ] || continue
 
         local name=$(basename "$cache_file" .cache)
-        local size_bytes
 
         # Get file size in bytes (cross-platform)
         if [[ "$(uname)" == "Darwin" ]]; then
-            size_bytes=$(stat -f %z "$cache_file" 2> /dev/null || echo "0")
+            local size_bytes=$(stat -f %z "$cache_file" 2> /dev/null || echo "0")
         else
-            size_bytes=$(stat -c %s "$cache_file" 2> /dev/null || echo "0")
+            local size_bytes=$(stat -c %s "$cache_file" 2> /dev/null || echo "0")
         fi
 
-        local size_human
-
         # Format size
+        local size_human=""
         if ((size_bytes < 1024)); then
             size_human="${size_bytes}B"
         elif ((size_bytes < 1048576)); then
@@ -90,11 +88,10 @@ main() {
         local key_count=$(jq '[paths(scalars)] | length' "$cache_file" 2> /dev/null || echo "0")
 
         # Get modification date
-        local cache_date
         if [[ "$(uname)" == "Darwin" ]]; then
-            cache_date=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$cache_file" 2> /dev/null || echo "N/A")
+            local cache_date=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$cache_file" 2> /dev/null || echo "N/A")
         else
-            cache_date=$(stat -c "%y" "$cache_file" 2> /dev/null | cut -d'.' -f1 || echo "N/A")
+            local cache_date=$(stat -c "%y" "$cache_file" 2> /dev/null | cut -d'.' -f1 || echo "N/A")
         fi
 
         # Add row to table

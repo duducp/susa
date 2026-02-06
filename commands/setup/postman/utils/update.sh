@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Postman Update Functions
 
 # Update Postman on macOS using Homebrew

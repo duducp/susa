@@ -71,7 +71,10 @@ echo "Configuração adicionada em: $shell_config"
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/shell.sh"
 source "$LIB_DIR/logger.sh"
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -48,6 +48,9 @@ show_complement_help() {
 
 # Scans a category directory and returns its structure
 scan_category_dir() {
+    # Enable null_glob to prevent "no matches found" errors on empty directories
+    setopt local_options null_glob
+
     local base_dir="$1"
     local category_path="$2"
     local source="$3" # 'commands' or plugin name
@@ -136,6 +139,9 @@ scan_category_dir() {
 
 # Scans all categories and commands
 scan_all_structure() {
+    # Enable null_glob to prevent "no matches found" errors on empty directories
+    setopt local_options null_glob
+
     local cli_dir="${CLI_DIR}"
     local commands_dir="${cli_dir}/commands"
     local plugins_dir="${cli_dir}/plugins"
@@ -237,7 +243,7 @@ scan_all_structure() {
             [ ! -d "$plugin_source" ] && continue
 
             # Get the configured directory for plugin commands
-            local commands_subdir=$(get_plugin_directory "$plugin_source")
+            local commands_subdir=$(get_plugin_directory "$plugin_source" 2> /dev/null)
             local plugin_scan_dir="$plugin_source"
 
             if [ -n "$commands_subdir" ]; then
@@ -252,8 +258,8 @@ scan_all_structure() {
                 [ ! -d "$cat_dir" ] && continue
                 local cat_name=$(basename "$cat_dir")
 
-                # Skip non-category files
-                [[ "$cat_name" =~ ^\. ]] && continue
+                # Skip non-category files (hidden directories starting with dot)
+                [[ "$cat_name" =~ ^\\\. ]] && continue
                 [ "$cat_name" = "README.md" ] && continue
 
                 # Validate category name
@@ -547,6 +553,8 @@ main() {
                 shift
                 ;;
             *)
+                log_error "Argumento inválido: $1"
+                show_usage
                 exit 1
                 ;;
         esac
@@ -567,6 +575,4 @@ main() {
 }
 
 # Execute main only if not showing help
-if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
-    main "$@"
-fi
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

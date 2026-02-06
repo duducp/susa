@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # homebrew.sh - Library for managing applications via Homebrew
 #
 # Functions to install, update, remove and query applications
@@ -16,9 +16,6 @@
 #   homebrew_update                 - Update an installed application
 #   homebrew_uninstall              - Remove an installed application
 #   homebrew_update_metadata        - Update Homebrew formulae
-
-set -euo pipefail
-IFS=$'\n\t'
 
 # Check if Homebrew is installed on the system
 #
@@ -220,16 +217,14 @@ homebrew_update() {
     fi
 
     local current_version=$(homebrew_get_installed_version "$cask_name")
-    log_debug "Versão atual: $current_version"
+    log_debug "Versão atual do $app_name: $current_version"
 
     # Update the cask
-    log_info "Atualizando $app_name via Homebrew..."
-
     if brew upgrade --cask "$cask_name" 2> /dev/null; then
         local new_version=$(homebrew_get_installed_version "$cask_name")
 
         if [ "$current_version" = "$new_version" ]; then
-            log_info "$app_name já estava na versão mais recente ($new_version)"
+            log_info "$app_name já está na versão mais recente ($new_version)"
         else
             log_success "$app_name atualizado com sucesso para versão $new_version!"
         fi

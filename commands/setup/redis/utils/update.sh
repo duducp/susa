@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Redis CLI Update Functions
 
 # Update Redis CLI on macOS

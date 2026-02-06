@@ -8,7 +8,6 @@ nav:
   - Sudo: sudo.md
   - Strings: string.md
   - Tabelas: table.md
-  - Dependências: dependencies.md
   - Flatpak: flatpak.md
   - Snap: snap.md
   - Homebrew: homebrew.md

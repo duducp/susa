@@ -67,7 +67,10 @@ print_current_context
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/kubernetes.sh"
 source "$LIB_DIR/logger.sh"
 

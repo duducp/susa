@@ -319,7 +319,10 @@ $ sync_installations
 **Exemplo de Integração:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/installations.sh"
 
 # Após gerar lock file
@@ -334,7 +337,10 @@ sync_installations
 Os comandos `susa setup` devem usar estas funções para rastrear instalações:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/installations.sh"
 
 install_docker() {

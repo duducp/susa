@@ -79,7 +79,10 @@ echo "Plugin myplugin: $version ($source)"
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/registry.sh"
 
 registry_file="$CLI_DIR/plugins/registry.json"

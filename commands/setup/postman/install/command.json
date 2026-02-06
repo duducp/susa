@@ -2,5 +2,5 @@
   "name": "Install",
   "description": "Instala o Postman (plataforma completa para desenvolvimento de APIs)",
   "entrypoint": "main.sh",
-  "os": ["linux", "macos"]
+  "os": ["linux", "mac"]
 }

@@ -97,7 +97,10 @@ Garante privilégios sudo ou sai com erro. **Agora com bypass automático** para
 **Uso Básico:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/sudo.sh"
 
 # Garante que temos sudo (mas permite --help sem sudo)
@@ -122,7 +125,10 @@ susa setup docker
 ### Exemplo 1: Comando com Sudo e Bypass
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/sudo.sh"
 source "$LIB_DIR/logger.sh"
 
@@ -142,7 +148,10 @@ apt-get install package
 ### Exemplo 2: Verificação Condicional
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/sudo.sh"
 
 # Verifica manualmente se precisa de sudo
@@ -159,7 +168,10 @@ fi
 ### Exemplo 3: Script Completo de Instalação
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/sudo.sh"
 source "$LIB_DIR/logger.sh"
 

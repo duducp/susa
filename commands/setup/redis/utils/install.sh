@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Redis CLI Installation Functions
 
 # Install Redis CLI on macOS

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Podman Common Utilities
 # Shared functions used across install, update and uninstall
 
@@ -77,8 +77,6 @@ show_additional_info() {
 
 # Install Podman on macOS using Homebrew
 install_podman_macos() {
-    log_info "Instalando Podman no macOS..."
-
     if ! homebrew_is_available; then
         log_error "Homebrew não está instalado. Instale-o primeiro:"
         log_output "  /bin/bash -c \"\$(curl -fsSL $PODMAN_HOMEBREW_INSTALL_URL)\""
@@ -87,16 +85,13 @@ install_podman_macos() {
 
     # Install or upgrade Podman
     if homebrew_is_installed_formula "$PODMAN_HOMEBREW_PKG"; then
-        log_info "Atualizando Podman via Homebrew..."
         homebrew_update_formula "$PODMAN_HOMEBREW_PKG" "Podman" || true
     else
-        log_info "Instalando Podman via Homebrew..."
         homebrew_install_formula "$PODMAN_HOMEBREW_PKG" "Podman"
     fi
 
     # Install podman-compose if not present
     if ! homebrew_is_installed_formula "$PODMAN_HOMEBREW_COMPOSE_PKG"; then
-        log_info "Instalando podman-compose..."
         homebrew_install_formula "$PODMAN_HOMEBREW_COMPOSE_PKG" "podman-compose" || log_debug "$PODMAN_COMPOSE_BIN não disponível via homebrew"
     fi
 

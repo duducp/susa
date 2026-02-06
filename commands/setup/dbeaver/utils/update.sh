@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # DBeaver Update Functions
 
 # Update DBeaver on macOS using Homebrew

@@ -2,5 +2,5 @@
   "name": "Instalar",
   "description": "Instala o Podman Desktop (interface gráfica para containers)",
   "entrypoint": "main.sh",
-  "os": ["linux", "macos"]
+  "os": ["linux", "mac"]
 }

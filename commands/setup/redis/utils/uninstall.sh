@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Redis CLI Uninstall Functions
 
 # Uninstall Redis CLI on macOS

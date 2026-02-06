@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -7,12 +7,13 @@ source "$LIB_DIR/shell.sh"
 source "$LIB_DIR/internal/completion.sh"
 
 # Help function
-show_help() {
-    show_description
+show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  -i, --install     Instala o completion no shell atual"
+    log_output "  -U, --uninstall   Remove o completion do shell"
+    log_output "  -p, --print       Apenas imprime o script (não instala)"
     log_output ""
-    show_usage "[shell] [options]"
-    log_output ""
-    log_output "${LIGHT_GREEN}Description:${NC}"
+    log_output "${LIGHT_GREEN}Descrição:${NC}"
     log_output "  Gera e instala scripts de autocompletar (tab completion) para seu shell."
     log_output "  O autocompletar sugere categorias, comandos e subcategorias automaticamente."
     log_output ""
@@ -21,15 +22,7 @@ show_help() {
     log_output "  zsh               Gera completion para Zsh"
     log_output "  fish              Gera completion para Fish"
     log_output ""
-    log_output "${LIGHT_GREEN}Options:${NC}"
-    log_output "  -v, --verbose     Modo verbose (debug)"
-    log_output "  -q, --quiet       Modo silencioso (mínimo de output)"
-    log_output "  -h, --help        Mostra esta mensagem de ajuda"
-    log_output "  -i, --install     Instala o completion no shell atual"
-    log_output "  --uninstall       Remove o completion do shell"
-    log_output "  -p, --print       Apenas imprime o script (não instala)"
-    log_output ""
-    log_output "${LIGHT_GREEN}Examples:${NC}"
+    log_output "${LIGHT_GREEN}Exemplos:${NC}"
     log_output "  susa self completion --install            # Instala em todos os shells"
     log_output "  susa self completion bash --install       # Instala apenas no bash"
     log_output "  susa self completion zsh --install        # Instala apenas no zsh"
@@ -38,7 +31,7 @@ show_help() {
     log_output "  susa self completion --uninstall          # Remove de todos os shells"
     log_output "  susa self completion zsh --uninstall      # Remove apenas do zsh"
     log_output ""
-    log_output "${LIGHT_GREEN}Post-installation:${NC}"
+    log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
     log_output "  Após a instalação, reinicie o terminal ou execute:"
     log_output "    source ~/.bashrc   (para Bash)"
     log_output "    source ~/.zshrc    (para Zsh)"
@@ -745,6 +738,7 @@ install_bash_completion() {
             log_output ""
             log_output "${LIGHT_YELLOW}⚠️  Para ativar no terminal atual:${NC}"
             log_output "   ${LIGHT_CYAN}exec bash${NC}  ou abra um novo terminal"
+            log_output ""
         fi
     else
         log_output ""
@@ -835,7 +829,8 @@ install_zsh_completion() {
         fi
     fi
 
-    # Clear zsh completion cache
+    # Clear zsh completion cache (safe for zsh when no matches)
+    setopt LOCAL_OPTIONS NULL_GLOB
     rm -f ~/.zcompdump* 2> /dev/null || true
 
     log_success "   ✅ Instalado: $completion_file"
@@ -960,6 +955,7 @@ handle_uninstall() {
         if [ $removed_count -gt 0 ]; then
             # Limpa cache do zsh se foi removido
             if [[ " ${shells_to_remove[*]} " =~ " zsh " ]]; then
+                setopt LOCAL_OPTIONS NULL_GLOB
                 rm -f ~/.zcompdump* 2> /dev/null
             fi
 
@@ -990,6 +986,7 @@ handle_uninstall() {
             if rm "$completion_file" 2> /dev/null; then
                 # Limpa cache do zsh se necessário
                 if [ "$shell_type" = "zsh" ]; then
+                    setopt LOCAL_OPTIONS NULL_GLOB
                     rm -f ~/.zcompdump* 2> /dev/null
                 fi
 
@@ -1135,7 +1132,7 @@ main() {
 
     # If there are no arguments, show help
     if [ $# -eq 0 ]; then
-        show_help
+        display_help
         return 0
     fi
 
@@ -1146,7 +1143,7 @@ main() {
                 action="install"
                 shift
                 ;;
-            --uninstall)
+            -U | --uninstall)
                 action="uninstall"
                 shift
                 ;;
@@ -1161,7 +1158,7 @@ main() {
             *)
                 log_error "Argumento inválido: $1"
                 log_output ""
-                show_help
+                display_help
                 return 1
                 ;;
         esac
@@ -1169,7 +1166,7 @@ main() {
 
     # If no action was specified, show help
     if [ -z "$action" ]; then
-        show_help
+        display_help
         return 0
     fi
 
@@ -1188,6 +1185,4 @@ main() {
 }
 
 # Execute main only if not showing help
-if [ "${SUSA_SHOW_HELP:-}" != "1" ]; then
-    main "$@"
-fi
+[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"

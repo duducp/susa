@@ -284,7 +284,10 @@ snap_install "code" "VS Code" "stable" "true"
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/snap.sh"
 
 APP_NAME="podman-desktop"

@@ -118,7 +118,9 @@ envs:
 EOF
 
 cat > meu-plugin/deploy/staging/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Variáveis automaticamente disponíveis
 url="${STAGING_URL:-https://default-staging.com}"
@@ -236,7 +238,7 @@ meu-plugin/
 **demo/main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 

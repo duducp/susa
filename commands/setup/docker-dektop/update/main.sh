@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -7,7 +7,7 @@ source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/os.sh"
 
 # Get utilities directory
-UTILS_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../utils"
+UTILS_DIR="$(dirname "$(readlink -f "$0")")/../utils"
 source "$UTILS_DIR/common.sh"
 
 # Help function
@@ -23,8 +23,6 @@ show_complement_help() {
 
 # Main update function
 main() {
-    log_info "Atualizando Docker Desktop..."
-
     # Check if Docker Desktop is installed
     if ! check_installation; then
         log_error "Docker Desktop não está instalado. Use 'susa setup docker-dektop install' para instalar."
@@ -32,31 +30,24 @@ main() {
     fi
 
     local current_version=$(get_current_version)
-    log_info "Versão atual: $current_version"
+    log_info "Versão atual do Docker Desktop: $current_version"
 
-    # Detect OS and update
+    # Detect OS and update (update functions show their own detailed messages)
     if is_mac; then
-        update_docker_desktop_macos
+        update_docker_desktop_macos || {
+            log_error "Falha na atualização do Docker Desktop"
+            return 1
+        }
     else
-        update_docker_desktop_linux
+        update_docker_desktop_linux || {
+            log_error "Falha na atualização do Docker Desktop"
+            return 1
+        }
     fi
 
-    # Verify update
-    if check_installation; then
-        local new_version=$(get_current_version)
-
-        # Update version in lock file
-        register_or_update_software_in_lock "$COMMAND_NAME" "$new_version"
-
-        if [ "$current_version" = "$new_version" ]; then
-            log_info "Docker Desktop já estava na versão mais recente ($current_version)"
-        else
-            log_success "Docker Desktop atualizado com sucesso para versão $new_version!"
-        fi
-    else
-        log_error "Falha na atualização do Docker Desktop"
-        return 1
-    fi
+    # Update version in lock file
+    local new_version=$(get_current_version)
+    register_or_update_software_in_lock "$COMMAND_NAME" "$new_version"
 }
 
 # Run main function (skip if showing help)

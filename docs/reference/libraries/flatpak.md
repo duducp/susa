@@ -182,7 +182,10 @@ fi
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/flatpak.sh"
 
 APP_ID="io.podman_desktop.PodmanDesktop"

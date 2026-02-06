@@ -163,9 +163,9 @@ Você pode definir variáveis de ambiente específicas para cada comando usando 
 **Uso no script:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 install_docker() {
     # Use as variáveis com valores de fallback
@@ -194,9 +194,9 @@ install_docker() {
 Crie `commands/<categoria>/<comando>/main.sh`:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 # Help function
 show_help() {
@@ -395,8 +395,9 @@ commands/
 **commands/deploy/app/main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+IFS=$'\n\t'
 
 source "$LIB_DIR/logger.sh"
 

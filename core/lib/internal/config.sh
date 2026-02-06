@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # ============================================================
 # Config Parser for Shell Script using jq
@@ -611,7 +611,9 @@ load_command_envs() {
         while IFS='=' read -r key value; do
             if [ -n "$key" ] && [ -n "$value" ]; then
                 # Only set if not already defined (respects system env vars)
-                if [ -z "${!key:-}" ]; then
+                # Use eval for indirect variable access (POSIX-compatible)
+                local current_value="$(eval echo "\${${key}:-}" 2> /dev/null)"
+                if [ -z "$current_value" ]; then
                     # Expand variables like $HOME in the value
                     value=$(eval echo "$value")
                     export "$key=$value"

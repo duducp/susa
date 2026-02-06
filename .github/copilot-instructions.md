@@ -442,8 +442,8 @@ context_get_all                     # Obter tudo como JSON
 
 ### Exemplos de Uso
 
-```bash
-#!/bin/bash
+```zsh
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -793,8 +793,8 @@ get_installed_version_cached()
 
 ### Estrutura de Comandos
 
-```bash
-#!/bin/bash
+```zsh
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 

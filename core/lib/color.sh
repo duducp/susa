@@ -1,6 +1,4 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+#!/usr/bin/env zsh
 
 NC='\033[0m'    # RESET
 RESET='\033[0m' # RESET

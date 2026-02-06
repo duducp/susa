@@ -209,10 +209,9 @@ internal/json.sh
 ### Estrutura Típica de um Comando
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
-# Setup environment
+IFS=$'\n\t'
 
 # Importa bibliotecas necessárias
 source "$LIB_DIR/logger.sh"

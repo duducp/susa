@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # Source required libraries
 source "$LIB_DIR/os.sh"

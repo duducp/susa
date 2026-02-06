@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+setopt KSH_ARRAYS # Use zero-based array indexing
 IFS=$'\n\t'
 
 # ============================================================
@@ -13,7 +14,7 @@ initialize_command_context() {
     local full_category="$1"
     local command="$2"
     shift 2
-    local all_args=("$@")
+    local -a all_args=("$@")
 
     # Initialize context
     context_init
@@ -23,7 +24,7 @@ initialize_command_context() {
     local parent=""
     local current="$command"
     local action=""
-    local args=()
+    local -a args=()
     local type="command" # Default to command
 
     # Extract category structure
@@ -75,10 +76,10 @@ initialize_command_context() {
 
     # Separate action from args
     # If first arg is not a flag, it's the action and the rest are args
-    if [ ${#all_args[@]} -gt 0 ] && [[ ! "${all_args[0]}" =~ ^- ]]; then
+    if ((${#all_args[@]} > 0)) && [[ ! "${all_args[0]:-}" =~ ^- ]]; then
         action="${all_args[0]}"
         # Args are everything after the action
-        if [ ${#all_args[@]} -gt 1 ]; then
+        if ((${#all_args[@]} > 1)); then
             args=("${all_args[@]:1}")
         fi
     else
@@ -106,13 +107,23 @@ initialize_command_context() {
     context_set "command.action" "$action"
     context_set "command.full" "$full_command"
     context_set "command.path" "$command_path"
-    context_set "command.args" "$(printf '%s\n' "${args[@]}")"
+
+    # Handle args safely (may be empty array)
+    if ((${#args[@]} > 0)); then
+        context_set "command.args" "$(printf '%s\n' "${args[@]}")"
+    else
+        context_set "command.args" ""
+    fi
     context_set "command.args_count" "${#args[@]}"
 
     # Save individual args for easy access
-    for i in "${!args[@]}"; do
-        context_set "command.arg.$i" "${args[$i]}"
-    done
+    local i=0
+    if ((${#args[@]} > 0)); then
+        for arg in "${args[@]}"; do
+            context_set "command.arg.$i" "$arg"
+            ((i++)) || true
+        done
+    fi
 
     log_debug2 "Contexto de comando inicializado: $full_command"
 }

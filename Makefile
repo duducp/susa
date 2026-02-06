@@ -39,24 +39,86 @@ clean: ## Remove arquivos gerados
 	@echo "$(GREEN)✅ Limpeza concluída!$(NC)"
 
 # CLI Installation
-cli-install: ## Instala o CLI no sistema
-	@if command -v susa > /dev/null 2>&1; then \
-		echo "$(YELLOW)⚠️  SUSA já está instalado$(NC)"; \
+cli-install: ## Instala o CLI no sistema (modo desenvolvimento - symlink local)
+	@echo "$(GREEN)🚀 Instalando CLI em modo desenvolvimento...$(NC)"
+	@echo ""
+	@BIN_DIR="$$HOME/.local/bin"; \
+	CLI_PATH="$$(pwd)/core/susa"; \
+	if [ ! -f "$$CLI_PATH" ]; then \
+		echo "$(RED)❌ Arquivo core/susa não encontrado!$(NC)"; \
+		exit 1; \
+	fi; \
+	mkdir -p "$$BIN_DIR"; \
+	if [ -L "$$BIN_DIR/susa" ] || [ -f "$$BIN_DIR/susa" ]; then \
+		echo "$(YELLOW)⚠️  SUSA já está instalado em $$BIN_DIR/susa$(NC)"; \
+		CURRENT_TARGET=$$(readlink "$$BIN_DIR/susa" 2>/dev/null || echo "arquivo regular"); \
+		echo "$(DIM)   Atual: $$CURRENT_TARGET$(NC)"; \
+		echo "$(DIM)   Novo:  $$CLI_PATH$(NC)"; \
+		echo ""; \
 		read -p "Deseja reinstalar? (s/N): " response; \
-		if [ "$$response" = "s" ] || [ "$$response" = "S" ]; then \
-			echo "$(GREEN)🚀 Reinstalando CLI...$(NC)"; \
-			./install.sh; \
+		if [ "$$response" = "s" ] || [ "$$response" = "S" ] || [ "$$response" = "y" ] || [ "$$response" = "Y" ]; then \
+			echo ""; \
+			echo "$(BLUE)→ Removendo instalação anterior...$(NC)"; \
+			rm -f "$$BIN_DIR/susa"; \
+			echo "$(BLUE)→ Criando symlink para $$CLI_PATH...$(NC)"; \
+			ln -sf "$$CLI_PATH" "$$BIN_DIR/susa"; \
+			echo "$(GREEN)  ✓ Symlink criado com sucesso!$(NC)"; \
 		else \
 			echo "$(BLUE)ℹ️  Instalação cancelada$(NC)"; \
+			exit 0; \
 		fi \
 	else \
-		echo "$(GREEN)🚀 Instalando CLI...$(NC)"; \
-		./install.sh; \
-	fi
+		echo "$(BLUE)→ Criando diretório $$BIN_DIR...$(NC)"; \
+		echo "$(BLUE)→ Criando symlink para $$CLI_PATH...$(NC)"; \
+		ln -sf "$$CLI_PATH" "$$BIN_DIR/susa"; \
+		echo "$(GREEN)  ✓ Symlink criado com sucesso!$(NC)"; \
+	fi; \
+	echo ""; \
+	if echo "$$PATH" | grep -q "$$HOME/.local/bin"; then \
+		echo "$(GREEN)  ✓ $$HOME/.local/bin já está no PATH$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠️  $$HOME/.local/bin não está no PATH$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Adicione ao seu ~/.bashrc ou ~/.zshrc:$(NC)"; \
+		echo "$(BLUE)  export PATH=\"\$$HOME/.local/bin:\$$PATH\"$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Depois execute: source ~/.bashrc (ou ~/.zshrc)$(NC)"; \
+	fi; \
+	echo ""; \
+	echo "$(GREEN)✅ CLI instalado com sucesso em modo desenvolvimento!$(NC)"; \
+	echo "$(DIM)   Symlink: $$BIN_DIR/susa -> $$CLI_PATH$(NC)"; \
+	echo ""; \
+	echo "$(YELLOW)💡 Teste com: susa --version$(NC)"
 
-cli-uninstall: ## Remove o CLI do sistema
+cli-uninstall: ## Remove o CLI do sistema (remove apenas o symlink)
 	@echo "$(YELLOW)🗑️  Desinstalando CLI...$(NC)"
-	@./uninstall.sh
+	@echo ""
+	@BIN_DIR="$$HOME/.local/bin"; \
+	if [ -L "$$BIN_DIR/susa" ]; then \
+		LINK_TARGET=$$(readlink "$$BIN_DIR/susa"); \
+		echo "$(BLUE)→ Removendo symlink...$(NC)"; \
+		echo "$(DIM)   $$BIN_DIR/susa -> $$LINK_TARGET$(NC)"; \
+		rm -f "$$BIN_DIR/susa"; \
+		echo "$(GREEN)  ✓ Symlink removido com sucesso!$(NC)"; \
+	elif [ -f "$$BIN_DIR/susa" ]; then \
+		echo "$(YELLOW)⚠️  $$BIN_DIR/susa existe mas não é um symlink$(NC)"; \
+		echo "$(YELLOW)   Pode ser uma instalação via install.sh$(NC)"; \
+		echo ""; \
+		read -p "Deseja remover mesmo assim? (s/N): " response; \
+		if [ "$$response" = "s" ] || [ "$$response" = "S" ] || [ "$$response" = "y" ] || [ "$$response" = "Y" ]; then \
+			rm -f "$$BIN_DIR/susa"; \
+			echo "$(GREEN)  ✓ Arquivo removido!$(NC)"; \
+		else \
+			echo "$(BLUE)ℹ️  Nada foi removido$(NC)"; \
+			exit 0; \
+		fi \
+	else \
+		echo "$(BLUE)ℹ️  CLI não está instalado em $$BIN_DIR/susa$(NC)"; \
+		exit 0; \
+	fi; \
+	echo ""; \
+	echo "$(GREEN)✅ CLI desinstalado com sucesso!$(NC)"; \
+	echo "$(DIM)   Os arquivos do projeto em $$(pwd) não foram removidos.$(NC)"
 
 # Quality Assurance
 lint: ## Executa ShellCheck, shfmt em todos os arquivos

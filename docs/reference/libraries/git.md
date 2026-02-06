@@ -198,7 +198,10 @@ fi
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/git.sh"
 source "$LIB_DIR/logger.sh"
 

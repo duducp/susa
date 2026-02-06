@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # VSCode Installation Utilities
 # Functions for installing VS Code on different platforms
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # MySQL Client Update Functions
 
 # Update MySQL client on macOS using Homebrew

@@ -2,5 +2,5 @@
   "name": "Uninstall",
   "description": "Desinstala o Postman do sistema",
   "entrypoint": "main.sh",
-  "os": ["linux", "macos"]
+  "os": ["linux", "mac"]
 }

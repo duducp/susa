@@ -6,23 +6,33 @@ A forma mais rápida de instalar o Susa CLI é usando o instalador remoto.
 
 ### Linux and macOS
 
-Use este comando com `curl` para baixar o script e executá-lo:
+Use `curl` ou `wget` para baixar e executar o script:
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install-remote.sh | bash
+# Com curl (recomendado)
+curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash
+
+# Com wget (alternativa)
+wget -qO- https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash
 ```
 
-Se o seu sistema não tiver curl, você pode usar `wget`:
+**Usar com zsh:**
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/duducp/susa/main/install-remote.sh | bash
+curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install.sh | zsh
 ```
 
-Solicite uma versão específica incluindo-a no URL:
+**Instalar versão específica:**
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/duducp/susa/1.0.0/install-remote.sh | bash
+# Com curl
+curl -LsSf https://raw.githubusercontent.com/duducp/susa/1.0.0/install.sh | bash
+
+# Com wget
+wget -qO- https://raw.githubusercontent.com/duducp/susa/1.0.0/install.sh | bash
 ```
+
+> **ℹ️ Nota:** O script funciona com `bash` ou `zsh`. O ZSH será instalado automaticamente se necessário.
 
 Este comando irá:
 
@@ -35,76 +45,45 @@ Este comando irá:
 
 ### 📦 Dependências
 
-O SUSA CLI requer algumas dependências para funcionar:
+O SUSA CLI requer as seguintes dependências:
 
-| Dependência | Versão Mínima | Motivo | Instalação |
-|-------------|---------------|--------|------------|
-| **Bash** | 3.2+ | Shell scripting (compatível com macOS) | Nativo no macOS/Linux |
-| **jq** | 1.5+ | Processamento de JSON | `brew install jq` ou `apt install jq` |
+| Dependência | Motivo | Instalação Automática |
+|-------------|--------|-----------------------|
+| **git** | Controle de versão e clonagem do repositório | ✅ Sim |
+| **zsh** | Shell requerido pelo CLI | ✅ Sim |
+| **jq** | Processamento de JSON (cache, configs, plugins) | ✅ Sim |
+| **gum** | Interface interativa (Charm) | ✅ Sim |
+| **pip3** | Gerenciador de pacotes Python | ✅ Sim |
+| **homebrew** | Gerenciador de pacotes (macOS apenas) | ✅ Sim |
 
-**Verificação Automática:**
+**Instalação Automática:**
 
-Na primeira execução, o SUSA CLI verifica automaticamente se todas as dependências estão instaladas:
-
-```bash
-$ susa --version
-
-Dependências faltando
-
-✗ jq
-  Motivo: jq é necessário para processar arquivos JSON (cache, configurações, plugins)
-  Comando: sudo apt install -y jq
-
-Deseja instalar as dependências agora? (s/n)
-```
-
-Se você responder **'s'** (sim), as dependências serão instaladas automaticamente. Se responder **'n'** (não), será exibido o comando de instalação manual.
-
-**Pular verificação (CI/CD):**
-
-Para ambientes automatizados onde as dependências já estão garantidas:
+Durante a instalação, o script `install.sh` detecta e instala automaticamente **todas** as dependências necessárias. Você não precisa instalar nada manualmente! 🎉
 
 ```bash
-export SUSA_SKIP_DEPS_CHECK=1
-susa --version
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📦 Verificando Dependências
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[INFO] git não encontrado. Tentando instalar...
+[SUCCESS] ✓ git instalado com sucesso
+[SUCCESS] ✓ zsh instalado com sucesso
+[SUCCESS] ✓ jq instalado com sucesso
+[SUCCESS] ✓ gum instalado com sucesso
+[SUCCESS] ✨ Todas as dependências estão instaladas!
 ```
 
-### ⚠️ Importante: Shells Suportados
+### 🐚 Shells Suportados
 
-O Susa CLI suporta **Bash** e **Zsh**. Durante a instalação, o script detectará e configurará automaticamente todos os shells disponíveis no seu sistema.
+O Susa CLI funciona com **Bash** e **Zsh**. Durante a instalação:
 
-#### Se você usa apenas Bash
+✅ **ZSH é instalado automaticamente** se não estiver presente
+✅ **Bash e Zsh são configurados automaticamente** (PATH adicionado aos respectivos arquivos de config)
+✅ **Backups são criados** antes de modificar os arquivos de configuração
 
-Nenhuma ação adicional necessária! ✅
+**Nenhuma ação manual necessária!** O instalador cuida de tudo. 🎉
 
-#### Se você planeja usar Zsh no futuro
-
-Se você instalar o Zsh após a instalação do Susa CLI, será necessário configurá-lo manualmente:
-
-```bash
-# 1. Instalar Zsh primeiro
-# Ubuntu/Debian:
-sudo apt install zsh
-
-# Fedora/RHEL:
-sudo dnf install zsh
-
-# Arch Linux:
-sudo pacman -S zsh
-
-# macOS (já vem instalado por padrão)
-
-# 2. Adicionar o PATH do .local no ~/.zshrc
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-
-# 3. Configurar o autocompletar do Susa CLI para Zsh
-susa self completion zsh --install
-
-# 4. Recarregar o shell
-source ~/.zshrc
-```
-
-#### Mudar o shell padrão para Zsh
+#### Mudar o shell padrão (opcional)
 
 Se quiser usar Zsh como shell padrão:
 
@@ -132,14 +111,21 @@ susa --help
 Para remover o Susa CLI utilizando o `curl`:
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/uninstall-remote.sh | bash
+curl -LsSf https://raw.githubusercontent.com/duducp/susa/main/uninstall.sh | bash
 ```
 
 Se o seu sistema não tiver curl, você pode usar `wget`:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/duducp/susa/main/uninstall-remote.sh | bash
+wget -qO- https://raw.githubusercontent.com/duducp/susa/main/uninstall.sh | bash
 ```
+
+O desinstalador remove:
+
+- ✅ Autocompletar (shell completions)
+- ✅ Executável (~/.local/bin/susa)
+- ✅ Todos os arquivos instalados (~/.local/susa)
+- ✅ Todos os plugins instalados
 
 ---
 
@@ -173,8 +159,9 @@ susa self info
 # Ver versão
 susa self version
 
-# Instalar ASDF (exemplo)
-susa setup asdf
+# Exemplos de instalação
+susa setup podman      # Instalar Podman
+susa setup poetry      # Instalar Poetry
 ```
 
 ### Configurar autocompletar
@@ -248,9 +235,9 @@ EOF
 
 # Script do comando
 cat > commands/demo/hello/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 show_help() {
     show_description

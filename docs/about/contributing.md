@@ -37,8 +37,9 @@ Tem uma ideia? Compartilhe abrindo uma issue com:
 
 ### Shell Script
 
-- Use `#!/bin/bash` em todos os scripts
-- Ative modo strict: `set -euo pipefail`
+- Use `#!/usr/bin/env zsh` em todos os scripts
+- Ative modo strict: `set -euo pipefail` e `IFS=$'\n\t'`
+- Ative compatibilidade: `setopt KSH_ARRAYS` (indexação zero-based)
 - Use 4 espaços para indentação
 - Nomeie variáveis em `snake_case`
 - Nomeie funções em `snake_case`

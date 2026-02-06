@@ -341,7 +341,10 @@ Validação:
 ### Básico - Listar Comandos
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/lock.sh"
 
 # Carregar cache
@@ -358,7 +361,10 @@ done
 ### Avançado - Verificar Compatibilidade
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/lock.sh"
 source "$LIB_DIR/os.sh"
 
@@ -392,7 +398,10 @@ fi
 ### Otimização - Múltiplas Consultas
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/lock.sh"
 
 # ✅ BOM: Carregar cache uma vez

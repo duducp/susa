@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -34,14 +34,15 @@ show_global_help() {
     log_output ""
     log_output "${LIGHT_GREEN}Comandos:${NC}"
 
-    for cat in $categories; do
-        # Skip subcategories (those containing /)
-        if [[ "$cat" == *"/"* ]]; then
-            continue
-        fi
+    # Split categories by newlines and iterate
+    while IFS= read -r cat; do
+        # Skip empty lines and subcategories (those containing /)
+        [[ -z "$cat" ]] && continue
+        [[ "$cat" == *"/"* ]] && continue
+
         local cat_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$cat" "description")
         printf "  ${LIGHT_CYAN}%-15s${NC} %s\n" "$cat" "$cat_desc"
-    done
+    done <<< "$categories"
 
     log_output ""
     log_output "${LIGHT_GREEN}Opções globais:${NC}"
@@ -75,7 +76,11 @@ print_subcategories() {
         fi
     fi
 
-    for subcat in $subcategories; do
+    # Iterate over subcategories using while read for proper multi-line handling
+    while IFS= read -r subcat; do
+        # Skip empty lines
+        [[ -z "$subcat" ]] && continue
+
         local subcat_desc=$(get_category_info "$GLOBAL_CONFIG_FILE" "$category/$subcat" "description")
         local indicators=""
 
@@ -87,7 +92,7 @@ print_subcategories() {
         fi
 
         printf "  ${LIGHT_MAGENTA}%-15s${NC} %s%b\n" "$subcat" "$subcat_desc" "$indicators"
-    done
+    done <<< "$subcategories"
 }
 
 # Format and print a command with its indicators
@@ -273,7 +278,11 @@ _display_category_commands() {
     else
         # List all commands without grouping (default)
         local has_compatible=false
-        for cmd in $commands; do
+        # Iterate over commands using while read for proper multi-line handling
+        while IFS= read -r cmd; do
+            # Skip empty lines
+            [[ -z "$cmd" ]] && continue
+
             if ! is_command_compatible "$GLOBAL_CONFIG_FILE" "$full_category" "$cmd" "$current_os"; then
                 continue
             fi
@@ -281,7 +290,7 @@ _display_category_commands() {
             has_compatible=true
             local cmd_desc=$(get_command_info "$GLOBAL_CONFIG_FILE" "$full_category" "$cmd" "description")
             print_command_line "$full_category" "$cmd" "$cmd_desc"
-        done
+        done <<< "$commands"
 
         if [ "$has_compatible" = false ] && [ -z "$subcategories" ]; then
             log_output "  ${GRAY}Nenhum comando ou subcategoria disponível${NC}"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # NordPass Installation Functions
 
 # Install on macOS using Homebrew

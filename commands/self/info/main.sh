@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -52,10 +52,13 @@ main() {
     # Use array to handle details containing colons
     IFS=':' read -r COMPLETION_INSTALLED COMPLETION_DETAILS_REST <<< "$COMPLETION_STATUS_INFO"
 
-    # Split the rest to get details and file (details may contain colons)
-    if [[ "$COMPLETION_DETAILS_REST" =~ ^(.*):(/.*)$ ]]; then
-        COMPLETION_DETAILS="${BASH_REMATCH[1]}"
-        COMPLETION_FILE="${BASH_REMATCH[2]}"
+    # Split the rest to get details and file
+    # Find last colon followed by a path (starts with /)
+    if [[ "$COMPLETION_DETAILS_REST" == *:/* ]]; then
+        # Extract file (everything after last :/)
+        COMPLETION_FILE="${COMPLETION_DETAILS_REST##*:}"
+        # Extract details (everything before last :/)
+        COMPLETION_DETAILS="${COMPLETION_DETAILS_REST%:/*}"
     else
         COMPLETION_DETAILS="$COMPLETION_DETAILS_REST"
         COMPLETION_FILE=""

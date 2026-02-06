@@ -88,7 +88,7 @@ As bibliotecas essenciais (`context.sh` incluída) são carregadas automaticamen
 ### Obter informações específicas
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -183,7 +183,7 @@ Todos acessados via `context_get "command.<campo>"`:
 Você pode adicionar código de debug em seus comandos:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -203,7 +203,7 @@ main "$@"
 ## Caso de uso: Detectar modo de execução
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -237,7 +237,7 @@ main "$@"
 ## Caso de uso: Log contextual
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # DBeaver Uninstall Functions
 
 # Uninstall DBeaver on macOS using Homebrew

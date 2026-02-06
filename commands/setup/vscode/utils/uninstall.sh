@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # VSCode Uninstall Utilities
 # Functions for uninstalling VS Code on different platforms
 

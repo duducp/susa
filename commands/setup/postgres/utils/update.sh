@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # PostgreSQL Client Update Functions
 
 # Update PostgreSQL client on macOS using Homebrew

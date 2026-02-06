@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # NordPass Update Functions
 
 # Update NordPass on macOS

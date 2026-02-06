@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # PostgreSQL Client Installation Functions
 
 # Install PostgreSQL client on macOS using Homebrew

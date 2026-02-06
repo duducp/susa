@@ -1,6 +1,9 @@
 # shfmt configuration for Susa CLI project
 # Documentation: https://github.com/mvdan/sh
 
+# NOTE: This project uses zsh (#!/usr/bin/env zsh)
+# shfmt is configured for POSIX-compatible formatting
+
 # Indent: 4 spaces (aligns with project style)
 # -i 4
 

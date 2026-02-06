@@ -218,7 +218,10 @@ Veja [documentação completa de lock.sh](lock.md) para detalhes e exemplos.
 ### Exemplo 1: Cache Personalizado
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/cache.sh"
 
 # Carregar cache
@@ -242,7 +245,10 @@ cache_named_clear "myapp"
 ### Exemplo 2: Usando Cache do Lock
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/lock.sh"  # lock.sh já carrega cache.sh
 
 # Carregar cache do lock
@@ -267,7 +273,10 @@ done
 ### Exemplo 3: Query Complexa no Lock
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/internal/lock.sh"
 
 cache_load
@@ -369,7 +378,10 @@ chmod 700 "${XDG_RUNTIME_DIR:-/tmp}/susa-$USER"
 ### ✅ Padrão Recomendado
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/cache.sh"
 
 main() {

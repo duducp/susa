@@ -65,7 +65,9 @@ O arquivo é carregado na linha 46 do `core/susa`:
 **Como Usar em Comandos:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Variáveis do settings.conf já estão disponíveis automaticamente
 echo "API_ENDPOINT: ${API_ENDPOINT:-https://api.default.com}"
@@ -381,7 +383,10 @@ DEBUG=true susa setup docker
 **Uso em Scripts:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/logger.sh"
 
 log_debug "Valor da variável X: $X"  # Só aparece com DEBUG=true
@@ -458,9 +463,9 @@ No arquivo `command.json` do seu comando, adicione a seção `envs`:
 No `main.sh` do comando, use as variáveis com valores padrão de fallback:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 # Usar variáveis com fallback para compatibilidade
 get_latest_version() {
@@ -755,8 +760,9 @@ local dir="$ASDF_INSTALL_DIR"
 **main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+IFS=$'\n\t'
 
 source "$LIB_DIR/logger.sh"
 
@@ -765,7 +771,7 @@ download_docker() {
     local timeout="${DOCKER_DOWNLOAD_TIMEOUT:-300}"
 
     log_info "Baixando Docker de: $repo_url"
-    curl -L --max-time "$timeout" "$repo_url/install.sh" | sudo bash
+    curl -L --max-time "$timeout" "$repo_url/install.sh" | sudo zsh
 }
 
 configure_docker() {
@@ -832,9 +838,9 @@ O arquivo `config/settings.conf` é carregado **automaticamente** no início da 
 As variáveis globais estão automaticamente disponíveis:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 # Variáveis do settings.conf já estão disponíveis
 echo "API Endpoint: ${API_ENDPOINT:-não configurado}"
@@ -924,9 +930,9 @@ API_BASE_URL="https://api.example.com"
 **commands/deploy/app/main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 deploy_app() {
     # Usa configuração global
@@ -1031,7 +1037,10 @@ API_TIMEOUT="30"
 Use em comandos:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 CLI_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 # Carrega configuração de produção
@@ -1187,7 +1196,9 @@ config/*.secret
 ### 3. Use Variáveis de Ambiente para Overrides
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Valores padrão
 DB_HOST="${DB_HOST:-localhost}"
@@ -1235,7 +1246,10 @@ BACKUP_RETENTION_DAYS="30"
 Em comandos que dependem de config:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 CLI_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 # Carrega configuração
@@ -1388,10 +1402,12 @@ DEBUG=true susa setup docker
 
 ```bash
 # commands/setup/docker/main.sh
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 repo="${DOCKER_REPO_URL:-https://download.docker.com}"
 timeout="${DOCKER_TIMEOUT:-300}"
 
-curl --max-time "$timeout" "$repo/install.sh" | sudo bash
+curl --max-time "$timeout" "$repo/install.sh" | sudo zsh
 ```

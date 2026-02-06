@@ -263,7 +263,9 @@ flameshot gui
 ### Integração com Script
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Captura screenshot e retorna caminho do arquivo
 screenshot=$(flameshot gui -r)
@@ -279,7 +281,9 @@ fi
 ### Captura com Nome Personalizado
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Gera nome com timestamp
 timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
@@ -434,7 +438,10 @@ flameshot full -c | convert - -quality 90 output.jpg
 ### Com OCR (Tesseract)
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 # Captura e extrai texto
 
 tempfile=$(mktemp --suffix=.png)
@@ -446,7 +453,10 @@ rm "$tempfile"
 ### Com Dropbox/Cloud
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 # Captura e salva no Dropbox
 
 timestamp=$(date +"%Y-%m-%d_%H-%M-%S")

@@ -1,13 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 set -euo pipefail
+setopt KSH_ARRAYS # Use zero-based array indexing for compatibility
 
 # ============================================================
 # CLI - Command Line Interface for Daily Scripts
 # ============================================================
 
 # Resolves the symbolic link to find the real directory
-CURRENT_SCRIPT="${BASH_SOURCE[0]}"
+CURRENT_SCRIPT="$0"
 while [ -L "$CURRENT_SCRIPT" ]; do
     SYMLINK_DIR="$(cd -P "$(dirname "$CURRENT_SCRIPT")" && pwd)"
     CURRENT_SCRIPT="$(readlink "$CURRENT_SCRIPT")"
@@ -31,47 +32,31 @@ export GLOBAL_CONFIG_FILE
 readonly EXEC_ENTRYPOINT_MARKER="__EXEC_ENTRYPOINT__"
 
 # ============================================================
-# Dependency Checking
+# Quick Dependency Check (< 5ms)
 # ============================================================
 
-# Check for missing dependencies
-check_dependencies() {
-    # Skip check if explicitly requested (useful for CI/CD)
-    if [ "${SUSA_SKIP_DEPS_CHECK:-}" = "1" ]; then
-        return 0
-    fi
+_check_required_dependencies() {
+    local missing=()
+    local required_deps=("jq" "gum" "zsh" "pip3" "git")
 
-    local missing_deps=()
-
-    # Check jq (required for JSON parsing)
-    if ! command -v jq &> /dev/null; then
-        missing_deps+=("jq")
-    fi
-
-    # If no missing dependencies, return success
-    if [ ${#missing_deps[@]} -eq 0 ]; then
-        return 0
-    fi
-
-    # Display missing dependencies
-    echo ""
-    log_error "Dependências ausentes detectadas"
-    echo ""
-    echo "As seguintes dependências são necessárias para o Susa CLI:"
-    echo ""
-
-    for dep in "${missing_deps[@]}"; do
-        echo -e "  ${LIGHT_RED}✗ ${dep}${NC}"
+    for dep in "${required_deps[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            missing+=("$dep")
+        fi
     done
 
-    echo ""
-    echo "Por favor, execute o script de instalação para configurar as dependências:"
-    echo ""
-    echo -e "  ${LIGHT_CYAN}./install.sh${NC}"
-    echo ""
-
-    exit 1
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo -e "\033[0;31m[ERROR]\033[0m Dependências obrigatórias ausentes: ${missing[*]}" >&2
+        echo "" >&2
+        echo "Execute o instalador novamente para instalar todas as dependências:" >&2
+        echo -e "  \033[0;36mcurl -LsSf https://raw.githubusercontent.com/duducp/susa/main/install.sh | bash\033[0m" >&2
+        echo "" >&2
+        exit 1
+    fi
 }
+
+# Run dependency check
+_check_required_dependencies
 
 # ============================================================
 # Load Libraries
@@ -101,9 +86,6 @@ source "$LIB_DIR/internal/command.sh"
 # string.sh, sudo.sh, shell.sh, dependencies.sh
 
 [ -f "$CLI_DIR/config/settings.conf" ] && source "$CLI_DIR/config/settings.conf"
-
-# Check dependencies before proceeding
-check_dependencies
 
 # Load cache for fast startup (only if lock exists)
 if [ -f "$CLI_DIR/susa.lock" ]; then
@@ -198,8 +180,11 @@ _validate_or_create_lock_file() {
 
 # Process global flags and filter arguments
 _process_global_flags() {
-    local -n _args_ref=$1
-    local -n _filtered_ref=$2
+    local args_var="$1"
+
+    # Get array values by indirect reference using eval (zsh-compatible)
+    local -a _args_ref
+    eval "_args_ref=(\"\${${args_var}[@]}\")"
 
     # Initialize verbosity level
     export VERBOSE_LEVEL=0
@@ -214,6 +199,7 @@ _process_global_flags() {
     done
 
     # Process each flag
+    local -a _filtered_ref=()
     for arg in "${_args_ref[@]}"; do
         case "$arg" in
             --group)
@@ -252,6 +238,9 @@ _process_global_flags() {
                 ;;
         esac
     done
+
+    # Output the filtered array as newline-separated values
+    printf '%s\n' "${_filtered_ref[@]}"
 }
 
 # Handle global commands that should show info and exit immediately
@@ -317,14 +306,28 @@ main() {
     _validate_or_create_lock_file
 
     # No arguments - show global help
-    [ $# -eq 0 ] && show_global_help && exit 0
+    (($# == 0)) && show_global_help && exit 0
 
     # Process global flags and filter arguments
     local args=("$@")
-    _process_global_flags args filtered_args
+    local filtered_output
+    # Simply capture stdout, logs go to stderr naturally
+    filtered_output=$(_process_global_flags args filtered_args)
+
+    # Parse output into array (split by newlines, filtering empty lines)
+    local -a filtered_args=()
+    if [[ -n "$filtered_output" ]]; then
+        # Split by newlines and filter out empty entries
+        local line
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                filtered_args+=("$line")
+            fi
+        done <<< "$filtered_output"
+    fi
 
     # No arguments after filtering - show global help
-    [ ${#filtered_args[@]} -eq 0 ] && show_global_help && exit 0
+    ((${#filtered_args[@]} == 0)) && show_global_help && exit 0
 
     # Handle global commands (help/version)
     _handle_global_commands "${filtered_args[0]}"
@@ -333,7 +336,7 @@ main() {
     local result_output
     result_output=$(resolve_category_path "${filtered_args[@]}")
 
-    # Read result into array
+    # Read result into array (split by lines)
     local result=()
     while IFS= read -r line; do
         result+=("$line")
@@ -344,17 +347,26 @@ main() {
     # Check if we need to execute category entrypoint
     if [ "$marker" = "$EXEC_ENTRYPOINT_MARKER" ]; then
         local category="${result[1]}"
-        local entrypoint_args=("${result[@]:2}")
+        # Extract args from position 2 onwards
+        local entrypoint_args=()
+        local i=2
+        local result_count="${#result[@]}"
+        # Array is 0-indexed (KSH_ARRAYS), so stop at count-1
+        while [[ $i -lt $result_count ]]; do
+            entrypoint_args+=("${result[$i]}")
+            ((i++)) || true
+        done
         execute_category_entrypoint "$category" "${entrypoint_args[@]}"
     fi
 
     # Normal flow: category and command
     local category="${result[0]}"
-    local remaining_args=("${result[@]:1}")
+    local -a remaining_args=("${result[@]:1}")
 
     # No command specified
-    if [ ${#remaining_args[@]} -eq 0 ]; then
+    if ((${#remaining_args[@]} == 0)); then
         display_category "$category"
+        exit 0
     fi
 
     # Extract command and its arguments
@@ -367,7 +379,7 @@ main() {
         exit 0
     fi
 
-    local command_args=("${remaining_args[@]:1}")
+    local -a command_args=("${remaining_args[@]:1}")
 
     # Check if --help was requested (global flag handling)
     for arg in "${command_args[@]}"; do

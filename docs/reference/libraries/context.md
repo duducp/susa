@@ -80,7 +80,10 @@ context_clear
 ### Exemplo 1: Compartilhar dados entre funções
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/cache.sh"
 source "$LIB_DIR/context.sh"
 
@@ -128,7 +131,10 @@ main "$@"
 ### Exemplo 2: Armazenar progresso de instalação
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/cache.sh"
 source "$LIB_DIR/context.sh"
 
@@ -180,7 +186,10 @@ main "$@"
 ### Exemplo 3: Validação de pré-requisitos
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/cache.sh"
 source "$LIB_DIR/context.sh"
 

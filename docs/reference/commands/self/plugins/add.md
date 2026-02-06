@@ -246,7 +246,9 @@ entrypoint: "main.sh"
 os: ["linux", "mac"]
 EOF
 
-echo '#!/bin/bash
+echo '#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\''\n\t'\'''
 echo "Hello from dev plugin!"' > ~/dev/my-plugin/tools/hello/main.sh
 chmod +x ~/dev/my-plugin/tools/hello/main.sh
 
@@ -259,7 +261,9 @@ susa tools hello
 # Saída: Hello from dev plugin!
 
 # Editar o código
-echo '#!/bin/bash
+echo '#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\''\n\t'\'''
 echo "Hello, World! Updated!"' > ~/dev/my-plugin/tools/hello/main.sh
 
 # Testar novamente (sem reinstalar!)

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # VSCode Update Utilities
 # Functions for updating VS Code on different platforms
 

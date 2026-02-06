@@ -152,7 +152,10 @@ echo "Total de linhas: $count"
 ### Exemplo Básico
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/table.sh"
 
 # Criar tabela (com numeração automática por padrão)
@@ -177,7 +180,10 @@ table_render
 ### Exemplo Sem Numeração
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/table.sh"
 
 # Criar tabela sem numeração automática
@@ -200,7 +206,10 @@ table_render
 ### Exemplo com Numeração Automática
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/table.sh"
 
 # Lista de items
@@ -252,7 +261,10 @@ log_output "${BOLD}Total:${NC} $total item(s)"
 Plugins podem usar a biblioteca da mesma forma:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 # No plugin
 source "$LIB_DIR/table.sh"
 

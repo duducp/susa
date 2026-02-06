@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # ============================================================
 # Installation Tracking Library
@@ -345,19 +345,19 @@ list_installed() {
             local current_normalized="${current_version#v}"
             local latest_normalized="${latest_version#v}"
 
-            # Determine status
-            local status=""
+            # Determine update status
+            local update_status=""
             if [ "$latest_version" = "N/A" ]; then
-                status="${GRAY}-${NC}"
+                update_status="${GRAY}-${NC}"
             elif [ "$current_version" = "unknown" ]; then
-                status="${GRAY}-${NC}"
+                update_status="${GRAY}-${NC}"
             elif [ "$latest_normalized" != "$current_normalized" ]; then
-                status="${YELLOW}⚠ Atualização disponível${NC}"
+                update_status="${YELLOW}⚠ Atualização disponível${NC}"
             else
-                status="${GREEN}✓ Atualizado${NC}"
+                update_status="${GREEN}✓ Atualizado${NC}"
             fi
 
-            table_add_row "$software_display" "$current_version" "$latest_version" "$status"
+            table_add_row "$software_display" "$current_version" "$latest_version" "$update_status"
         else
             table_add_row "$software_display" "$current_version"
         fi
@@ -736,12 +736,12 @@ sync_installations() {
 
     # Count changes from temp files
     if [ -f "$temp_add_file" ]; then
-        synced_count=$(wc -l < "$temp_add_file")
+        synced_count=$(wc -l < "$temp_add_file" | tr -d ' ')
         rm -f "$temp_add_file"
     fi
 
     if [ -f "$temp_remove_file" ]; then
-        removed_count=$(wc -l < "$temp_remove_file")
+        removed_count=$(wc -l < "$temp_remove_file" | tr -d ' ')
         rm -f "$temp_remove_file"
     fi
 

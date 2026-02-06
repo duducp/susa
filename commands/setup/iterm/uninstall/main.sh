@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+UTILS_DIR="$(dirname "$0")/../utils"
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/homebrew.sh"
 source "$UTILS_DIR/common.sh"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # MySQL Client Uninstall Functions
 
 # Uninstall MySQL client on macOS using Homebrew

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 #
 # table.sh - Generic table rendering system
 #
@@ -93,7 +93,7 @@ table_add_header() {
     local first=true
 
     # Load colors if available
-    if command -v source &> /dev/null && [ -f "${LIB_DIR:-}/color.sh" ]; then
+    if [ -f "${LIB_DIR:-}/color.sh" ]; then
         source "${LIB_DIR}/color.sh" 2> /dev/null || true
     fi
 

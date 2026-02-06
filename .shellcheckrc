@@ -1,6 +1,10 @@
 # ShellCheck configuration for Susa CLI project
 # Documentation: https://github.com/koalaman/shellcheck/wiki/Configuration
 
+# NOTE: This project uses zsh (#!/usr/bin/env zsh)
+# ShellCheck doesn't have native zsh support, so we configure it for bash
+# and disable zsh-specific syntax warnings
+
 # Disable specific checks globally
 
 # SC1090: Can't follow non-constant source (we use dynamic sourcing)
@@ -45,6 +49,9 @@ disable=SC2002
 # SC2178: Variable used as array but now string (nameref usage)
 disable=SC2178
 
+# SC2296: Parameter expansion with (U) and (L) flags (zsh-specific syntax)
+disable=SC2296
+
 # SC2317: Command appears unreachable (indirect invocation)
 disable=SC2317
 
@@ -66,7 +73,8 @@ disable=SC2001
 # SC2162: read without -r (backward compatibility)
 disable=SC2162
 
-# Set default shell to bash
+# Set default shell to bash (ShellCheck doesn't support zsh natively)
+# Project uses zsh, but we validate with bash rules + disabled zsh-specific warnings
 shell=bash
 
 # Minimum severity level to report (error, warning, info, style)

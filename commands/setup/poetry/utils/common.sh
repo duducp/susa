@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Poetry Common Utilities
 # Shared functions used across install, update and uninstall
 

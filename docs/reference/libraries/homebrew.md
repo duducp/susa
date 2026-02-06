@@ -191,7 +191,10 @@ fi
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/homebrew.sh"
 
 CASK_NAME="dbeaver-community"

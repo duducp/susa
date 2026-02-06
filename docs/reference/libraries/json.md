@@ -444,8 +444,9 @@ json_compact_print "command.json"
 ## Exemplo Completo
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
+IFS=$'\n\t'
 
 source "$LIB_DIR/internal/json.sh"
 source "$LIB_DIR/logger.sh"

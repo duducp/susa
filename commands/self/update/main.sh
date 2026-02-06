@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
 # Source libraries
 source "$LIB_DIR/github.sh"
+source "$LIB_DIR/gum.sh"
 
 TEMP_DIR=$(mktemp -d)
 TEMP_VERSION_FILE="/tmp/susa_update_check_$$_${RANDOM}"
@@ -38,7 +39,15 @@ cleanup() {
     if [ -d "$TEMP_DIR" ]; then
         rm -rf "$TEMP_DIR"
     fi
-    rm -f "$TEMP_VERSION_FILE" "/tmp/susa_update_$$_"* 2> /dev/null || true
+
+    # Remove temp files safely (zsh requires NULL_GLOB to avoid errors on no matches)
+    rm -f "$TEMP_VERSION_FILE" 2> /dev/null || true
+
+    # Remove pattern-based temp files only if they exist
+    setopt LOCAL_OPTIONS NULL_GLOB
+    for file in /tmp/susa_update_$$_*; do
+        [ -e "$file" ] && rm -f "$file"
+    done
 }
 trap cleanup EXIT # Execute cleanup on script exit
 
@@ -80,14 +89,13 @@ version_greater_than() {
 # Main update function
 perform_update() {
     log_trace "Chamando perform_update()"
-    log_info "Iniciando atualização do Susa CLI..."
     log_debug "Preparando atualização do repositório"
     log_debug2 "Clonando de: $CLI_REPO_URL (branch: $CLI_REPO_BRANCH)"
 
     # Clones the repository
     cd "$TEMP_DIR"
     log_trace "Mudando para diretório temporário: $TEMP_DIR"
-    log_info "Baixando versão mais recente do repositório..."
+    log_output "⬇  Baixando atualização..."
 
     # Captura a saída de erro do git clone, mas oculta do usuário
     local error_output
@@ -99,7 +107,7 @@ perform_update() {
         log_error "Falha ao baixar atualização do repositório"
         log_debug "Erro ao clonar repositório"
         log_debug2 "Detalhes do erro: $error_output"
-        log_info "Verifique sua conexão com a internet e tente novamente"
+        log_output "Verifique sua conexão com a internet e tente novamente"
         return 1
     fi
 
@@ -115,7 +123,7 @@ perform_update() {
     log_debug "Validação do repositório clonado concluída"
 
     # Preserve critical files before updating
-    log_info "Preservando configurações de plugins..."
+    log_debug "Preservando configurações de plugins..."
     local backup_registry=""
     if [ -f "$CLI_DIR/plugins/registry.json" ]; then
         backup_registry="$TEMP_DIR/registry.json.backup"
@@ -127,7 +135,7 @@ perform_update() {
     fi
 
     # Copy new files (except .git)
-    log_info "Instalando arquivos atualizados..."
+    log_output "⚙  Instalando arquivos..."
     log_trace "Removendo diretório .git"
     rm -rf .git
     log_trace "Copiando arquivos para: $CLI_DIR"
@@ -140,10 +148,8 @@ perform_update() {
         log_debug "Registry de plugins restaurado"
     fi
 
-    log_success "Arquivos atualizados com sucesso!"
-
     # Update lock file after successful update
-    log_info "Atualizando arquivo de cache..."
+    log_debug "Atualizando arquivo de cache..."
     log_trace "Executando: susa self lock"
     if "$CORE_DIR/susa" self lock > /dev/null 2>&1; then
         log_debug "Cache atualizado com sucesso"
@@ -183,12 +189,12 @@ main() {
     done
 
     log_trace "Chamando main() com auto_confirm=$auto_confirm, force_update=$force_update"
-    log_info "Verificando atualizações..."
+    log_output "🔍 Verificando atualizações..."
 
     # Get current version
     log_debug "Obtendo versão atual do CLI"
     CURRENT_VERSION=$(get_current_version)
-    log_info "Versão atual: $CURRENT_VERSION"
+    log_debug "Versão atual: $CURRENT_VERSION"
 
     # Get latest version
     log_debug "Consultando versão mais recente no repositório"
@@ -196,32 +202,23 @@ main() {
 
     if [[ -z "$LATEST_VERSION_RESULT" ]]; then
         log_warning "Não foi possível verificar a versão mais recente"
-        log_info "Será feito download da branch '$CLI_REPO_BRANCH' sem comparação de versões"
+        log_output "Será feito download da branch '$CLI_REPO_BRANCH' sem comparação de versões"
         log_output ""
 
         # Ask if you want to continue without version check
         if [ "$auto_confirm" = false ]; then
-            if [ -t 0 ]; then
-                read -p "Deseja continuar com a atualização? (s/N): " -n 1 -r
-                log_output ""
-
-                if [[ ! $REPLY =~ ^[SsYy]$ ]]; then
-                    log_info "Atualização cancelada pelo usuário"
-                    exit 0
-                fi
+            log_output ""
+            if ! gum_confirm "Deseja continuar com a atualização?" "no"; then
+                log_info "Atualização cancelada pelo usuário"
+                exit 0
             fi
         fi
 
-        log_output ""
-
         # Run update without version comparison
         if perform_update; then
-            log_output ""
-            log_success "✓ Susa CLI atualizado com sucesso!"
-            log_output ""
-            log_info "Execute 'susa self version' para confirmar a versão"
+            log_success "✓ Atualizado com sucesso!"
         else
-            log_error "Falha ao atualizar o Susa CLI"
+            log_error "Falha na atualização"
             exit 1
         fi
         exit 0
@@ -229,7 +226,8 @@ main() {
 
     # Parse result (version|method)
     IFS='|' read -r LATEST_VERSION METHOD <<< "$LATEST_VERSION_RESULT"
-    log_info "Última versão disponível: $LATEST_VERSION"
+    log_output "   Versão atual: ${CYAN}$CURRENT_VERSION${NC}"
+    log_output "   Disponível:   ${GREEN}$LATEST_VERSION${NC}"
     log_debug2 "Método de detecção: $METHOD"
 
     # Compare versions
@@ -237,22 +235,16 @@ main() {
     if version_greater_than "$CURRENT_VERSION" "$LATEST_VERSION" || [ "$force_update" = true ]; then
         log_output ""
         if [ "$force_update" = true ] && [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-            log_info "Forçando reinstalação da versão atual ($CURRENT_VERSION)"
+            log_output "🔄 Forçando reinstalação da versão $CURRENT_VERSION"
         else
-            log_success "Nova atualização disponível! ($CURRENT_VERSION → $LATEST_VERSION)"
+            log_output "🎉 Nova versão disponível!"
         fi
 
         # Ask if you want to update
         if [ "$auto_confirm" = false ]; then
-            if [ -t 0 ]; then
-                log_output ""
-                read -p "Deseja atualizar agora? (s/N): " -n 1 -r
-                log_output ""
-
-                if [[ ! $REPLY =~ ^[SsYy]$ ]]; then
-                    log_info "Atualização cancelada pelo usuário"
-                    exit 0
-                fi
+            if ! gum_confirm "Deseja atualizar agora?" "no"; then
+                log_info "Atualização cancelada pelo usuário"
+                exit 0
             fi
         fi
 
@@ -260,17 +252,13 @@ main() {
 
         # Run update
         if perform_update; then
-            log_output ""
-            log_success "✓ Susa CLI atualizado para versão $LATEST_VERSION!"
-            log_output ""
-            log_info "Execute 'susa self version' para confirmar a versão"
+            log_success "✓ Atualizado para $LATEST_VERSION"
         else
-            log_error "Falha ao atualizar o Susa CLI"
+            log_error "Falha na atualização"
             exit 1
         fi
     else
-        log_output ""
-        log_success "✓ Você já está usando a versão mais recente!"
+        log_success "✓ Já está na versão mais recente"
     fi
 }
 

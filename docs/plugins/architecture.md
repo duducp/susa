@@ -77,7 +77,9 @@ Plugins suportam **variáveis de ambiente isoladas** da mesma forma que comandos
 **Uso no main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Sempre use fallback
 api_url="${DEPLOY_API_URL:-https://default.com}"
@@ -208,7 +210,9 @@ mkdir -p plugins/meu-plugin/src/categoria/comando
 ### 4. Crie o Script
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Variáveis disponíveis automaticamente
 api_url="${MY_API_URL:-https://default.com}"
@@ -376,7 +380,7 @@ meu-plugin/
 **demo/main.sh:**
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 

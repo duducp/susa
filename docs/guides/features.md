@@ -17,7 +17,7 @@
 
 ## 🎯 Visão Geral
 
-O **Susa CLI** é um framework modular e extensível para criar ferramentas de linha de comando em Bash. O Susa usa **descoberta automática** e **configurações descentralizadas**.
+O **Susa CLI** é um framework modular e extensível para criar ferramentas de linha de comando em Zsh. O Susa usa **descoberta automática** e **configurações descentralizadas**.
 
 ### ✨ Características Principais
 
@@ -123,7 +123,7 @@ description: "Deploy para produção"
 entrypoint: "main.sh"
 EOF
 
-echo '#!/bin/bash\necho "Deploying..."' > commands/deploy/production/main.sh
+echo '#!/usr/bin/env zsh\nset -euo pipefail\nIFS=$'"'"'\n\t'"'"'\necho "Deploying..."' > commands/deploy/production/main.sh
 chmod +x commands/deploy/production/main.sh
 
 # Já funciona!
@@ -393,9 +393,9 @@ Para documentação completa, veja [Referência de Bibliotecas](../reference/lib
 ### Template de Comando
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
-
+IFS=$'\n\t'
 
 show_help() {
     show_description

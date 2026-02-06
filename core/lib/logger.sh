@@ -1,6 +1,4 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$'\n\t'
+#!/usr/bin/env zsh
 
 # Lazy load string.sh only if needed (optimization)
 if ! declare -f strtobool &> /dev/null; then

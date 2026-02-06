@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -7,7 +7,7 @@ source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/os.sh"
 
 # Get utilities directory
-UTILS_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../utils"
+UTILS_DIR="$(dirname "$(readlink -f "$0")")/../utils"
 source "$UTILS_DIR/common.sh"
 
 # Global variables

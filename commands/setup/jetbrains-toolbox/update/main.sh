@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
-UTILS_DIR="$(dirname "${BASH_SOURCE[0]}")/../utils"
+UTILS_DIR="$(dirname "$0")/../utils"
 source "$LIB_DIR/internal/installations.sh"
 source "$LIB_DIR/os.sh"
 source "$UTILS_DIR/common.sh"
@@ -60,7 +60,7 @@ main() {
     fi
 
     # Install new version using install subcommand
-    source "$(dirname "${BASH_SOURCE[0]}")/../install/main.sh"
+    source "$(dirname "$0")/../install/main.sh"
 
     local install_result=$?
 

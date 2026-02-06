@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # Postman Uninstall Functions
 
 # Uninstall Postman on macOS using Homebrew

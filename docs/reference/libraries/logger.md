@@ -158,7 +158,10 @@ fi
 ### Básico
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/logger.sh"
 
 log_info "Verificando dependências..."
@@ -176,7 +179,10 @@ log_warning "Usando configuração padrão"
 ### Com Debug
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/logger.sh"
 
 export DEBUG=true
@@ -192,7 +198,10 @@ log_success "Instalação concluída"
 ### Função com Logs Estruturados
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/logger.sh"
 
 instalar_ferramenta() {
@@ -226,7 +235,10 @@ instalar_ferramenta "podman" "v5.0.0"
 ### Tratamento de Erros
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/logger.sh"
 
 processar_arquivo() {
@@ -257,7 +269,10 @@ fi
 ### Modo Silencioso (Automação)
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/logger.sh"
 
 # Para scripts em CI/CD ou automação
@@ -326,7 +341,9 @@ fi
 ### 4. Use Debug Generosamente
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 # Não tenha medo de adicionar muitos log_debug
 # Eles só aparecem quando DEBUG=true
@@ -349,7 +366,9 @@ fi
 ### 5. Estruture Logs para Troubleshooting
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 
 processar_item() {
     local item=$1

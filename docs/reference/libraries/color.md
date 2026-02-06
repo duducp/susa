@@ -50,7 +50,10 @@ Define constantes de cores para formatação de texto no console.
 ### Básico
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/color.sh"
 
 # Mensagens simples
@@ -75,7 +78,10 @@ echo -e "${YELLOW}Atenção: ${GRAY}arquivo não encontrado${NC}"
 ### Em Funções
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
+
 source "$LIB_DIR/color.sh"
 
 mostrar_status() {

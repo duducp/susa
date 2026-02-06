@@ -226,7 +226,9 @@ EOF
 
 # Criar script
 cat > commands/install/nova-categoria/comando-xyz/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 echo "Executando XYZ!"
 EOF
 
@@ -262,7 +264,9 @@ sudo: false
 EOF
 
 cat > commands/install/categoria/subcategoria/comando/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 echo "Comando profundo!"
 EOF
 
@@ -387,7 +391,7 @@ Quando uma categoria tem um `entrypoint`:
 O script deve implementar a função `show_complement_help()` para exibir ajuda adicional:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -702,7 +706,9 @@ sudo: false
 EOF
 
 cat > commands/backup/local/full/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 echo "Executando backup completo local..."
 tar -czf /tmp/backup-$(date +%Y%m%d).tar.gz /home/$USER/Documents
 echo "✅ Backup concluído!"
@@ -738,7 +744,9 @@ entrypoint: "main.sh"
 EOF
 
 cat > plugins/dev-tools/deploy/staging/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 echo "🚀 Deploy para Staging..."
 echo "✅ Deploy concluído!"
 EOF
@@ -757,7 +765,9 @@ entrypoint: "main.sh"
 EOF
 
 cat > plugins/dev-tools/deploy/aws/ec2/main.sh << 'EOF'
-#!/bin/bash
+#!/usr/bin/env zsh
+set -euo pipefail
+IFS=$'\n\t'
 echo "☁️ Deploy para AWS EC2..."
 echo "✅ Deploy EC2 concluído!"
 EOF

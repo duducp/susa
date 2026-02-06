@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 # Constants
 TOOLBOX_NAME="JetBrains Toolbox"

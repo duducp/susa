@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -11,7 +11,7 @@ source "$LIB_DIR/sudo.sh"
 # It shows additional options related to the category itself
 show_complement_help() {
     log_output "${LIGHT_GREEN}Opções da categoria:${NC}"
-    log_output "  --group 			  Agrupa a saída por status de atualização"
+    log_output "  --group                Agrupa a saída por status de atualização"
     log_output "  --list                 Lista todos os softwares instalados"
     log_output "  --check-updates        Lista e verifica atualizações disponíveis dos softwares"
     log_output "  -u, --upgrade          Atualiza sistema operacional e todos os softwares ${YELLOW}[sudo]${NC}"

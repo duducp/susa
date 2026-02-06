@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 # snap.sh - Library for managing applications via Snap
 #
 # Functions to install, update, remove and query applications
@@ -16,9 +16,6 @@
 #   snap_update                 - Update an installed application
 #   snap_uninstall              - Remove an installed application
 #   snap_refresh_metadata       - Refresh Snap Store metadata
-
-set -euo pipefail
-IFS=$'\n\t'
 
 # Check if Snap is installed on the system
 #
