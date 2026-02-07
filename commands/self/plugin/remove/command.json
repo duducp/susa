@@ -2,7 +2,7 @@
   "name": "Remove",
   "description": "Remove um plugin instalado",
   "entrypoint": "main.sh",
-  "sudo": false,
+  "sudo": [],
   "group": null,
   "os": [
     "linux",

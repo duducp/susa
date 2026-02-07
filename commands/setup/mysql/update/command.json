@@ -2,7 +2,9 @@
   "name": "Update",
   "description": "Atualiza o MySQL Client para a versão mais recente disponível",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "os": [
     "linux",
     "mac"

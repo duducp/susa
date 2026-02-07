@@ -2,7 +2,7 @@
   "name": "List",
   "description": "Lista todos os plugins instalados",
   "entrypoint": "main.sh",
-  "sudo": false,
+  "sudo": [],
   "group": null,
   "os": [
     "linux",

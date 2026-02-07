@@ -65,9 +65,7 @@ main() {
     local install_result=$?
 
     if [ $install_result -eq 0 ]; then
-        log_success "JetBrains Toolbox atualizado com sucesso para versão $latest_version!"
         register_or_update_software_in_lock "jetbrains-toolbox" "$latest_version"
-        log_debug "Atualização concluída"
     else
         log_error "Falha na atualização do JetBrains Toolbox"
         return $install_result

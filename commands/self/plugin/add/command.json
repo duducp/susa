@@ -2,7 +2,7 @@
   "name": "Install",
   "description": "Instala um plugin a partir de um repositório Git",
   "entrypoint": "main.sh",
-  "sudo": false,
+  "sudo": [],
   "group": null,
   "os": [
     "linux",

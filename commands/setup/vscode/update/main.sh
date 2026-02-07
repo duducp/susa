@@ -72,8 +72,6 @@ update_vscode() {
 
         if [ "$current_version" = "$new_version" ]; then
             log_info "VS Code já estava na versão mais recente ($current_version)"
-        else
-            log_success "VS Code atualizado com sucesso para versão $new_version!"
         fi
     else
         log_error "Falha na atualização do VS Code"

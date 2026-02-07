@@ -2,7 +2,10 @@
   "name": "Update",
   "description": "Atualiza o VS Code para a versão mais recente",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux",
+    "mac"
+  ],
   "group": "editor",
   "os": [
     "linux",

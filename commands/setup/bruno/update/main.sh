@@ -43,8 +43,6 @@ main() {
 
     if [ "$current_version" = "$new_version" ]; then
         log_info "Bruno já estava na versão mais recente ($current_version)"
-    else
-        log_success "Bruno atualizado com sucesso para versão $new_version!"
     fi
 }
 

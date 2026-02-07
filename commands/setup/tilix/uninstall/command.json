@@ -2,7 +2,9 @@
   "name": "Uninstall",
   "description": "Remove Tilix do sistema",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "group": "terminal",
   "os": [
     "linux"

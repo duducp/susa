@@ -2,8 +2,10 @@
   "name": "Install",
   "description": "Instala Visual Studio Code (editor de código da Microsoft)",
   "entrypoint": "main.sh",
-  "sudo": true,
   "group": null,
+  "sudo": [
+    "linux"
+  ],
   "os": [
     "linux",
     "mac"

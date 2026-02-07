@@ -90,7 +90,7 @@ scan_category_dir() {
                 local description=$(jq -r '.description // empty' "$item_dir/command.json" 2> /dev/null)
                 local script=$(jq -r '.entrypoint // empty' "$item_dir/command.json" 2> /dev/null)
                 local os=$(jq -c '.os // empty' "$item_dir/command.json" 2> /dev/null)
-                local sudo=$(jq -r '.sudo // empty' "$item_dir/command.json" 2> /dev/null)
+                local sudo=$(jq -c '.sudo // empty' "$item_dir/command.json" 2> /dev/null)
                 local group=$(jq -r '.group // empty' "$item_dir/command.json" 2> /dev/null)
 
                 # Always output entrypoint (use default if not specified)
@@ -456,8 +456,8 @@ generate_lock_file() {
 
             # Add metadata to command object
             if [ -n "$meta_value" ] && [ "$meta_value" != "" ]; then
-                # Handle array fields (os)
-                if [ "$meta_key" = "os" ] && echo "$meta_value" | grep -q '^\['; then
+                # Handle array fields (os, sudo)
+                if [[ "$meta_key" =~ ^(os|sudo)$ ]] && echo "$meta_value" | grep -q '^\['; then
                     # Value is already a JSON array, add it directly
                     cmd_obj=$(echo "$cmd_obj" | jq --argjson arr "$meta_value" --arg key "$meta_key" '.[$key] = $arr')
                 else

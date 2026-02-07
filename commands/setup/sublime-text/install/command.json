@@ -2,7 +2,9 @@
   "name": "Install",
   "description": "Instala Sublime Text no sistema",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "group": "editor",
   "os": [
     "linux",

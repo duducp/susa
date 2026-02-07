@@ -2,7 +2,6 @@
   "name": "Uninstall",
   "description": "Remove UV do sistema",
   "entrypoint": "main.sh",
-  "sudo": false,
   "group": "python",
   "os": [
     "linux",

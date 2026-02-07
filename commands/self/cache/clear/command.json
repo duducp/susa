@@ -1,6 +1,5 @@
 {
   "name": "Clear",
   "description": "Remove um cache específico ou todos os caches",
-  "entrypoint": "main.sh",
-  "sudo": false
+  "entrypoint": "main.sh"
 }

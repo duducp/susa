@@ -2,7 +2,7 @@
   "name": "Update",
   "description": "Atualiza um plugin para a versão mais recente",
   "entrypoint": "main.sh",
-  "sudo": false,
+  "sudo": [],
   "group": null,
   "os": [
     "linux",

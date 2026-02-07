@@ -50,8 +50,6 @@ main() {
 
         if [ "$current_version" = "$new_version" ]; then
             log_info "Sublime Text já estava na versão mais recente ($current_version)"
-        else
-            log_success "Sublime Text atualizado com sucesso para versão $new_version!"
         fi
     else
         log_error "Falha na atualização do Sublime Text"

@@ -2,7 +2,9 @@
   "name": "Update",
   "description": "Atualiza Tilix para a versão mais recente",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "group": "terminal",
   "os": [
     "linux"
