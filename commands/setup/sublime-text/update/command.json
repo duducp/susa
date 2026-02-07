@@ -2,7 +2,9 @@
   "name": "Update",
   "description": "Atualiza Sublime Text para a versão mais recente",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "group": "editor",
   "os": [
     "linux",

@@ -133,8 +133,75 @@ table_render() {
         return 1
     fi
 
-    # Render using column
-    echo -e "$_TABLE_DATA" | column -t -s "$_TABLE_SEPARATOR"
+    # On macOS, column can have issues with ANSI codes and UTF-8
+    # Use a more robust rendering method
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Store data in temp file for processing
+        local temp_file=$(mktemp)
+        echo -e "$_TABLE_DATA" > "$temp_file"
+
+        # Calculate column widths by stripping ANSI codes
+        local -a widths
+        local max_cols=0
+
+        while IFS= read -r line; do
+            local -a cols
+            IFS=$'\t' read -rA cols <<< "$line"
+            local num_cols=${#cols[@]}
+            [ $num_cols -gt $max_cols ] && max_cols=$num_cols
+
+            local i=0
+            for col in "${cols[@]}"; do
+                # Strip ANSI codes to get real length
+                local clean_col=$(echo -e "$col" | sed $'s/\033\[[0-9;]*m//g')
+                local len=${#clean_col}
+
+                if [ -z "${widths[$i]:-}" ] || [ $len -gt ${widths[$i]} ]; then
+                    widths[$i]=$len
+                fi
+                ((i++)) || true
+            done
+        done < "$temp_file"
+
+        # Render with calculated widths
+        while IFS= read -r line; do
+            local -a cols
+            IFS=$'\t' read -rA cols <<< "$line"
+
+            local i=0
+            local output=""
+            for col in "${cols[@]}"; do
+                # Strip ANSI codes to calculate padding
+                local clean_col=$(echo -e "$col" | sed $'s/\033\[[0-9;]*m//g')
+                local len=${#clean_col}
+                local width=${widths[$i]:-0}
+                local padding=$((width - len + 2)) # +2 for spacing between columns
+
+                # Add column with original formatting
+                output+="$col"
+
+                # Add spacing if not last column
+                if [ $i -lt $((max_cols - 1)) ]; then
+                    local spaces=""
+                    for ((j = 0; j < padding; j++)); do
+                        spaces+=" "
+                    done
+                    output+="$spaces"
+                fi
+
+                ((i++)) || true
+            done
+
+            echo -e "$output"
+        done < "$temp_file"
+
+        rm -f "$temp_file"
+    else
+        # Linux and other systems: use column command
+        LC_ALL=C.UTF-8 echo -e "$_TABLE_DATA" | LC_ALL=C.UTF-8 column -t -s "$_TABLE_SEPARATOR" 2> /dev/null ||
+            LC_ALL=en_US.UTF-8 echo -e "$_TABLE_DATA" | LC_ALL=en_US.UTF-8 column -t -s "$_TABLE_SEPARATOR" 2> /dev/null ||
+            echo -e "$_TABLE_DATA" | column -t -s "$_TABLE_SEPARATOR"
+    fi
 
     # Clear data after rendering (default behavior)
     if [ "$clear_after" = true ]; then

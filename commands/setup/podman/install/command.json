@@ -2,6 +2,11 @@
   "name": "Install",
   "description": "Instala o Podman",
   "entrypoint": "main.sh",
-  "os": ["linux", "mac"],
-  "sudo": true
+  "os": [
+    "linux",
+    "mac"
+  ],
+  "sudo": [
+    "linux"
+  ]
 }

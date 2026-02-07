@@ -2,7 +2,9 @@
   "name": "Install",
   "description": "Instala Tilix no sistema",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "group": "terminal",
   "os": [
     "linux"

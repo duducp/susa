@@ -56,8 +56,6 @@ update_nordpass() {
 
             if [ "$current_version" = "$new_version" ]; then
                 log_info "$NORDPASS_NAME já estava na versão mais recente ($new_version)"
-            else
-                log_success "$NORDPASS_NAME atualizado com sucesso para versão $new_version!"
             fi
         else
             log_error "Falha na atualização do $NORDPASS_NAME"

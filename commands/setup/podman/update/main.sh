@@ -47,8 +47,8 @@ main() {
     # Verify update
     if [ $update_result -eq 0 ] && check_installation; then
         local new_version=$(get_current_version)
-        log_success "Podman atualizado com sucesso para versão $new_version!"
         register_or_update_software_in_lock "$COMMAND_NAME" "$new_version"
+        log_success "Podman atualizado com sucesso para versão $new_version!"
     else
         log_error "Falha na atualização do Podman"
         return 1

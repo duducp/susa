@@ -2,7 +2,6 @@
   "name": "Restore",
   "description": "Restaura configurações do VS Code a partir de um backup",
   "entrypoint": "main.sh",
-  "sudo": false,
   "group": null,
   "os": [
     "linux",

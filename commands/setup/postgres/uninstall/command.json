@@ -2,7 +2,9 @@
   "name": "Uninstall",
   "description": "Desinstala o PostgreSQL Client do sistema",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "os": [
     "linux",
     "mac"

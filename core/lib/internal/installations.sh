@@ -366,7 +366,6 @@ list_installed() {
     # Render the table
     table_render
 
-    echo ""
     return 0
 }
 

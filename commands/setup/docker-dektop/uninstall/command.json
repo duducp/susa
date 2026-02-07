@@ -2,7 +2,9 @@
   "name": "Uninstall",
   "description": "Remove Docker Desktop do sistema",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "group": "container",
   "os": [
     "linux",

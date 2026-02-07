@@ -2,7 +2,9 @@
   "name": "Install",
   "description": "Instala NordPass (gerenciador de senhas seguro)",
   "entrypoint": "main.sh",
-  "sudo": true,
+  "sudo": [
+    "linux"
+  ],
   "os": [
     "linux",
     "mac"

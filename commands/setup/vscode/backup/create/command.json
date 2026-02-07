@@ -2,7 +2,6 @@
   "name": "Create",
   "description": "Cria backup das configurações e perfis do VS Code",
   "entrypoint": "main.sh",
-  "sudo": false,
   "group": null,
   "os": [
     "linux",

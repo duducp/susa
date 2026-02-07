@@ -2,7 +2,6 @@
   "name": "Uninstall",
   "description": "Remove DBeaver do sistema",
   "entrypoint": "main.sh",
-  "sudo": false,
   "os": [
     "linux",
     "mac"

@@ -2,7 +2,6 @@
   "name": "Update",
   "description": "Atualiza Docker Desktop para a versão mais recente",
   "entrypoint": "main.sh",
-  "sudo": false,
   "group": "container",
   "os": [
     "linux",

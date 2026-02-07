@@ -460,6 +460,7 @@ is_command_compatible() {
 }
 
 # Function to check if command requires sudo from lock file only
+# Now supports both array format ["linux", "mac"] and checks current OS
 requires_sudo() {
     local config_file="$1" # Kept for compatibility
     local category="$2"
@@ -467,9 +468,23 @@ requires_sudo() {
 
     # Only read from lock file
     if has_valid_lock_file; then
-        local needs_sudo=$(get_command_info_from_lock "$category" "$command_id" "sudo")
-        if [ "$needs_sudo" = "true" ]; then
-            return 0
+        # Get current OS
+        local current_os=$(get_simple_os)
+
+        # Get sudo field - can be array or null
+        local sudo_data=$(cache_query ".commands[] | select(.category == \"$category\" and .name == \"$command_id\") | .sudo" 2> /dev/null)
+
+        # If empty or null, no sudo required
+        if [ -z "$sudo_data" ] || [ "$sudo_data" = "null" ] || [ "$sudo_data" = "[]" ]; then
+            return 1
+        fi
+
+        # Check if current OS is in the sudo array
+        if echo "$sudo_data" | jq -e '. | type == "array"' > /dev/null 2>&1; then
+            # It's an array - check if current OS is included
+            if echo "$sudo_data" | jq -e ".[] | select(. == \"$current_os\")" > /dev/null 2>&1; then
+                return 0
+            fi
         fi
     fi
 
