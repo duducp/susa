@@ -69,6 +69,7 @@ source "$LIB_DIR/os.sh"
 source "$LIB_DIR/cache.sh"
 source "$LIB_DIR/context.sh"
 source "$LIB_DIR/similarity.sh"
+source "$LIB_DIR/gum.sh"
 
 # Essential internal libraries (loaded automatically for all commands)
 source "$LIB_DIR/internal/lock.sh"
@@ -164,15 +165,15 @@ _validate_or_create_lock_file() {
     fi
 
     log_info "Primeira execução detectada. Configurando o Susa CLI..."
-    log_info "Gerando arquivo de cache para otimizar o desempenho..."
 
     # Call the lock command bypassing the check to prevent infinite loop
-    local lock_output
-    if ! lock_output=$(SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock 2>&1); then
+    gum_spin_start "Gerando arquivo de cache..."
+    if ! env SUSA_SKIP_LOCK_CHECK=1 "$CORE_DIR/susa" self lock 2>&1; then
+        gum_spin_stop
         log_error "Erro ao gerar arquivo de cache"
-        echo "$lock_output" >&2
         exit 1
     fi
+    gum_spin_stop
 
     log_success "Configuração concluída! O CLI está pronto para uso."
     echo ""

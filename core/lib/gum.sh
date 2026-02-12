@@ -18,6 +18,9 @@
 #   - gum_choose_multi()              Multiple selections from list
 #   - gum_filter()                    Fuzzy filter selection
 #   - gum_spin()                      Show spinner during operation
+#   - gum_spin_start()                Start spinner in background (manual control)
+#   - gum_spin_stop()                 Stop background spinner
+#   - gum_spin_update()               Update spinner message (restart with new message)
 #   - gum_progress()                  Show progress bar
 #   - gum_pager()                     Show content in pager
 #   - gum_format()                    Format markdown text
@@ -157,17 +160,89 @@ gum_filter() {
 # Progress Indicators
 # ============================================================
 
-# Show spinner while executing command
-# Usage: gum_spin [title] [command...]
-# Returns: Command exit code
-gum_spin() {
+# Global variable to track active spinner PID
+_GUM_SPIN_PID=""
+_GUM_SPIN_TEMP=""
+
+# Start spinner in background (manual control)
+# Usage: gum_spin_start "Loading..."
+# Returns: 0 if started, 1 if already running
+gum_spin_start() {
     gum_require
 
-    local title="$1"
-    shift
-    local command=("$@")
+    local title="${1:-Processando...}"
 
-    gum spin --spinner dot --title "$title" -- "${command[@]}"
+    log_trace "Iniciando spinner com título: $title"
+
+    # Stop existing spinner if running
+    gum_spin_stop
+
+    # Create temp file to track spinner
+    _GUM_SPIN_TEMP=$(mktemp)
+
+    # Start spinner in background with sleep infinity
+    gum spin --spinner dot --title "$title" --spinner.foreground 214 -- sleep infinity &
+
+    _GUM_SPIN_PID=$!
+    echo $_GUM_SPIN_PID > "$_GUM_SPIN_TEMP"
+    log_trace "Spinner iniciado (PID: $_GUM_SPIN_PID)"
+
+    # Give spinner a tiny moment to start rendering
+    sleep 0.02
+}
+
+# Stop spinner started with gum_spin_start
+# Usage: gum_spin_stop
+gum_spin_stop() {
+    if [ -n "$_GUM_SPIN_PID" ] && kill -0 "$_GUM_SPIN_PID" 2> /dev/null; then
+        kill -TERM "$_GUM_SPIN_PID" 2> /dev/null || true
+        # Don't wait, just move on
+        _GUM_SPIN_PID=""
+    fi
+
+    # Clean up temp file
+    if [ -n "$_GUM_SPIN_TEMP" ] && [ -f "$_GUM_SPIN_TEMP" ]; then
+        rm -f "$_GUM_SPIN_TEMP" 2> /dev/null || true
+        _GUM_SPIN_TEMP=""
+    fi
+
+    # Give terminal a moment to clean up
+    sleep 0.05
+}
+
+# Update spinner message (restarts spinner with new message)
+# Usage: gum_spin_update "New message..."
+# Returns: 0 if updated, 1 if no spinner was running
+gum_spin_update() {
+    gum_require
+
+    local new_title="${1:-Processing...}"
+
+    # Check if spinner is running
+    if [ -z "$_GUM_SPIN_PID" ] || ! kill -0 "$_GUM_SPIN_PID" 2> /dev/null; then
+        log_trace "Nenhum spinner ativo para atualizar"
+        return 1
+    fi
+
+    log_trace "Atualizando spinner (PID: $_GUM_SPIN_PID) com nova mensagem: $new_title"
+
+    # Kill current spinner quickly (no cleanup delay)
+    if [ -n "$_GUM_SPIN_PID" ] && kill -0 "$_GUM_SPIN_PID" 2> /dev/null; then
+        kill -TERM "$_GUM_SPIN_PID" 2> /dev/null || true
+        _GUM_SPIN_PID=""
+    fi
+
+    # Start new spinner immediately with sleep infinity
+    gum spin --spinner dot --title "$new_title" --spinner.foreground 214 -- sleep infinity &
+
+    _GUM_SPIN_PID=$!
+    echo $_GUM_SPIN_PID > "$_GUM_SPIN_TEMP"
+    log_trace "Spinner reiniciado (PID: $_GUM_SPIN_PID)"
+
+    # Give spinner a tiny moment to start rendering
+    sleep 0.02
+
+    return 0
 }
 
 # Show progress bar (for loops/batches)
@@ -304,19 +379,61 @@ gum_wizard_step() {
 # Table Display (Enhanced)
 # ============================================================
 
-# Display table with gum formatting
-# Usage: gum_table [headers] [rows_json]
-# headers format: "Header1,Header2,Header3"
-# rows_json format: [["val1","val2","val3"], ...]
-gum_table() {
+# Display CSV table with optional row numbering
+# Usage: echo "$csv_data" | gum_table_csv [--numbered] [gum_options...]
+# Options:
+#   --numbered        Add row numbers (# column) automatically
+#   Other options     Passed directly to gum table (e.g., --print, --border, etc.)
+#
+# Default styling: --print --border rounded --border.foreground 240
+#
+# Example:
+#   csv="Name,Age\nJohn,30\nJane,25"
+#   echo "$csv" | gum_table_csv --numbered
+gum_table_csv() {
     gum_require
 
-    local headers="$1"
-    local rows_json="$2"
+    local numbered=false
+    local gum_args=("--print" "--border" "rounded" "--border.foreground" "240")
 
-    # Convert to gum table format
-    echo "$headers" | tr ',' '\t'
-    echo "$rows_json" | jq -r '.[] | @tsv'
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --numbered)
+                numbered=true
+                shift
+                ;;
+            *)
+                gum_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # Read CSV from stdin
+    local csv_data=$(cat)
+
+    if [ "$numbered" = true ]; then
+        # Add row numbers
+        local header=$(echo "$csv_data" | head -n 1)
+        local body=$(echo "$csv_data" | tail -n +2)
+
+        # Add # to header
+        local numbered_data="#,${header}"$'\n'
+
+        # Add index to each row
+        local index=1
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            numbered_data+="${index},${line}"$'\n'
+            ((index++))
+        done <<< "$body"
+
+        echo "$numbered_data" | gum table "${gum_args[@]}"
+    else
+        # No numbering, just pass through
+        echo "$csv_data" | gum table "${gum_args[@]}"
+    fi
 }
 
 # ============================================================

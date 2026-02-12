@@ -74,12 +74,14 @@ show_backup_info() {
     # Create temporary directory to extract metadata
     local temp_dir=$(mktemp -d)
 
-    log_info "Extraindo informações do backup..."
-    tar -xzf "$backup_archive" -C "$temp_dir" dbeaver-backup/backup-info.json 2> /dev/null || {
+    gum_spin_start "Extraindo informações do backup..."
+    if ! tar -xzf "$backup_archive" -C "$temp_dir" dbeaver-backup/backup-info.json 2> /dev/null; then
+        gum_spin_stop
         log_error "Falha ao extrair informações do backup"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
+    gum_spin_stop
 
     log_output ""
     log_output "${LIGHT_GREEN}Informações do Backup:${NC}"
@@ -132,7 +134,7 @@ create_safety_backup() {
     local safety_backup_name="dbeaver-safety-backup-$(date +%Y%m%d-%H%M%S)"
     local safety_backup_archive="$BACKUP_DIR/$safety_backup_name.tar.gz"
 
-    log_info "Criando backup de segurança das configurações atuais..."
+    gum_spin_start "Criando backup de segurança das configurações atuais..."
 
     mkdir -p "$BACKUP_DIR"
 
@@ -141,6 +143,7 @@ create_safety_backup() {
 
     tar -czf "$safety_backup_archive" -C "$temp_backup_dir" dbeaver-backup > /dev/null 2>&1
     rm -rf "$temp_backup_dir"
+    gum_spin_stop
 
     if [ -f "$safety_backup_archive" ]; then
         log_success "✓ Backup de segurança criado: $safety_backup_name"
@@ -199,12 +202,14 @@ restore_backup() {
     # Create temporary directory for extraction
     local temp_dir=$(mktemp -d)
 
-    log_info "Extraindo backup..."
-    tar -xzf "$backup_archive" -C "$temp_dir" > /dev/null 2>&1 || {
+    gum_spin_start "Extraindo backup..."
+    if ! tar -xzf "$backup_archive" -C "$temp_dir" > /dev/null 2>&1; then
+        gum_spin_stop
         log_error "Falha ao extrair backup"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
+    gum_spin_stop
 
     # Check if workspace6 exists in backup
     if [ ! -d "$temp_dir/dbeaver-backup/workspace6" ]; then
@@ -216,7 +221,7 @@ restore_backup() {
     # Get parent directory of DBEAVER_CONFIG_DIR to restore workspace6
     local parent_dir=$(dirname "$DBEAVER_CONFIG_DIR")
 
-    log_info "Restaurando workspace completo do DBeaver..."
+    gum_spin_start "Restaurando workspace completo do DBeaver..."
     log_debug "Destino: $DBEAVER_CONFIG_DIR"
 
     # Remove existing workspace6 directory
@@ -229,14 +234,16 @@ restore_backup() {
     mkdir -p "$parent_dir"
 
     # Restore entire workspace6 directory
-    cp -r "$temp_dir/dbeaver-backup/workspace6" "$DBEAVER_CONFIG_DIR" 2> /dev/null || {
+    if ! cp -r "$temp_dir/dbeaver-backup/workspace6" "$DBEAVER_CONFIG_DIR" 2> /dev/null; then
+        gum_spin_stop
         log_error "Falha ao restaurar workspace completo"
         rm -rf "$temp_dir"
         return 1
-    }
+    fi
 
     # Clean up
     rm -rf "$temp_dir"
+    gum_spin_stop
 
     log_success "✓ Backup restaurado com sucesso!"
     log_output ""

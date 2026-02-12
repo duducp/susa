@@ -96,18 +96,20 @@ create_backup() {
     mkdir -p "$backup_content_dir"
 
     # Backup entire workspace6 directory
-    log_info "Copiando workspace completo do DBeaver..."
+    gum_spin_start "Copiando workspace completo do DBeaver..."
     log_debug "Origem: $DBEAVER_CONFIG_DIR"
     log_debug "Destino: $backup_content_dir/workspace6"
 
-    cp -r "$DBEAVER_CONFIG_DIR" "$backup_content_dir/workspace6" 2> /dev/null || {
+    if ! cp -r "$DBEAVER_CONFIG_DIR" "$backup_content_dir/workspace6" 2> /dev/null; then
+        gum_spin_stop
         log_error "Falha ao copiar workspace completo"
         rm -rf "$temp_backup_dir"
         return 1
-    }
+    fi
+    gum_spin_stop
 
     # Create metadata file
-    log_info "Criando arquivo de metadados..."
+    gum_spin_update "Criando arquivo de metadados..."
     local dbeaver_version="desconhecida"
     if command -v dbeaver &> /dev/null; then
         dbeaver_version=$(dbeaver --version 2> /dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "desconhecida")
@@ -124,11 +126,12 @@ create_backup() {
 EOF
 
     # Create compressed archive
-    log_info "Compactando backup..."
+    gum_spin_update "Compactando backup..."
     tar -czf "$backup_archive" -C "$temp_backup_dir" dbeaver-backup > /dev/null 2>&1
 
     # Clean up temporary directory
     rm -rf "$temp_backup_dir"
+    gum_spin_stop
 
     if [ -f "$backup_archive" ]; then
         local backup_size=$(du -h "$backup_archive" | cut -f1)

@@ -296,9 +296,13 @@ generate_lock_file() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     local temp_installations="/tmp/susa_installations_backup_$$"
 
+    # Iniciar spinner
+    gum_spin_start "Iniciando geração do lock file..."
+
     # Backup existing installations section if lock file exists
     # Try to use cache first for better performance, fallback to direct file read
     if [ -f "$lock_file" ] && json_is_valid "$lock_file" 2> /dev/null; then
+        gum_spin_update "Fazendo backup da seção de instalações..."
         log_debug "Fazendo backup da seção de instalações..."
 
         # Try cache first if available
@@ -323,6 +327,7 @@ generate_lock_file() {
     local original_dir="$PWD"
     cd "$CLI_DIR" || {
         log_error "Não foi possível acessar o diretório $CLI_DIR"
+        gum_spin_stop
         rm -f "$temp_installations"
         return 1
     }
@@ -330,12 +335,13 @@ generate_lock_file() {
     local version=$(get_config_field "$GLOBAL_CONFIG_FILE" "version")
     [ -z "$version" ] && version="1.0.0"
 
-    log_info "Gerando o lock..."
-
     # Scan and process structure
-    local scan_output=$(scan_all_structure)
+    gum_spin_update "Escaneando estrutura de comandos..."
+    local scan_output
+    scan_output=$(scan_all_structure)
 
     # Initialize JSON structure
+    gum_spin_update "Inicializando estrutura JSON..."
     local json_data='{}'
     json_data=$(echo "$json_data" | jq \
         --arg comment "Susa Lock File - This file contains the discovered commands and categories structure" \
@@ -354,6 +360,7 @@ generate_lock_file() {
         }')
 
     # First pass: process categories
+    gum_spin_update "Processando categorias..."
     while IFS='|' read -r type field1 field2 field3 field4; do
         if [ "$type" = "CATEGORY" ]; then
             local cat_name="$field1"
@@ -380,9 +387,11 @@ generate_lock_file() {
     done <<< "$scan_output"
 
     # Add all plugins from registry to lock
+    gum_spin_update "Adicionando plugins ao lock..."
     json_data=$(add_plugins_to_lock "$json_data")
 
     # Second pass: process commands
+    gum_spin_update "Processando comandos..."
     local buffer=""
     local current_source=""
     local is_dev_plugin=false
@@ -503,6 +512,7 @@ generate_lock_file() {
 
     # Restore installations section if it was backed up
     if [ -f "$temp_installations" ]; then
+        gum_spin_update "Restaurando seção de instalações..."
         log_debug "Restaurando seção de instalações..."
         local installations_data=$(cat "$temp_installations")
         json_data=$(echo "$json_data" | jq --argjson inst "$installations_data" '.installations = $inst')
@@ -511,6 +521,7 @@ generate_lock_file() {
 
     # Sort categories, plugins, and commands alphabetically
     # Keep "self" category always at the end
+    gum_spin_update "Ordenando categorias, plugins e comandos..."
     log_debug "Ordenando categorias, plugins e comandos alfabeticamente..."
     json_data=$(echo "$json_data" | jq '
         .categories |= (
@@ -527,12 +538,15 @@ generate_lock_file() {
     ')
 
     # Write JSON to lock file with pretty printing
+    gum_spin_update "Escrevendo arquivo de lock..."
+    log_debug "Escrevendo arquivo de lock..."
     echo "$json_data" | jq '.' > "$lock_file"
-
-    log_success "Lock gerado com sucesso!"
 
     # Refresh cache after updating lock file
     cache_refresh 2> /dev/null || true
+
+    gum_spin_stop
+    log_success "Lock gerado com sucesso!"
 
     # Return to original directory
     cd "$original_dir" || true
@@ -567,10 +581,10 @@ main() {
     if [ "$should_sync" = true ]; then
         echo ""
         log_info "Sincronizando instalações..."
-        sync_installations || {
+        if ! sync_installations; then
             log_error "Falha ao sincronizar instalações"
             return 1
-        }
+        fi
     fi
 }
 

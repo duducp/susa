@@ -23,6 +23,8 @@ show_complement_help() {
 
 # Update system dependencies based on OS
 update_system_dependencies() {
+    required_sudo
+
     log_output "${LIGHT_GREEN}📦 Atualizando dependências do sistema operacional...${NC}"
     echo ""
 

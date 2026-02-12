@@ -4,7 +4,6 @@ IFS=$'\n\t'
 
 # List all DBeaver backups
 # Bibliotecas essenciais já carregadas automaticamente
-source "$LIB_DIR/table.sh"
 
 # Default backup directory
 DEFAULT_BACKUP_DIR="$HOME/.susa/backups/dbeaver"
@@ -18,41 +17,45 @@ show_complement_help() {
 
 # List available backups
 list_backups() {
-    log_info "Listando backups disponíveis..."
-    log_output ""
-
     if [ ! -d "$BACKUP_DIR" ] || [ -z "$(ls -A "$BACKUP_DIR" 2> /dev/null)" ]; then
         log_output "Nenhum backup encontrado."
         log_output ""
-        log_output "${LIGHT_GREEN}Para criar um backup:${NC}"
-        log_output "  susa setup dbeaver backup create"
+        log_output "Para criar um backup, use: ${LIGHT_CYAN}susa setup dbeaver backup create${NC}"
         return 0
     fi
 
-    log_output "${BOLD}Backups disponíveis:${NC}"
-    log_output ""
+    # Start spinner
+    gum_spin_start "Listando backups disponíveis..."
 
-    # Initialize table
-    table_init
-    table_add_header "Nome" "Tamanho" "Data de Criação"
-
+    # Build table data
+    local table_data="Nome,Tamanho,Data de Criação"$'\n'
     local count=0
+
     for backup in "$BACKUP_DIR"/*.tar.gz; do
         if [ -f "$backup" ]; then
             count=$((count + 1))
             local backup_name=$(basename "$backup" .tar.gz)
             local backup_size=$(du -h "$backup" | cut -f1)
             local backup_date=$(date -r "$backup" "+%Y-%m-%d %H:%M:%S" 2> /dev/null || stat -c %y "$backup" 2> /dev/null | cut -d' ' -f1-2)
-
-            table_add_row "$backup_name" "$backup_size" "$backup_date"
+            table_data+="${backup_name},${backup_size},${backup_date}"$'\n'
         fi
     done
+
+    # Minimum display time for spinner visibility
+    sleep 0.5
+
+    # Stop spinner
+    gum_spin_stop
+
+    log_output ""
+    log_output "${BOLD}Backups disponíveis:${NC}"
+    log_output ""
 
     if [ $count -eq 0 ]; then
         log_output "Nenhum backup encontrado."
     else
-        # Render table
-        table_render
+        # Render table with gum
+        echo "$table_data" | gum_table_csv
         log_output ""
         log_output "${BOLD}Total:${NC} $count backup(s) • ${BOLD}Diretório:${NC} $BACKUP_DIR"
         log_output ""

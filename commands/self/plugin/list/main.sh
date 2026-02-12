@@ -5,7 +5,6 @@ IFS=$'\n\t'
 # Source libs
 source "$LIB_DIR/internal/registry.sh"
 source "$LIB_DIR/internal/plugin.sh"
-source "$LIB_DIR/table.sh"
 
 # Help function
 show_complement_help() {
@@ -99,9 +98,8 @@ list_all_plugins() {
         return 0
     fi
 
-    # Initialize table
-    table_init
-    table_add_header "Nome" "Versão" "Comandos" "Categorias" "Origem"
+    # Build table data for gum
+    local table_data="Nome,Versão,Comandos,Categorias,Origem"$'\n'
 
     # Get all plugin names from registry
     local plugin_names=$(registry_get_all_plugin_names "$REGISTRY_FILE")
@@ -150,9 +148,9 @@ list_all_plugins() {
         # Format plugin name with dev indicator
         local name_display
         if [ "$is_dev" = "true" ]; then
-            name_display="${LIGHT_CYAN}${plugin_name}${NC} ${MAGENTA}[DEV]${NC}"
+            name_display="${plugin_name} [DEV]"
         else
-            name_display="${LIGHT_CYAN}${plugin_name}${NC}"
+            name_display="${plugin_name}"
         fi
 
         # Format origin (Local or Remote)
@@ -161,13 +159,13 @@ list_all_plugins() {
         # Format version
         local version_display="${version:-N/A}"
 
-        # Add row to table
-        table_add_row "$name_display" "$version_display" "$cmd_count" "$category_count" "$origin_display"
+        # Add row to table data
+        table_data+="${name_display},${version_display},${cmd_count},${category_count},${origin_display}"$'\n'
 
     done <<< "$plugin_names"
 
-    # Render table
-    table_render
+    # Render table with gum
+    echo "$table_data" | gum_table_csv
 
     # Show summary
     log_output ""

@@ -14,20 +14,16 @@ get_lock_file_path() {
     echo "${CLI_DIR}/susa.lock"
 }
 
-# Internal helper: Query installation data from lock file
+# Internal helper: Query installation data from cache
 # Args: command_name jq_selector
 # Returns: selected value or empty
 # Usage: _query_installation_field "docker" ".version"
 _query_installation_field() {
     local command_name="$1"
     local selector="$2"
-    local lock_file=$(get_lock_file_path)
 
-    if [ ! -f "$lock_file" ]; then
-        return 1
-    fi
-
-    jq -r ".installations[] | select(.name == \"$command_name\") | $selector // empty" "$lock_file" 2> /dev/null
+    # Use cache instead of reading from file directly
+    cache_query ".installations[]? | select(.name == \"$command_name\") | $selector // empty" 2> /dev/null
 }
 
 # Gets list of installed software names from cache (performance optimized)
@@ -92,7 +88,7 @@ _mark_installed_software_in_lock() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     # Check if software already tracked
-    local exists=$(jq -r ".installations[] | select(.name == \"$software_name\") | .name" "$lock_file" 2> /dev/null)
+    local exists=$(cache_query ".installations[]? | select(.name == \"$software_name\") | .name" 2> /dev/null)
 
     if [ -n "$exists" ] && [ "$exists" != "null" ]; then
         # Update existing entry
@@ -107,6 +103,9 @@ _mark_installed_software_in_lock() {
             '.installations += [{name: $name, installed: true, version: $ver, installedAt: $ts}]' \
             "$lock_file" > "$temp_file" && mv "$temp_file" "$lock_file"
     fi
+
+    # Refresh cache after modifying lock file
+    cache_refresh 2> /dev/null || true
 
     return 0
 }
@@ -127,13 +126,16 @@ _update_software_version_in_lock() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     # Check if software is tracked
-    local exists=$(jq -r ".installations[] | select(.name == \"$software_name\") | .name" "$lock_file" 2> /dev/null)
+    local exists=$(cache_query ".installations[]? | select(.name == \"$software_name\") | .name" 2> /dev/null)
 
     if [ -n "$exists" ] && [ "$exists" != "null" ]; then
         local temp_file=$(mktemp)
         jq --arg name "$software_name" --arg ver "$version" --arg ts "$timestamp" \
             '(.installations[] | select(.name == $name)) |= (.version = $ver | .updatedAt = $ts)' \
             "$lock_file" > "$temp_file" && mv "$temp_file" "$lock_file"
+
+        # Refresh cache after modifying lock file
+        cache_refresh 2> /dev/null || true
         return 0
     fi
 
@@ -179,7 +181,7 @@ remove_software_in_lock() {
     fi
 
     # Check if software is tracked
-    local exists=$(jq -r ".installations[] | select(.name == \"$software_name\") | .name" "$lock_file" 2> /dev/null)
+    local exists=$(cache_query ".installations[]? | select(.name == \"$software_name\") | .name" 2> /dev/null)
 
     if [ -n "$exists" ] && [ "$exists" != "null" ]; then
         # Mark as uninstalled and clear version
@@ -188,6 +190,9 @@ remove_software_in_lock() {
             '(.installations[] | select(.name == $name)) |= {name: $name, installed: false, version: null} |
              (.installations[] | select(.name == $name)) |= del(.installedAt)' \
             "$lock_file" > "$temp_file" && mv "$temp_file" "$lock_file"
+
+        # Refresh cache after modifying lock file
+        cache_refresh 2> /dev/null || true
     fi
 
     return 0
@@ -250,7 +255,7 @@ get_installation_info() {
         return 1
     fi
 
-    jq -r ".installations[] | select(.name == \"$command_name\")" "$lock_file" 2> /dev/null
+    cache_query ".installations[]? | select(.name == \"$command_name\")" 2> /dev/null
     return 0
 }
 
@@ -281,17 +286,19 @@ list_installed() {
         return 1
     fi
 
-    # Show loading message to user (without timestamp for cleaner output)
-    log_output "${CYAN}⏳ Sincronizando instalações...${NC}"
+    # Sync installations with spinner
+    gum_spin_start "Sincronizando instalações..."
 
-    # Sync installations (hide output)
+    # Run sync
     sync_installations > /dev/null 2>&1
+
+    gum_spin_stop
 
     # Refresh cache after sync to ensure data is up-to-date
     cache_refresh 2> /dev/null || true
 
     # Get installed software and format output
-    local installed=$(jq -r '.installations[] | select(.installed == true) | .name' "$lock_file" 2> /dev/null)
+    local installed=$(cache_query '.installations[]? | select(.installed == true) | .name' 2> /dev/null)
 
     if [ -z "$installed" ]; then
         echo ""
@@ -303,68 +310,73 @@ list_installed() {
     # Count total
     local total=$(echo "$installed" | wc -l | tr -d ' ')
 
-    # Display header
-    echo ""
+    # Build table data for gum
+    local table_data=""
+
+    # Add header and rows based on mode
     if [ "$check_updates" = true ]; then
-        log_output "${LIGHT_GREEN}✓ Softwares instalados (${total}) - Verificando atualizações...${NC}"
+        table_data="Software,Versão Atual,Última Versão,Status"$'\n'
+
+        # Run update checks in background
+        local temp_data=$(mktemp)
+
+        gum_spin_start "Verificando atualizações para ${total} softwares..."
+
+        (
+            while IFS= read -r name; do
+                [ -z "$name" ] && continue
+
+                # Get current version from lock file
+                local current_version=$(cache_query ".installations[]? | select(.name == \"$name\") | .version // \"unknown\"" 2> /dev/null)
+
+                # Get latest version
+                local latest_version=$(get_latest_software_version "$name" 2> /dev/null)
+                [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] && latest_version="N/A"
+
+                # Normalize versions for comparison (remove 'v' prefix if present)
+                local current_normalized="${current_version#v}"
+                local latest_normalized="${latest_version#v}"
+
+                # Determine update status
+                local update_status=""
+                if [ "$latest_version" = "N/A" ]; then
+                    update_status="-"
+                elif [ "$current_version" = "unknown" ]; then
+                    update_status="-"
+                elif [ "$latest_normalized" != "$current_normalized" ]; then
+                    update_status="${YELLOW}⚠ Atualização disponível${NC}"
+                else
+                    update_status="${GREEN}✓ Atualizado${NC}"
+                fi
+
+                echo "${name},${current_version},${latest_version},${update_status}"
+            done <<< "$installed"
+        ) > "$temp_data"
+
+        gum_spin_stop
+
+        # Append results to table data
+        table_data+="$(cat "$temp_data")"
+        rm -f "$temp_data"
     else
-        log_output "${LIGHT_GREEN}✓ Softwares instalados (${total}):${NC}"
-    fi
-    echo ""
+        table_data="Software,Versão"$'\n'
 
-    # Load table library
-    source "$LIB_DIR/table.sh"
+        # Simple mode without update checks
+        while IFS= read -r name; do
+            [ -z "$name" ] && continue
 
-    # Initialize table
-    table_init
+            # Get current version from lock file
+            local current_version=$(cache_query ".installations[]? | select(.name == \"$name\") | .version // \"unknown\"" 2> /dev/null)
 
-    # Add header based on mode
-    if [ "$check_updates" = true ]; then
-        table_add_header "Software" "Versão Atual" "Última Versão" "Status"
-    else
-        table_add_header "Software" "Versão"
+            table_data+="${name},${current_version}"$'\n'
+        done <<< "$installed"
     fi
 
-    # Add rows for each installed software
-    while IFS= read -r name; do
-        [ -z "$name" ] && continue
+    log_output "${BOLD}Softwares Instalados${NC}"
+    log_output ""
 
-        # Get current version from lock file
-        local current_version=$(jq -r ".installations[] | select(.name == \"$name\") | .version // \"unknown\"" "$lock_file" 2> /dev/null)
-
-        # Format software name with color
-        local software_display="${LIGHT_CYAN}${name}${NC}"
-
-        # Check for updates if requested
-        if [ "$check_updates" = true ]; then
-            # Get latest version
-            local latest_version=$(get_latest_software_version "$name" 2> /dev/null)
-            [ -z "$latest_version" ] || [ "$latest_version" = "desconhecida" ] && latest_version="N/A"
-
-            # Normalize versions for comparison (remove 'v' prefix if present)
-            local current_normalized="${current_version#v}"
-            local latest_normalized="${latest_version#v}"
-
-            # Determine update status
-            local update_status=""
-            if [ "$latest_version" = "N/A" ]; then
-                update_status="${GRAY}-${NC}"
-            elif [ "$current_version" = "unknown" ]; then
-                update_status="${GRAY}-${NC}"
-            elif [ "$latest_normalized" != "$current_normalized" ]; then
-                update_status="${YELLOW}⚠ Atualização disponível${NC}"
-            else
-                update_status="${GREEN}✓ Atualizado${NC}"
-            fi
-
-            table_add_row "$software_display" "$current_version" "$latest_version" "$update_status"
-        else
-            table_add_row "$software_display" "$current_version"
-        fi
-    done <<< "$installed"
-
-    # Render the table
-    table_render
+    # Render table with gum (spinner already finished)
+    echo "$table_data" | gum_table_csv --numbered
 
     return 0
 }
