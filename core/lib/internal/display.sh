@@ -10,15 +10,22 @@ IFS=$'\n\t'
 # Display CLI logo with version
 show_logo() {
     local version=$(show_number_version)
-    cat << LOGO
-   _____
-  / ____|
- | (___  _   _ ___  __ _
-  \___ \| | | / __|/ _' |
-  ____) | |_| \__ \ (_| |
- |_____/ \__,_|___/\__,_| ${version}
 
-LOGO
+    # Cores laranja em gradiente (escuro -> claro)
+    local ORANGE1='\033[38;2;180;82;0m'    # Laranja escuro
+    local ORANGE2='\033[38;2;200;100;20m'  # Laranja médio-escuro
+    local ORANGE3='\033[38;2;220;120;40m'  # Laranja médio
+    local ORANGE4='\033[38;2;240;140;60m'  # Laranja médio-claro
+    local ORANGE5='\033[38;2;255;160;80m'  # Laranja claro
+    local ORANGE6='\033[38;2;255;180;100m' # Laranja muito claro
+
+    echo -e "${ORANGE1}   _____${NC}"
+    echo -e "${ORANGE2}  / ____|${NC}"
+    echo -e "${ORANGE3} | (___  _   _ ___  __ _${NC}"
+    echo -e "${ORANGE4}  \___ \| | | / __|/ _' |${NC}"
+    echo -e "${ORANGE5}  ____) | |_| \__ \ (_| |${NC}"
+    echo -e "${ORANGE6} |_____/ \__,_|___/\__,_| ${version}${NC}"
+    echo ""
 }
 
 # Display global help information
