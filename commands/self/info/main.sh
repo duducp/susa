@@ -36,10 +36,10 @@ main() {
         if [[ -L "$SUSA_BIN" ]]; then
             SYMLINK_PATH="$SUSA_BIN -> $(readlink -f "$SUSA_BIN")"
         else
-            SYMLINK_PATH="$SUSA_BIN (direct executable)"
+            SYMLINK_PATH="$SUSA_BIN (executável direto)"
         fi
     else
-        SYMLINK_PATH="Not found in PATH"
+        SYMLINK_PATH="Não encontrado no PATH"
     fi
 
     # Get completion status using library functions
@@ -47,44 +47,70 @@ main() {
     log_debug "Shell detectado: $CURRENT_SHELL"
 
     COMPLETION_STATUS_INFO=$(get_completion_status "$CURRENT_SHELL")
-
-    # Parse completion status (format: status:details:file)
-    # Use array to handle details containing colons
     IFS=':' read -r COMPLETION_INSTALLED COMPLETION_DETAILS_REST <<< "$COMPLETION_STATUS_INFO"
 
-    # Split the rest to get details and file
-    # Find last colon followed by a path (starts with /)
-    if [[ "$COMPLETION_DETAILS_REST" == *:/* ]]; then
-        # Extract file (everything after last :/)
-        COMPLETION_FILE="${COMPLETION_DETAILS_REST##*:}"
-        # Extract details (everything before last :/)
-        COMPLETION_DETAILS="${COMPLETION_DETAILS_REST%:/*}"
-    else
-        COMPLETION_DETAILS="$COMPLETION_DETAILS_REST"
-        COMPLETION_FILE=""
+    # OS Info
+    OS_TYPE=$(uname -s)
+    ARCH=$(uname -m)
+    KERNEL=$(uname -r)
+    DISTRO="Desconhecida"
+    if [ -f /etc/os-release ]; then
+        # Subshell to avoid polluting environment
+        DISTRO=$(grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"')
+        [ -z "$DISTRO" ] && DISTRO=$(grep "^ID=" /etc/os-release | cut -d= -f2 | tr -d '"')
+    elif [[ "$OS_TYPE" == "Darwin" ]]; then
+        DISTRO="macOS $(sw_vers -productVersion)"
     fi
 
     # Display information
-    log_output "${CYAN}╔═════════════════════════════════════════════════╗${NC}"
-    log_output "${CYAN}║${NC}           ${BOLD}Informações de Instalação${NC}             ${CYAN}║${NC}"
-    log_output "${CYAN}╚═════════════════════════════════════════════════╝${NC}"
+    log_output "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════╗${NC}"
+    log_output "${BOLD}${CYAN}║${NC}                ${WHITE}DETALHES DA INSTALAÇÃO${NC}                    ${BOLD}${CYAN}║${NC}"
+    log_output "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
     log_output ""
 
-    # Infos
-    log_output "  ${BOLD}📦 Nome:${NC}             ${GREEN}$(get_config_field $GLOBAL_CONFIG_FILE name)${NC}"
-    log_output "  ${BOLD}🏷️  Versão:${NC}           ${GREEN}$(show_number_version)${NC}"
-    log_output "  ${BOLD}📂 Instalação:${NC}       ${YELLOW}$CLI_DIR${NC}"
-    log_output "  ${BOLD}🔗 Executável:${NC}       ${YELLOW}$SYMLINK_PATH${NC}"
-    log_output "  ${BOLD}🐚 Shell atual:${NC}      ${CYAN}$CURRENT_SHELL${NC}"
+    # CLI Section
+    log_output "  ${BOLD}${MAGENTA}🚀 CLI Info${NC}"
+    log_output "  ${DIM}──────────────────────────────────────────────────────────${NC}"
+    log_output "  ${BOLD}Nome:${NC}             ${GREEN}$(get_config_field $GLOBAL_CONFIG_FILE name)${NC}"
+    log_output "  ${BOLD}Versão:${NC}           ${GREEN}$(show_number_version)${NC}"
+    log_output "  ${BOLD}Diretório:${NC}        ${YELLOW}$CLI_DIR${NC}"
+    log_output "  ${BOLD}Executável:${NC}       ${YELLOW}$SYMLINK_PATH${NC}"
+    log_output ""
 
-    # Display completion status
+    # Shell Section
+    log_output "  ${BOLD}${MAGENTA}🐚 Ambiente de Shell${NC}"
+    log_output "  ${DIM}──────────────────────────────────────────────────────────${NC}"
+    log_output "  ${BOLD}Shell Atual:${NC}      ${CYAN}$CURRENT_SHELL${NC}"
     if [[ "$COMPLETION_INSTALLED" == "Installed" ]]; then
-        log_output "  ${BOLD}✨ Autocompletar:${NC}    ${GREEN}Sim${NC} - $COMPLETION_DETAILS"
-    elif [[ "$COMPLETION_INSTALLED" == "Not installed" ]]; then
-        log_output "  ${BOLD}✨ Autocompletar:${NC}    ${RED}Não${NC} - $COMPLETION_DETAILS"
+        log_output "  ${BOLD}Autocompletar:${NC}    ${GREEN}● Ativo${NC}"
     else
-        log_output "  ${BOLD}✨ Autocompletar:${NC}    ${YELLOW}$COMPLETION_INSTALLED${NC} - $COMPLETION_DETAILS"
+        log_output "  ${BOLD}Autocompletar:${NC}    ${RED}○ Inativo${NC}"
     fi
+    log_output ""
+
+    # System Section
+    log_output "  ${BOLD}${MAGENTA}💻 Sistema Operacional${NC}"
+    log_output "  ${DIM}──────────────────────────────────────────────────────────${NC}"
+    log_output "  ${BOLD}Distribuição:${NC}     ${WHITE}$DISTRO${NC}"
+    log_output "  ${BOLD}Arquitetura:${NC}      ${WHITE}$ARCH${NC}"
+    log_output "  ${BOLD}Kernel:${NC}           ${DIM}$KERNEL${NC}"
+    log_output ""
+
+    # Dependencies Section
+    log_output "  ${BOLD}${MAGENTA}🛠️  Dependências Core${NC}"
+    log_output "  ${DIM}──────────────────────────────────────────────────────────${NC}"
+
+    local deps=("git" "jq" "curl" "gum")
+    local deps_line="  "
+    for dep in "${deps[@]}"; do
+        if command -v "$dep" &> /dev/null; then
+            deps_line+="${GREEN}✓${NC} ${BOLD}$dep${NC}  "
+        else
+            deps_line+="${RED}✗${NC} ${BOLD}$dep${NC}  "
+        fi
+    done
+    log_output "$deps_line"
+    log_output ""
 }
 
 # Execute main only if not showing help

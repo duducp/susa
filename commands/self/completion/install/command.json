@@ -1,0 +1,10 @@
+{
+  "name": "Install",
+  "description": "Instala autocompletar no shell (bash, zsh ou fish)",
+  "entrypoint": "main.sh",
+  "group": null,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}

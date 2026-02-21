@@ -1,0 +1,10 @@
+{
+  "name": "Uninstall",
+  "description": "Remove autocompletar do shell (bash, zsh ou fish)",
+  "entrypoint": "main.sh",
+  "group": null,
+  "os": [
+    "linux",
+    "mac"
+  ]
+}
