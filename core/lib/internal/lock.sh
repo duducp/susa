@@ -77,7 +77,7 @@ cache_clear() {
 
 # Check if cache exists and is valid
 cache_exists() {
-    local cache_file="${XDG_RUNTIME_DIR:-/tmp}/susa-$USER/${LOCK_CACHE_NAME}.cache"
+    local cache_file="$CACHE_DIR/${LOCK_CACHE_NAME}.cache"
     [ ! -f "$LOCK_FILE" ] && return 1
     [ ! -f "$cache_file" ] && return 1
     [ "$cache_file" -nt "$LOCK_FILE" ] && return 0
@@ -86,7 +86,7 @@ cache_exists() {
 
 # Get cache info for debugging
 cache_info() {
-    local cache_file="${XDG_RUNTIME_DIR:-/tmp}/susa-$USER/${LOCK_CACHE_NAME}.cache"
+    local cache_file="$CACHE_DIR/${LOCK_CACHE_NAME}.cache"
 
     if command -v log_output &> /dev/null; then
         log_output "${BOLD}${CYAN}Informações do Cache${NC}"
@@ -94,7 +94,7 @@ cache_info() {
         echo ""
 
         log_output "${BOLD}Localização:${NC}"
-        log_output "  ${GRAY}Diretório:${NC} ${XDG_RUNTIME_DIR:-/tmp}/susa-$USER"
+        log_output "  ${GRAY}Diretório:${NC} $CACHE_DIR"
         log_output "  ${GRAY}Arquivo:${NC}   $cache_file"
         log_output "  ${GRAY}Lock:${NC}      $LOCK_FILE"
         echo ""
