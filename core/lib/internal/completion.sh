@@ -6,6 +6,9 @@ IFS=$'\n\t'
 # Susa CLI - Completion Helper Functions
 # ============================================================
 
+# Source dependencies
+source "$LIB_DIR/shell.sh"
+
 # Get completion file path for a shell
 # Arguments:
 #   $1 - shell type (bash, zsh)

@@ -106,7 +106,6 @@ download_mise() {
     local output_file="/tmp/${MISE_BIN_NAME}-${version}.tar.gz"
     local download_url=$(github_build_download_url "$MISE_REPO" "$version" "$os_name" "$arch" "$MISE_TAR_PATTERN")
 
-    log_info "Baixando Mise..."
     log_debug "URL: $download_url"
 
     if ! github_download_release "$download_url" "$output_file" "Mise"; then

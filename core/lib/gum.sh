@@ -180,15 +180,15 @@ gum_spin_start() {
     # Create temp file to track spinner
     _GUM_SPIN_TEMP=$(mktemp)
 
-    # Start spinner in background with sleep infinity
-    gum spin --spinner dot --title "$title" --spinner.foreground 214 -- sleep infinity &
+    # Start spinner in background with sleep (use large number for macOS compatibility)
+    gum spin --spinner dot --title "$title" --spinner.foreground 214 -- sleep 2147483647 &
 
     _GUM_SPIN_PID=$!
     echo $_GUM_SPIN_PID > "$_GUM_SPIN_TEMP"
     log_trace "Spinner iniciado (PID: $_GUM_SPIN_PID)"
 
     # Give spinner a tiny moment to start rendering
-    sleep 0.02
+    sleep 0.02s
 }
 
 # Stop spinner started with gum_spin_start
@@ -207,7 +207,7 @@ gum_spin_stop() {
     fi
 
     # Give terminal a moment to clean up
-    sleep 0.05
+    sleep 0.05s
 }
 
 # Update spinner message (restarts spinner with new message)
@@ -232,15 +232,15 @@ gum_spin_update() {
         _GUM_SPIN_PID=""
     fi
 
-    # Start new spinner immediately with sleep infinity
-    gum spin --spinner dot --title "$new_title" --spinner.foreground 214 -- sleep infinity &
+    # Start new spinner immediately with sleep (use large number for macOS compatibility)
+    gum spin --spinner dot --title "$new_title" --spinner.foreground 214 -- sleep 2147483647 &
 
     _GUM_SPIN_PID=$!
     echo $_GUM_SPIN_PID > "$_GUM_SPIN_TEMP"
     log_trace "Spinner reiniciado (PID: $_GUM_SPIN_PID)"
 
     # Give spinner a tiny moment to start rendering
-    sleep 0.02
+    sleep 0.02s
 
     return 0
 }

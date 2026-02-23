@@ -6,6 +6,11 @@
 # Generic named cache system for fast data access in memory
 # Compatible with zsh 5.0+
 
+# NOTE: KSH_ARRAYS option from core/susa breaks this associative array cache
+# We disable KSH_ARRAYS for this file to allow proper associative array operations
+emulate -L zsh
+setopt NO_KSH_ARRAYS
+
 # Determine cache directory based on OS
 # Linux: Use XDG_RUNTIME_DIR or /tmp/susa-$USER
 # macOS: Use TMPDIR (user-specific) or ~/Library/Caches/susa
@@ -58,7 +63,8 @@ _cache_mark_loaded() {
 
 # Initialize cache directory
 _cache_init() {
-    log_trace "Chamando _cache_init()"
+    # log_trace disabled - was causing hangs
+    # log_trace "Chamando _cache_init()"
 
     if [ ! -d "$CACHE_DIR" ]; then
         log_debug2 "Criando diretório de cache: $CACHE_DIR"
@@ -67,7 +73,8 @@ _cache_init() {
             return 1
         }
         chmod 700 "$CACHE_DIR" 2> /dev/null
-        log_debug "Diretório de cache criado: $CACHE_DIR"
+        # log_debug disabled
+        # log_debug "Diretório de cache criado: $CACHE_DIR"
     fi
     return 0
 }
@@ -85,10 +92,12 @@ cache_named_load() {
     local name="$1"
     local source_file="${2:-}"
 
-    log_trace "Chamando cache_named_load(name=$name, source_file=$source_file)"
+    # log_trace disabled - was causing hangs
+    # log_trace "Chamando cache_named_load(name=$name, source_file=$source_file)"
 
     if [ -z "$name" ]; then
-        log_error "cache_named_load: nome do cache não pode ser vazio"
+        # log_error disabled
+        # log_error "cache_named_load: nome do cache não pode ser vazio"
         return 1
     fi
 
@@ -152,10 +161,12 @@ cache_named_query() {
     local name="$1"
     local query="$2"
 
-    log_trace "Chamando cache_named_query(name=$name, query=$query)"
+    # log_trace disabled - was causing hangs in zsh with KSH_ARRAYS
+    # log_trace "Chamando cache_named_query(name=$name, query=$query)"
 
     if [ -z "$name" ] || [ -z "$query" ]; then
-        log_error "cache_named_query: nome e query são obrigatórios"
+        # log_error disabled
+        # log_error "cache_named_query: nome e query são obrigatórios"
         return 1
     fi
 
