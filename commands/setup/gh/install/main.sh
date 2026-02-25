@@ -24,6 +24,7 @@ show_complement_help() {
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
     log_output "  Execute: ${LIGHT_CYAN}gh auth login${NC} para autenticar sua conta GitHub"
     log_output "  Execute: ${LIGHT_CYAN}gh repo list${NC} para listar seus repositórios"
+    log_output "  Execute: ${LIGHT_CYAN}gh repo list <OWNER>${NC} para listar os repositórios de um usuário ou organização"
     log_output ""
     log_output "${LIGHT_GREEN}Recursos principais:${NC}"
     log_output "  • Gerenciamento de issues e pull requests"
@@ -44,8 +45,6 @@ install_macos() {
 
 # Install on Linux
 install_linux() {
-    log_info "Instalando $SOFTWARE_NAME..."
-
     local distro=$(get_distro_id)
 
     case "$distro" in

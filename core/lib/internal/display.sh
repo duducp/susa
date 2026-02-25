@@ -375,6 +375,10 @@ _display_category_help() {
     # Display commands
     _display_category_commands "$full_category" "$commands" "$current_os" "$subcategories"
 
+    log_output ""
+    log_output "${LIGHT_GREEN}Opções:${NC}"
+    log_output "  -h, --help      Mostra esta mensagem de ajuda"
+
     # Execute category's show_complement_help if available
     _execute_category_complement_help "$full_category"
 }
