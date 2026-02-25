@@ -1,0 +1,5 @@
+{
+  "name": "GitHub CLI",
+  "description": "Ferramenta oficial de linha de comando do GitHub (gh)",
+  "entrypoint": "main.sh"
+}

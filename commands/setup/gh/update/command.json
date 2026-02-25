@@ -1,0 +1,7 @@
+{
+  "name": "Update",
+  "description": "Atualiza o GitHub CLI para a versão mais recente",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"],
+  "sudo": ["linux"]
+}

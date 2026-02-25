@@ -1,0 +1,7 @@
+{
+  "name": "Install",
+  "description": "Instala o GitHub CLI (gh)",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"],
+  "sudo": ["linux"]
+}
