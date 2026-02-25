@@ -11,6 +11,9 @@ source "$UTILS_DIR/common.sh"
 
 # Help function
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra informações da instalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Docker Desktop é uma aplicação completa com interface gráfica para"
     log_output "  gerenciar containers Docker. Inclui Docker Engine, Docker CLI,"

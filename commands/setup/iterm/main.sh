@@ -8,6 +8,9 @@ source "$UTILS_DIR/common.sh"
 
 # Optional - Additional information in help
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra status da instalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $ITERM_NAME é um substituto para o Terminal do macOS com recursos"
     log_output "  avançados como split panes, busca, autocompletar, histórico,"

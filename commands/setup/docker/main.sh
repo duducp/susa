@@ -26,6 +26,9 @@ show_additional_info() {
 
 # Optional - Additional information in help
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra status da instalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $DOCKER_NAME é a plataforma líder em containers para desenvolvimento,"
     log_output "  empacotamento e execução de aplicações. Esta instalação inclui"

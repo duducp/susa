@@ -39,6 +39,9 @@ show_additional_info() {
 
 # Optional - Additional information in help
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra status da instalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $GCLOUD_NAME ($GCLOUD_BIN_NAME) é um conjunto de ferramentas de linha"
     log_output "  de comando para gerenciar recursos e aplicações hospedadas no"

@@ -10,6 +10,9 @@ source "$UTILS_DIR/common.sh"
 
 # Optional - Additional information in help
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra status da instalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  $TOOLBOX_NAME é um aplicativo que facilita o gerenciamento"
     log_output "  de todas as IDEs da JetBrains (IntelliJ IDEA, PyCharm, WebStorm,"

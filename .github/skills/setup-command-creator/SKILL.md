@@ -414,6 +414,12 @@ source "$UTILS_DIR/common.sh"
 show_complement_help() {
     log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
     log_output "  --info          Mostra informações da instalação"
+    log_output ""
+    log_output "${LIGHT_GREEN}Exemplos:${NC}"
+    log_output "  susa setup [comando] install              # Instala o software"
+    log_output "  susa setup [comando] update               # Atualiza o software"
+    log_output "  susa setup [comando] uninstall            # Desinstala o software"
+    log_output "  susa setup [comando] --info               # Mostra status da instalação"
 }
 
 # OBRIGATÓRIO - Parse de argumentos com --info
@@ -471,6 +477,12 @@ show_complement_help() {
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Descrição detalhada do software (1-2 linhas)"
     log_output "  Informações relevantes sobre sua funcionalidade"
+    log_output ""
+    log_output "${LIGHT_GREEN}Exemplos:${NC}"
+    log_output "  susa setup [comando] install              # Instala o software"
+    log_output "  susa setup [comando] update               # Atualiza o software"
+    log_output "  susa setup [comando] uninstall            # Desinstala o software"
+    log_output "  susa setup [comando] --info               # Mostra status da instalação"
     log_output ""
     log_output "${LIGHT_GREEN}Recursos principais:${NC}"
     log_output "  • Recurso 1"
@@ -1120,8 +1132,10 @@ Adiciona informações complementares ao help padrão **sem substituí-lo**.
 **Para main.sh da categoria principal:**
 1. **"Opções adicionais"** - SEMPRE PRIMEIRA seção (flags como --info)
 2. **"O que é"** - Descrição do software
-3. **"Recursos principais"** - Lista de features
-4. **"Pós-instalação"** - Instruções de uso (opcional)
+3. **"Exemplos"** - Exemplos de uso dos comandos disponíveis (RECOMENDADO)
+4. **"Recursos principais"** - Lista de features
+5. **"Pós-instalação"** - Instruções de uso (opcional)
+6. **"Próximos passos"** - Comandos úteis após instalação (opcional)
 
 **Para subcomandos (install/update/uninstall):**
 1. **"O que é"** - Descrição breve (opcional, se relevante)
@@ -1129,7 +1143,10 @@ Adiciona informações complementares ao help padrão **sem substituí-lo**.
 3. **"Pós-instalação"** - Apenas no install
 4. **"Recursos principais"** - Lista de features (se não estiver no main)
 
-**⚠️ Regra importante:** "Opções adicionais" SEMPRE deve ser a PRIMEIRA seção no main.sh da categoria principal, nunca ao final.
+**⚠️ Regras importantes:**
+- "Opções adicionais" SEMPRE deve ser a PRIMEIRA seção no main.sh da categoria principal
+- "Exemplos" deve mostrar o uso de todos os subcomandos (install, update, uninstall, --info)
+- Mantenha consistência: se tem exemplos, inclua todos os comandos relevantes
 
 **Exemplo - main.sh da categoria principal:**
 
@@ -1150,6 +1167,12 @@ show_complement_help() {
     log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Cliente REST API open-source (alternativa ao Postman)"
+    log_output ""
+    log_output "${LIGHT_GREEN}Exemplos:${NC}"
+    log_output "  susa setup bruno install              # Instala o Bruno"
+    log_output "  susa setup bruno update               # Atualiza o Bruno"
+    log_output "  susa setup bruno uninstall            # Desinstala o Bruno"
+    log_output "  susa setup bruno --info               # Mostra status da instalação"
     log_output ""
     log_output "${LIGHT_GREEN}Recursos principais:${NC}"
     log_output "  • Interface intuitiva para testar APIs"
