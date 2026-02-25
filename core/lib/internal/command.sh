@@ -90,7 +90,7 @@ initialize_command_context() {
     # Get command config path
     local config_file=""
     if [ -n "$command" ]; then
-        config_file=$(find_command_config "$full_category" "$command")
+        config_file=$(find_command_config "$full_category" "$command") || true
     fi
     local command_path=""
     if [ -n "$config_file" ]; then
@@ -130,6 +130,7 @@ initialize_command_context() {
 
 # Validate command exists and is compatible with current OS
 # Note: This is a safety check - validation should already happen in core/susa
+# Returns config file path if success, empty string if failure (validation errors are printed to stderr)
 validate_command() {
     local category="$1"
     local command="$2"
@@ -139,17 +140,16 @@ validate_command() {
     local config_file=$(find_command_config "$category" "$command")
 
     if [ -z "$config_file" ]; then
-        log_error "Comando '$command' não encontrado na categoria '$category'"
-        exit 1
+        return 1
     fi
 
     # Check OS compatibility
     if ! is_command_compatible "$GLOBAL_CONFIG_FILE" "$category" "$command" "$current_os"; then
-        log_error "Comando '$command' não é compatível com o sistema operacional atual ($current_os)"
-        exit 1
+        return 1
     fi
 
     echo "$config_file"
+    return 0
 }
 
 # Check if help was requested for the command
@@ -239,8 +239,32 @@ execute_command() {
 
     # Validate command exists and is compatible
     local config_file
-    config_file=$(validate_command "$category" "$command" "$current_os")
-    if [ $? -ne 0 ] || [ -z "$config_file" ]; then
+    if ! config_file=$(validate_command "$category" "$command" "$current_os" 2>&1); then
+        # Show error message
+        log_error "Comando '$command' não encontrado na categoria '$category'"
+        log_output ""
+
+        # Try to find similar command
+        local similar=$(find_similar_command "$category" "$command" 2> /dev/null)
+        if [ -n "$similar" ]; then
+            show_similarity_suggestion "command" "$command" "$similar"
+        fi
+
+        log_output "Use ${LIGHT_CYAN}susa $category --help${NC} para ver os comandos disponíveis."
+        exit 1
+    fi
+
+    # Check if config_file is empty
+    if [ -z "$config_file" ]; then
+        log_error "Comando '$command' não encontrado na categoria '$category'"
+        log_output ""
+
+        local similar=$(find_similar_command "$category" "$command" 2> /dev/null)
+        if [ -n "$similar" ]; then
+            show_similarity_suggestion "command" "$command" "$similar"
+        fi
+
+        log_output "Use ${LIGHT_CYAN}susa $category --help${NC} para ver os comandos disponíveis."
         exit 1
     fi
 

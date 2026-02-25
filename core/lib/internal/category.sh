@@ -16,6 +16,23 @@ resolve_category_path() {
     shift
     local -a remaining_args=("$@")
 
+    # Validate initial category exists
+    local categories=$(get_all_categories "$GLOBAL_CONFIG_FILE")
+    if ! echo "$categories" | grep -q "^${category}$"; then
+        # Category not found - show error with suggestion
+        log_error "Categoria '$category' não encontrada"
+        log_output ""
+
+        # Try to find similar category
+        local similar=$(find_similar_category "$category" 2> /dev/null)
+        if [ -n "$similar" ]; then
+            show_similarity_suggestion "category" "$category" "$similar"
+        fi
+
+        log_output "Use ${LIGHT_CYAN}susa --help${NC} para ver as categorias disponíveis."
+        exit 1
+    fi
+
     # Check if there are more arguments that could be subcategories
     while ((${#remaining_args[@]} > 0)); do
         local next_arg="${remaining_args[0]:-}"

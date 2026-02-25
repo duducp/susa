@@ -36,21 +36,6 @@ show_complement_help() {
     log_output "  • Suporte a projetos recentes"
 }
 
-# Optional - Additional information
-show_additional_info() {
-    log_output "${LIGHT_GREEN}IDEs disponíveis:${NC}"
-    log_output "  IntelliJ IDEA (Java/Kotlin)"
-    log_output "  PyCharm (Python)"
-    log_output "  WebStorm (JavaScript/TypeScript)"
-    log_output "  PhpStorm (PHP)"
-    log_output "  GoLand (Go)"
-    log_output "  RubyMine (Ruby)"
-    log_output "  CLion (C/C++)"
-    log_output "  Rider (.NET)"
-    log_output "  DataGrip (Database)"
-    log_output "  Android Studio (Android)"
-}
-
 # Main function for --info flag
 main() {
     # Parse arguments
@@ -58,7 +43,6 @@ main() {
         case "$1" in
             --info)
                 show_software_info "$TOOLBOX_BIN_NAME" "$TOOLBOX_BIN_NAME"
-                show_additional_info
                 exit 0
                 ;;
             -h | --help)
