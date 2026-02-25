@@ -109,7 +109,7 @@ susa -vv setup docker      # Debug detalhado
 
 ### Ordem de Source de Bibliotecas
 
-> **🎉 Carregamento Automático:** As bibliotecas essenciais (`color.sh`, `logger.sh`, `cache.sh`, `lock.sh`, `context.sh`, `config.sh`) são carregadas automaticamente no início da execução de cada comando pelo `core/susa`. **Você não precisa fazer `source` delas nos seus comandos!**
+> **🎉 Carregamento Automático:** As bibliotecas essenciais (`color.sh`, `logger.sh`, `cache.sh`, `lock.sh`, `context.sh`, `config.sh`, `gum.sh`) são carregadas automaticamente no início da execução de cada comando pelo `core/susa`. **Você não precisa fazer `source` delas nos seus comandos!**
 
 **Bibliotecas carregadas automaticamente:**
 - `color.sh` - Cores e formatação
@@ -120,6 +120,7 @@ susa -vv setup docker      # Debug detalhado
 - `context.sh` - Contexto de execução
 - `config.sh` - Parser de configurações
 - `cli.sh` - Funções do CLI
+- `gum.sh` - Interface gráfica de terminal (spinners, prompts)
 
 **Bibliotecas que você precisa carregar manualmente (quando necessário):**
 ```bash
@@ -205,7 +206,7 @@ Comandos são scripts executáveis dentro de categorias. Cada comando tem:
   "name": "Docker",
   "description": "Instala Docker CLI e Engine (plataforma de containers)",
   "entrypoint": "main.sh",
-  "sudo": true,              // Se requer privilégios root
+  "sudo": ["linux", "mac"],  // Sistemas que requerem sudo (array vazio [] = não requer)
   "group": "container",      // Agrupa comandos relacionados
   "os": ["linux", "mac"],    // Sistemas operacionais compatíveis
   "envs": {                  // Variáveis de ambiente específicas
@@ -218,7 +219,7 @@ Comandos são scripts executáveis dentro de categorias. Cada comando tem:
 - `name`: Nome exibido no help
 - `description`: Descrição do comando
 - `entrypoint`: Script a executar (sempre `main.sh`)
-- `sudo`: Exibe indicador `[sudo]` no help
+- `sudo`: Array de sistemas que requerem privilégios root (["linux", "mac"], ["linux"], ou [] para nenhum)
 - `group`: Agrupa comandos na listagem (ex: "container", "runtime")
 - `os`: Array com sistemas suportados (`linux`, `mac`, `windows`)
 - `envs`: Variáveis de ambiente injetadas antes da execução

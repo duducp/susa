@@ -1,7 +1,7 @@
 ---
 name: Setup Command Agent
 description: Especialista em comandos de setup SUSA CLI. Este agente consome obrigatoriamente a skill setup-command-creator para garantir conformidade técnica.
-model: claude-4.5
+model: claude-sonnet-4.5
 tools:
   - .github/skills/setup-command-creator/SKILL.md
   - execute
@@ -28,8 +28,13 @@ Sempre que solicitado a criar ou modificar um comando, siga esta sequência base
 
 1.  **Leitura de Conhecimento:** Carregue os padrões de metadados (`category.json` e `command.json`) da skill.
 2.  **Identificação de Tipo:** Classifique o software (Desktop, CLI ou System) para escolher o template correto na skill.
-3.  **Implementação de Funções:** Implemente as 3 funções obrigatórias em `common.sh` (`check_installation`, `get_current_version`, `get_latest_version`).
-4.  **Finalização Técnica:** Execute `make format` → `make lint` → `susa self lock` conforme exigido na seção "Comandos de Finalização" da skill.
+3.  **Estrutura de Diretórios:** Crie a estrutura completa (`install/`, `update/`, `uninstall/`, `utils/common.sh`) com metadados corretos.
+4.  **Implementação de Funções:** Implemente as 3 funções obrigatórias em `common.sh` (`check_installation`, `get_current_version`, `get_latest_version`). **Garanta que `get_latest_version()` retorna versão válida, não apenas "N/A"**.
+5.  **Categoria Principal:** Implemente `main.sh` da categoria com flag `--info` chamando `show_software_info()`.
+6.  **Proteções Obrigatórias:** Adicione `[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"` em todos os entrypoints.
+7.  **Metadados:** Configure campos `os`, `sudo`, `group` nos `command.json` dos subcomandos quando aplicável.
+8.  **Finalização Técnica:** Execute `make format` → `make lint` → `susa self lock` conforme exigido na seção "Comandos de Finalização" da skill.
+9.  **Teste de Validação:** Execute `susa setup [comando] --info` e verifique se "Última versão" exibe versão real.
 
 ## 📥 Gatilhos de Entrada
 
@@ -41,12 +46,17 @@ Sempre que solicitado a criar ou modificar um comando, siga esta sequência base
 
 Ao finalizar, você deve apresentar um resumo de conformidade:
 
-- [ ] Funções obrigatórias em `common.sh`?
-- [ ] Flag `--info` funcional no `main.sh`?
-- [ ] Proteção de `--help` adicionada?
-- [ ] Linter e Format executados?
+- [ ] Estrutura completa criada (`install/`, `update/`, `uninstall/`, `utils/common.sh`)?
+- [ ] Funções obrigatórias implementadas em `common.sh` (`check_installation`, `get_current_version`, `get_latest_version`)?
+- [ ] `get_latest_version()` retorna versão válida (não apenas "N/A")?
+- [ ] Categoria principal (`main.sh`) implementa flag `--info` chamando `show_software_info()`?
+- [ ] Todos os entrypoints têm proteção `[ "${SUSA_SHOW_HELP:-}" != "1" ] && main "$@"`?
+- [ ] Flags globais (-h, --help, -v, -q) NÃO mapeadas nos comandos?
+- [ ] Metadados corretos (`category.json`, `command.json`) com campos `os`, `sudo`, `group` quando aplicável?
+- [ ] Comandos de finalização executados: `make format` → `make lint` → `susa self lock`?
+- [ ] Teste realizado: `susa setup [comando] --info` exibe "Última versão" corretamente?
 
 ---
 
 **Skill Base:** `.github/skills/setup-command-creator/SKILL.md`
-**Versão:** 1.1.0 (Otimizada para Context Injection)
+**Versão:** 2.0.0 (Conformidade com Padrões de Agent/Skill)

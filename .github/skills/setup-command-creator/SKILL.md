@@ -239,16 +239,16 @@ Use o campo `os` no `command.json` dos **subcomandos** para especificar compatib
 }
 ```
 
-**⚠️ Quando usar `sudo: true`:**
+**⚠️ Quando usar `sudo`:**
 
-Marque `sudo: true` no `command.json` dos **subcomandos** quando:
+Configure o array `sudo: ["linux"]` ou `sudo: ["linux", "mac"]` no `command.json` dos **subcomandos** quando:
 
 - Usar **Snap** para instalação (requer `sudo snap install`)
 - Usar **gerenciadores nativos** Linux: apt, dnf, pacman (requerem sudo)
 - Copiar arquivos para `/usr/local/bin`, `/opt`, `/etc` ou outros diretórios do sistema
 - Modificar permissões ou ownership de arquivos do sistema
 
-**Não use `sudo: true` quando:**
+**Não inclua o sistema no array `sudo` quando:**
 
 - Usar **Homebrew** (macOS) - gerenciado pelo usuário
 - Usar **Flatpak** (Linux) - instalação por usuário (sem sudo)
@@ -258,31 +258,31 @@ Marque `sudo: true` no `command.json` dos **subcomandos** quando:
 **Exemplos:**
 
 ```json
-// ✅ CORRETO - Snap requer sudo
+// ✅ CORRETO - Snap requer sudo apenas no Linux
 // commands/setup/software/install/command.json
 {
   "name": "Install",
   "description": "Instala o software",
   "entrypoint": "main.sh",
-  "sudo": true
+  "sudo": ["linux"]
 }
 
-// ✅ CORRETO - apt/dnf requer sudo
+// ✅ CORRETO - apt/dnf requer sudo no Linux
 // commands/setup/postgres/install/command.json
 {
   "name": "Install",
   "description": "Instala PostgreSQL Client",
   "entrypoint": "main.sh",
-  "sudo": true
+  "sudo": ["linux"]
 }
 
-// ❌ NÃO NECESSÁRIO - Flatpak não requer sudo
+// ✅ CORRETO - Flatpak não requer sudo
 // commands/setup/bruno/install/command.json
 {
   "name": "Install",
   "description": "Instala o Bruno",
-  "entrypoint": "main.sh"
-  // sudo: false ou omitir
+  "entrypoint": "main.sh",
+  "sudo": []
 }
 ```
 
@@ -656,8 +656,6 @@ main() {
 
     if [ "$current_version" = "$new_version" ]; then
         log_info "$SOFTWARE_NAME já estava na versão mais recente ($current_version)"
-    else
-        log_success "$SOFTWARE_NAME atualizado com sucesso para versão $new_version!"
     fi
 }
 
@@ -1119,12 +1117,19 @@ Adiciona informações complementares ao help padrão **sem substituí-lo**.
 
 **Estrutura recomendada:**
 
-1. **"Opções adicionais"** - PRIMEIRA seção (quando houver flags como --info)
+**Para main.sh da categoria principal:**
+1. **"Opções adicionais"** - SEMPRE PRIMEIRA seção (flags como --info)
 2. **"O que é"** - Descrição do software
 3. **"Recursos principais"** - Lista de features
-4. **"Exemplos"** / **"Pós-instalação"** - Apenas em subcomandos (install/update)
+4. **"Pós-instalação"** - Instruções de uso (opcional)
 
-**⚠️ Nota:** Se o comando não tiver opções adicionais (como --info), omita a seção "Opções adicionais" e comece direto com "O que é".
+**Para subcomandos (install/update/uninstall):**
+1. **"O que é"** - Descrição breve (opcional, se relevante)
+2. **"Exemplos"** - Exemplos práticos do comando
+3. **"Pós-instalação"** - Apenas no install
+4. **"Recursos principais"** - Lista de features (se não estiver no main)
+
+**⚠️ Regra importante:** "Opções adicionais" SEMPRE deve ser a PRIMEIRA seção no main.sh da categoria principal, nunca ao final.
 
 **Exemplo - main.sh da categoria principal:**
 
@@ -1578,11 +1583,12 @@ log_trace "Trace completo (visível com -vvv)"
   - [ ] `"os": ["linux"]` - Se software disponível **apenas para Linux**
   - [ ] `"os": ["linux", "mac"]` - Se software disponível para **ambos**
   - [ ] Omitir `os` - Se compatível universalmente (mesma lógica em ambos)
-- [ ] **Adicionar campo `sudo: true` em command.json dos subcomandos** se:
-  - [ ] Usar Snap (requer `sudo snap install`)
-  - [ ] Usar apt/dnf/pacman (requerem sudo)
-  - [ ] Instalar em `/usr/local/bin`, `/opt`, `/etc` (diretórios do sistema)
-  - [ ] Não usar se: Homebrew, Flatpak, ou instalação em `~/.local/bin`
+- [ ] **Adicionar campo `sudo` em command.json dos subcomandos** se necessário:
+  - [ ] `"sudo": ["linux"]` - Se requer sudo **apenas no Linux**
+  - [ ] `"sudo": ["linux", "mac"]` - Se requer sudo **em ambos os sistemas**
+  - [ ] `"sudo": []` - Se **não requer sudo** em nenhum sistema
+  - [ ] Usar `["linux"]` se: Snap, apt/dnf/pacman, instalar em `/usr/local/bin`, `/opt`, `/etc`
+  - [ ] Usar `[]` se: Homebrew, Flatpak, ou instalação em `~/.local/bin`
 - [ ] Testar instalação: `susa setup [comando] install`
 - [ ] Testar atualização: `susa setup [comando] update`
 - [ ] Testar desinstalação: `susa setup [comando] uninstall`
@@ -1650,7 +1656,7 @@ susa setup [comando] uninstall --help
 - [ ] **Listagem:** Comando aparece em `susa setup`
   - [ ] Nome está correto e legível
   - [ ] Descrição é clara e concisa
-  - [ ] Indicador `[sudo]` aparece se campo `sudo: true`
+  - [ ] Indicador `[sudo]` aparece quando o comando requer sudo no sistema atual
   - [ ] Indicador de grupo aparece se definido
 
 - [ ] **Info básico:** `susa setup [comando] --info` funciona
@@ -2544,11 +2550,11 @@ check_installation() {
 
 **Solução:**
 
-1. **Marcar `sudo: true` no command.json**
+1. **Adicionar sistema ao array `sudo` no command.json**
    ```json
    {
      "name": "Install",
-     "sudo": true
+     "sudo": ["linux", "mac"]
    }
    ```
 
@@ -2560,12 +2566,6 @@ check_installation() {
    # ✅ Não requer sudo
    mkdir -p ~/.local/bin
    mv binary ~/.local/bin/
-   ```
-
-3. **Usar biblioteca sudo.sh para prompt amigável**
-   ```bash
-   source "$LIB_DIR/sudo.sh"
-   run_with_sudo "mv binary /usr/local/bin/"
    ```
 
 ### Argumentos não são processados

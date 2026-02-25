@@ -90,7 +90,7 @@ mkdir -p commands/setup/myapp
   "name": "My App",
   "description": "Instala My App",
   "entrypoint": "main.sh",
-  "sudo": false,
+  "sudo": [],
   "os": ["linux", "mac"],
   "envs": {
     "MYAPP_VERSION": "1.0.0",

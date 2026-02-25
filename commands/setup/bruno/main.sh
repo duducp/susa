@@ -13,6 +13,9 @@ source "$UTILS_DIR/common.sh"
 
 # Show additional info in category listing
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra informações do Bruno instalado"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Bruno é um cliente de API open-source rápido e amigável para Git."
     log_output "  Alternativa ao Postman/Insomnia, armazena coleções diretamente"
@@ -23,9 +26,6 @@ show_complement_help() {
     log_output "  • Armazena coleções em pastas no sistema de arquivos"
     log_output "  • Versionamento com Git"
     log_output "  • Suporte a REST, GraphQL e gRPC"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
-    log_output "  --info          Mostra informações do Bruno instalado"
 }
 
 # Main function

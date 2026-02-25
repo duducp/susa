@@ -10,6 +10,9 @@ source "$UTILS_DIR/common.sh"
 
 # Show additional info in category listing
 show_complement_help() {
+    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
+    log_output "  --info          Mostra informações da instalação"
+    log_output ""
     log_output "${LIGHT_GREEN}O que é:${NC}"
     log_output "  Interface TUI simples para Git, facilitando operações comuns"
     log_output "  como commits, branches, merges e rebases via terminal"
@@ -23,9 +26,6 @@ show_complement_help() {
     log_output ""
     log_output "${LIGHT_GREEN}Pós-instalação:${NC}"
     log_output "  Execute: ${LIGHT_CYAN}lazygit${NC} dentro de um repositório Git"
-    log_output ""
-    log_output "${LIGHT_GREEN}Opções adicionais:${NC}"
-    log_output "  --info          Mostra informações da instalação"
 }
 
 # Main function
