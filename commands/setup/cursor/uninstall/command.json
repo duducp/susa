@@ -1,0 +1,7 @@
+{
+  "name": "Uninstall",
+  "description": "Desinstala o Cursor",
+  "entrypoint": "main.sh",
+  "os": ["linux", "mac"],
+  "sudo": []
+}

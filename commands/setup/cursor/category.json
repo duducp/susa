@@ -1,0 +1,5 @@
+{
+  "name": "Cursor",
+  "description": "Editor de código com IA integrada",
+  "entrypoint": "main.sh"
+}
