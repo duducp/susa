@@ -1,0 +1,5 @@
+{
+  "name": "Create",
+  "description": "Criar backup das configurações do Cursor",
+  "entrypoint": "main.sh"
+}

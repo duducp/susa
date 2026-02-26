@@ -1,0 +1,5 @@
+{
+  "name": "Restore",
+  "description": "Restaurar backup das configurações do Cursor",
+  "entrypoint": "main.sh"
+}

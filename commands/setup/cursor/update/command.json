@@ -3,5 +3,7 @@
   "description": "Atualiza o Cursor",
   "entrypoint": "main.sh",
   "os": ["linux", "mac"],
-  "sudo": []
+  "sudo": [
+    "linux"
+  ]
 }

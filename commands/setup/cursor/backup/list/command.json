@@ -1,0 +1,5 @@
+{
+  "name": "List",
+  "description": "Listar backups disponíveis do Cursor",
+  "entrypoint": "main.sh"
+}

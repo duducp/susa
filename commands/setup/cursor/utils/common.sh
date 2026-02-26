@@ -5,7 +5,6 @@
 # Constants
 SOFTWARE_NAME="Cursor"
 HOMEBREW_PACKAGE="cursor"
-FLATPAK_APP_ID="com.cursor.Cursor"
 CURSOR_BASE_URL="https://api2.cursor.sh/updates/download/golden"
 
 # Get latest version from Homebrew API (works for both macOS and Linux)
@@ -30,15 +29,17 @@ get_latest_version() {
 get_current_version() {
     if check_installation; then
         if is_mac; then
+            # Homebrew já retorna versão e commit (ex: 2.5.25,hash)
             homebrew_get_installed_version "$HOMEBREW_PACKAGE"
         else
-            # No Linux, tentar obter versão do executável
+            # No Linux, tentar obter versão e commit do executável
             if command -v cursor &> /dev/null; then
-                # Extrair versão do output de --version
-                # Formato esperado: "0.42.3" ou similar
-                local version=$(cursor --version 2> /dev/null | grep -oP '\d+\.\d+\.\d+' | head -n 1)
-                if [ -n "$version" ]; then
-                    echo "$version"
+                # Output esperado: "0.42.3+commit_hash" ou "0.42.3"
+                local output=$(cursor --version 2> /dev/null | head -n 1)
+                # Extrair versão e commit
+                local version_commit=$(echo "$output" | grep -oP '\d+\.\d+\.\d+(\+\w+)?')
+                if [ -n "$version_commit" ]; then
+                    echo "$version_commit"
                 else
                     echo "installed"
                 fi
@@ -58,5 +59,53 @@ check_installation() {
     else
         # No Linux, verificar se comando está disponível
         command -v cursor &> /dev/null
+    fi
+}
+
+# Get Cursor configuration paths based on OS and installation method
+get_cursor_config_paths() {
+    local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+    case "$os_name" in
+        darwin)
+            CURSOR_CONFIG_DIR="$HOME/Library/Application Support/Cursor"
+            CURSOR_USER_DIR="$HOME/.cursor"
+            ;;
+        linux)
+            CURSOR_CONFIG_DIR="$HOME/.config/Cursor"
+            CURSOR_USER_DIR="$HOME/.cursor"
+            log_debug "Usando diretório padrão: $CURSOR_CONFIG_DIR"
+            ;;
+        *)
+            log_error "Sistema operacional não suportado: $os_name"
+            return 1
+            ;;
+    esac
+
+    return 0
+}
+
+# Show additional Cursor-specific information
+show_additional_info() {
+    if ! check_installation; then
+        return
+    fi
+
+    # Show configuration directory
+    if get_cursor_config_paths; then
+        if [ -d "$CURSOR_CONFIG_DIR" ]; then
+            log_output "  ${CYAN}Configurações:${NC} $CURSOR_CONFIG_DIR"
+        fi
+    fi
+
+    # Check installation method
+    if is_mac; then
+        if homebrew_is_installed "$HOMEBREW_PACKAGE"; then
+            log_output "  ${CYAN}Método:${NC} Homebrew"
+        fi
+    else
+        if command -v cursor &> /dev/null; then
+            log_output "  ${CYAN}Método:${NC} AppImage/Manual"
+        fi
     fi
 }
